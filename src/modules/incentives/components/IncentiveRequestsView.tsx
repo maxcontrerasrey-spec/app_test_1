@@ -2,6 +2,8 @@ import { Fragment, useEffect, useMemo, useState } from "react";
 import { useMutation, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
 import { useAuth } from "../../auth/context/AuthContext";
 import { TextField, MultiSelectField } from "../../../shared/ui";
+import { useDebouncedValue } from "../../../shared/hooks/useDebouncedValue";
+import { WORKER_SEARCH_DEBOUNCE_MS } from "../../../shared/lib/workerSearch";
 import { formatCurrencyValue, formatRequestDate } from "../../../shared/lib/format";
 import { formatRut } from "../../../shared/lib/rut";
 import {
@@ -38,7 +40,12 @@ export function IncentiveRequestsView({
   const { appRoles, isSuperAdmin } = useAuth();
   const queryClient = useQueryClient();
   const [workerSearch, setWorkerSearch] = useState("");
-  const [debouncedWorkerSearch, setDebouncedWorkerSearch] = useState("");
+  const debouncedWorkerSearchValue = useDebouncedValue(
+    workerSearch.trim(),
+    WORKER_SEARCH_DEBOUNCE_MS,
+    ""
+  );
+  const debouncedWorkerSearch = debouncedWorkerSearchValue.toLocaleLowerCase("es-CL");
   const [statusFilter, setStatusFilter] = useState<string[]>(["A"]);
   const [typeIdFilter, setTypeIdFilter] = useState<string[]>([]);
   const [periodCodeFilter, setPeriodCodeFilter] = useState("");
@@ -58,14 +65,6 @@ export function IncentiveRequestsView({
   const detailQuery = useHrIncentiveRequestDetail(selectedRequestId);
 
   const canCancelRequests = isSuperAdmin || appRoles.includes("control_contratos");
-
-  useEffect(() => {
-    const timeoutId = window.setTimeout(() => {
-      setDebouncedWorkerSearch(workerSearch.trim());
-    }, 250);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [workerSearch]);
 
   useEffect(() => {
     setPage(0);

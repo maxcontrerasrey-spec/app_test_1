@@ -1,6 +1,12 @@
 import { useQuery, type QueryClient } from "@tanstack/react-query";
 import { queryKeys } from "../../../shared/lib/queryKeys";
 import {
+  createWorkerSearchQueryOptions,
+  WORKER_SEARCH_GC_TIME_MS,
+  WORKER_SEARCH_STALE_TIME_MS,
+  normalizeRutAwareWorkerSearchTerm
+} from "../../../shared/lib/workerSearch";
+import {
   fetchRosterCalendarSummary,
   fetchRosterBulkCalendarPage,
   fetchRosterCalendarScopeSummary,
@@ -37,18 +43,19 @@ export function useRosterCalendarSummary(params: {
     areaFilter = "",
     enabled = true
   } = params;
+  const normalizedSearch = normalizeRutAwareWorkerSearchTerm(search);
 
   return useQuery({
     queryKey: queryKeys.roster.calendarSummary({
       monthValue,
-      search,
+      search: normalizedSearch,
       contractFilter,
       areaFilter
     }),
     queryFn: ({ signal }) =>
       fetchRosterCalendarSummary({
         monthValue,
-        search,
+        search: normalizedSearch,
         contractFilter,
         areaFilter
       }, signal),
@@ -78,12 +85,13 @@ export function useRosterCalendarScopeSummary(params: {
     contractAdministratorFilter = "",
     enabled = true
   } = params;
+  const normalizedSearch = normalizeRutAwareWorkerSearchTerm(search);
 
   return useQuery({
     queryKey: queryKeys.roster.calendarScopeSummary({
       startDate,
       endDate,
-      search,
+      search: normalizedSearch,
       contractFilter,
       areaFilter,
       contractAdministratorFilter
@@ -91,7 +99,7 @@ export function useRosterCalendarScopeSummary(params: {
     queryFn: ({ signal }) => fetchRosterCalendarScopeSummary({
       startDate,
       endDate,
-      search,
+      search: normalizedSearch,
       contractFilter,
       areaFilter,
       contractAdministratorFilter
@@ -130,10 +138,11 @@ export function useRosterBulkCalendar(params: {
     cursor = null,
     enabled = true
   } = params;
+  const normalizedSearch = normalizeRutAwareWorkerSearchTerm(search);
   return useQuery({
     queryKey: queryKeys.roster.bulkCalendar({
       monthValue: `${startDate}:${endDate}`,
-      search,
+      search: normalizedSearch,
       contractFilter,
       areaFilter,
       contractAdministratorFilter,
@@ -145,7 +154,7 @@ export function useRosterBulkCalendar(params: {
     queryFn: ({ signal }) => fetchRosterBulkCalendarPage({
       startDate,
       endDate,
-      search,
+      search: normalizedSearch,
       contractFilter,
       areaFilter,
       contractAdministratorFilter,
@@ -163,17 +172,15 @@ export function useRosterBulkCalendar(params: {
 }
 
 export function useRosterWorkerSearch(search: string, enabled = true) {
-  const normalizedSearch = search.trim().toLocaleLowerCase("es-CL");
-
-  return useQuery({
-    queryKey: queryKeys.roster.workerSearch(normalizedSearch),
-    queryFn: ({ signal }) => searchRosterWorkers(normalizedSearch, 12, signal),
-    staleTime: 5 * 60_000,
-    gcTime: ROSTER_GC_TIME_MS,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-    enabled: enabled && normalizedSearch.length >= 2
-  });
+  return useQuery(createWorkerSearchQueryOptions({
+    search,
+    enabled,
+    normalizeSearch: normalizeRutAwareWorkerSearchTerm,
+    queryKey: (normalizedSearch) => queryKeys.roster.workerSearch(normalizedSearch),
+    query: (normalizedSearch, signal) => searchRosterWorkers(normalizedSearch, 12, signal),
+    staleTime: WORKER_SEARCH_STALE_TIME_MS,
+    gcTime: WORKER_SEARCH_GC_TIME_MS
+  }));
 }
 
 export function useWorkerSchedule(params: {

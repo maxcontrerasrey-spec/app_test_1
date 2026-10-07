@@ -97,12 +97,17 @@ export async function fetchHrSanctionSetupCatalogs(): Promise<HrSanctionSetupCat
   };
 }
 
-export async function searchHrSanctionWorkers(search: string, limit = 12): Promise<HrSanctionWorker[]> {
+export async function searchHrSanctionWorkers(
+  search: string,
+  limit = 12,
+  signal?: AbortSignal
+): Promise<HrSanctionWorker[]> {
   const client = getSupabaseClient();
-  const { data, error } = await client.rpc("search_hr_sanction_workers", {
+  const request = client.rpc("search_hr_sanction_workers", {
     p_search: search.trim() || null,
     p_limit: limit
   });
+  const { data, error } = await (signal ? request.abortSignal(signal) : request);
 
   if (error) {
     throw new Error(

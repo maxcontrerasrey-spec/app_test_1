@@ -4266,3 +4266,8 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - Al programar un despacho, derivar el término desde la duración guardada de la ruta y el inicio local; aclarar que es duración vial sin detenciones y recalcular al cambiar ruta/inicio.
 - Si el despacho exige origen, destino y fin de una ruta guardada, no basta con bloquear los inputs: la RPC debe derivarlos de las paradas ordenadas y la duración persistida, ignorando cualquier valor alterado por el cliente.
 - Para integrar SDKs WebAssembly de navegación, no asumir que siempre rechazan instancias `Error`: conservar los rechazos tipo string/objeto y comprobar el estado HTTP antes de entregar el body al parser; distinguir además si falla la consulta de ruta o el arranque de navegación.
+
+## 2026-10-07 - La búsqueda insensible a tildes debe normalizar ambos lados
+
+- No basta con quitar tildes al texto que escribe la persona: si la RPC compara contra nombres/campos con `lower()` literal, consultas como `Jose` no encontrarán `José` y consultas `José` pueden fallar tras normalizar solo el término.
+- Normalizar simétricamente el término y los campos concatenados en servidor, usando el helper aprobado y manteniendo intactos autorización, filtros, límite y scope; añadir regresión para pares con/sin tilde antes de release.

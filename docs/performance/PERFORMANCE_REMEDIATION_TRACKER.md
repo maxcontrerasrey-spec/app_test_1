@@ -7,7 +7,7 @@ Estados permitidos: `PENDING`, `IN_ANALYSIS`, `IMPLEMENTED_UNVALIDATED`, `VALIDA
 ## Contexto de ejecución
 
 - Release productivo: PR #68 integrado en `main` como `34f4f51df782dd2f09210911b77e89ca7cc60642`; árbol de salida idéntico al auditado y CI Enterprise verde.
-- Supabase producción: `pzblmbahnoyntrhistea`. El inventario previo encontró cero branches; no hay PostgreSQL local (Docker/psql). El usuario rechazó crear una rama Preview facturable y pidió esperar staging existente.
+- Supabase producción: `pzblmbahnoyntrhistea`. El inventario previo encontró cero branches y no hay PostgreSQL local. La validación local precede a cualquier operación productiva; la autorización vigente de producción se limita expresamente a P1-WORKER-SEARCH.
 - Alcance seguro actualizado por instrucción expresa del usuario: release productivo controlado, SQL aditivo antes del frontend, sin carga, estrés ni pruebas destructivas contra producción.
 - `BLOCKED_VALIDATION` identifica gates externos no ejecutables; no impide análisis, implementación o validación local de ese mismo módulo.
 
@@ -20,6 +20,7 @@ Estados permitidos: `PENDING`, `IN_ANALYSIS`, `IMPLEMENTED_UNVALIDATED`, `VALIDA
 | P1-ATLAS | Atlas `atlas_ops_search_drivers` | `BLOCKED_VALIDATION` | Implementación local P1; equivalencia, permisos, plan y carga aún requieren PostgreSQL/staging. |
 | P1-MOB | Movilidad `search_internal_mobility_workers` + catálogos | `BLOCKED_VALIDATION` | Cambios locales de búsqueda/cancelación; validar multiplicidad, acentos, RUT, permisos, plan y latencia en staging. |
 | P1-PROJECTION | Proyección común del padrón | `NO_CHANGE_REQUIRED` | No crearla por intuición; reconsiderar solo con evidencia de consumidores, costo de escritura y costo de Sync BUK. |
+| P1-WORKER-SEARCH | Búsquedas de personal BUK en formularios y módulos | `VALIDATING` | SQL aplicado en producción (`20261007195115`); firma/retorno/owner/SECURITY DEFINER/search_path/ACL preservados y UI actual confirma resultados equivalentes `Gonzalez`/`González`. Falta integrar/desplegar el frontend compartido y verificar bundle/UI publicada. Esta autorización no incluye los otros módulos del tracker. |
 | P1-ROSTER | Jornadas calendario general | `IMPLEMENTED_UNVALIDATED` | RPC v2, cursor y límite de 50 implementados; SQL productivo y ACL verificados. Equivalencia exhaustiva, planes y carga siguen `BLOCKED_VALIDATION` sin staging. |
 | P1-BI | BI Dotación | `IN_ANALYSIS` | Baseline histórico del prompt: promedio ~1.324 ms, máximo ~7,69 s, ~34.157 shared blocks y ~85 temp blocks/call. Verificar código/telemetría y causa actual antes de optimizar. |
 | P1-HOME | Inicio / Dashboard / `get_dashboard_home_bundle` | `PENDING` | Auditoría reportó 30.773 llamadas, promedio ~1.095 ms, máximo ~7,934 s y ~9.905 blocks/call. Separar criticidad, duplicación, bytes y render. |
@@ -38,6 +39,17 @@ Estados permitidos: `PENDING`, `IN_ANALYSIS`, `IMPLEMENTED_UNVALIDATED`, `VALIDA
 ## Fichas de evidencia por módulo
 
 Cada ficha registra: **fuente/baseline; causa raíz; cambio; pruebas; before/after; p50/p95/p99; EXPLAIN/BUFFERS; riesgo residual; rollback; SHA**. `NO MEDIDO` significa que no hay evidencia comparable; `BLOCKED_VALIDATION` se reserva para trabajo dependiente del entorno externo.
+
+### P1-WORKER-SEARCH — Búsquedas de personal BUK
+
+- Fuente/causa comprobada: inventario de UI y hooks mostró políticas duplicadas por módulo (debounce desigual o ausente, criterios de inicio, normalización de nombres/RUT, caché y cancelación); Atlas disparaba consultas por tecla y dos vistas de Atlas con igual RPC/fecha no compartían la misma key. No se atribuye a esto todo el tiempo de SQL observado: las RPC y sus volúmenes son diferentes.
+- Cambio cliente: `workerSearch` y `useDebouncedValue` centralizan debounce fijo (200 ms), normalización sin tildes, umbral, política React Query y cancelación AbortSignal. Ningún selector común puede sobrescribir el debounce. Se conservan claves/RPC acotadas por módulo y permisos; el caché solo se reutiliza dentro del mismo scope autorizado o para consultas Atlas con parámetros y contrato idénticos. RUT formateado se canonicaliza al formato de búsqueda sincronizado, incluso cuando termina en K.
+- Cambio servidor aplicado a producción: `supabase/migrations/20261007195115_worker_search_accent_insensitive.sql` normaliza tanto término como campos candidatos en `search_accreditation_workers` y `search_hr_sanction_workers`, las dos excepciones encontradas. Archivo local y versión del historial Supabase coinciden. Se mantienen firma, filas, límites, filtros y guards de autorización; `CREATE OR REPLACE` no tocó owner ni ACL y la migración no contiene `GRANT`/`REVOKE`. No incluye filtros de historial de solicitudes que no consultan el padrón BUK.
+- Validación local: `tsc -b` PASS; unit 174/174; contracts 139/139; tests focalizados 22/22; build PASS; auditorías migrations, Supabase-security, destructive migrations y enterprise docs PASS; Guardian 1 error/0 warnings. Único error: presupuesto base de `supabase-vendor` (+4.381 B) y `app-framework` (+600 B), comparado con archivos de mismo hash en el checkout principal; todos los demás gates pasan. `git diff --check` PASS.
+- Antes/después de backend y p50/p95/p99: `NO MEDIDO`; no se simulará mejora de latencia de servidor a partir de reducir llamadas redundantes del cliente.
+- Ejecución productiva autorizada para esta tarea (2026-10-07): respaldo físico Supabase disponible del 07-Oct-2026 07:52:25 UTC. Post-DDL se confirmó para ambas RPC el mismo owner `postgres`, `SECURITY DEFINER`, `search_path=public`, shape de retorno; ACL permite `authenticated`/`service_role`, deniega `anon`. Normalizador productivo convierte `José Núñez Álvarez` en `jose nunez alvarez`. La pantalla real de Sanciones retorna el mismo conjunto de 12 resultados para `Gonzalez` y `González`. No ejecutar carga/estrés ni EXPLAIN ANALYZE en producción.
+- Riesgo residual: no prueba la latencia del primer resultado frente al motor/índices productivos ni identifica las RPC individuales de mayor costo. Revisar otra vez si la instrumentación muestra una llamada lenta después de debounce/cache.
+- Rollback preparado: `docs/performance/rollback/worker-search-accent-insensitive.sql` repone los cuerpos originales de las migraciones base como una corrección forward-only; no modifica ACL ni datos. La copia restaurada debe aplicarse con `supabase_apply_migration`, nunca restaurando todo el backup. Confirmar la restauración con las mismas verificaciones de ACL y UI.
 
 ### P1-ROSTER — Jornadas
 
@@ -73,5 +85,7 @@ Cada ficha registra: **fuente/baseline; causa raíz; cambio; pruebas; before/aft
 ## Historia
 
 - 2026-10-07: Fase 1B Jornadas quedó implementada, validada localmente y compilada en PostgreSQL productivo mediante migración `20261007153510`; performance posterior aún no medida.
+- 2026-10-07: capa común local de búsqueda BUK implementada. Validación de backend y efecto medido en latencia quedan `BLOCKED_VALIDATION` hasta tener staging; no hubo deploy, migraciones ni escrituras productivas.
+- 2026-10-07: las dos RPC que exigían tildes tienen una migración local correctiva; queda `IMPLEMENTED_UNVALIDATED` y su aplicación/equivalencia/EXPLAIN/carga en `BLOCKED_VALIDATION`. Sin cambios de permisos ni producción.
 - 2026-10-07: PR #68 integrado como `34f4f51d`; Cloudflare producción publica el build auditado. Los hashes productivos de `index-xz0Yf4Yp.js`, `RosterPage-DbekQk1s.js` e `index-DczyPlkl.css` coinciden con `dist`.
 - 2026-10-07: reanudado loop maestro. Se mantiene la negativa del usuario a crear una rama temporal de costo; staging sigue externo. Sin escrituras ni carga a producción.

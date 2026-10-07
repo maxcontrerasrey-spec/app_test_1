@@ -258,12 +258,17 @@ export async function fetchInternalMobilitySetupCatalogs() {
   return mapSetupCatalogs(data);
 }
 
-export async function searchInternalMobilityWorkers(search: string, limit = 12) {
+export async function searchInternalMobilityWorkers(
+  search: string,
+  limit = 12,
+  signal?: AbortSignal
+) {
   const client = getSupabaseClient();
-  const { data, error } = await client.rpc("search_internal_mobility_workers", {
+  const request = client.rpc("search_internal_mobility_workers", {
     p_search: search,
     p_limit: limit
   });
+  const { data, error } = await (signal ? request.abortSignal(signal) : request);
 
   if (error) {
     throw new Error(

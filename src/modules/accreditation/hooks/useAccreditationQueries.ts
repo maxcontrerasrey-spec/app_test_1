@@ -1,6 +1,10 @@
 import { useQuery, type QueryClient } from "@tanstack/react-query";
 import { queryKeys } from "../../../shared/lib/queryKeys";
 import {
+  createWorkerSearchQueryOptions,
+  normalizeRutAwareWorkerSearchTerm
+} from "../../../shared/lib/workerSearch";
+import {
   fetchAccreditationDashboard,
   fetchAccreditationSetupCatalogs,
   fetchWorkerAccreditationProfile,
@@ -45,14 +49,18 @@ export function useAccreditationWorkers(filters: {
   enabled?: boolean;
 }) {
   const { enabled = true, ...rest } = filters;
+  const normalizedSearch = normalizeRutAwareWorkerSearchTerm(rest.search ?? "");
 
-  return useQuery({
-    queryKey: queryKeys.accreditation.workers(rest),
-    queryFn: () => searchAccreditationWorkers(rest),
+  return useQuery(createWorkerSearchQueryOptions({
+    search: normalizedSearch,
+    enabled,
+    normalizeSearch: normalizeRutAwareWorkerSearchTerm,
+    allowEmptySearch: true,
+    queryKey: (search) => queryKeys.accreditation.workers({ ...rest, search }),
+    query: (search, signal) => searchAccreditationWorkers({ ...rest, search }, signal),
     staleTime: ACCREDITATION_STALE_TIME_MS,
-    gcTime: ACCREDITATION_GC_TIME_MS,
-    enabled
-  });
+    gcTime: ACCREDITATION_GC_TIME_MS
+  }));
 }
 
 export function useWorkerAccreditationProfile(params: {

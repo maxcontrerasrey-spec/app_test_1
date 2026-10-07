@@ -75,7 +75,8 @@ describe("paged HR roster calendar contract", () => {
     expect(hooks).toContain("cycleFilter");
     expect(hooks).toContain("pageSize");
     expect(hooks).toContain("queryKeys.roster.calendarScopeSummary");
-    expect(browseHook).toContain("setTimeout(() => setCalendarSearchTerm(workerSearchTerm.trim()), 250)");
+    expect(browseHook).toContain("useDebouncedValue(");
+    expect(browseHook).toContain("WORKER_SEARCH_DEBOUNCE_MS");
     expect(page).toContain("onLoadAllWorkersForExport={loadAllRosterWorkersForExport}");
     expect(page).toContain("fetchAllRosterBulkCalendarPages({");
     expect(api).toContain("const pageSize = 50");

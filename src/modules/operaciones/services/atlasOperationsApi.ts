@@ -132,10 +132,14 @@ export async function acknowledgeAtlasAlert(id: string) {
   await unwrap<null>(client().rpc("atlas_ops_acknowledge_alert", { p_alert_id: id }), "No fue posible atender la alerta.");
 }
 
-export async function searchAtlasDrivers(search: string, date: string) {
-  return asArray<AtlasDriver>(await unwrap<unknown>(client().rpc("atlas_ops_search_drivers", {
+export async function searchAtlasDrivers(search: string, date: string, signal?: AbortSignal) {
+  const request = client().rpc("atlas_ops_search_drivers", {
     p_search: search.trim(), p_service_date: date, p_limit: 12
-  }), "No fue posible buscar conductores."));
+  });
+  return asArray<AtlasDriver>(await unwrap<unknown>(
+    signal ? request.abortSignal(signal) : request,
+    "No fue posible buscar conductores."
+  ));
 }
 
 export async function createAtlasDispatch(payload: Record<string, unknown>) {

@@ -1,6 +1,11 @@
 import { ChangeEvent, useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { SelectField, TextField } from "../../../shared/ui";
+import { useDebouncedValue } from "../../../shared/hooks/useDebouncedValue";
+import {
+  normalizeWorkerSearchTerm,
+  WORKER_SEARCH_DEBOUNCE_MS
+} from "../../../shared/lib/workerSearch";
 import {
   invalidateAccreditationQueries,
   useAccreditationSetupCatalogs,
@@ -51,18 +56,10 @@ export function AccreditationWorkersView() {
     reviewerNotes: ""
   });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const normalizedSearch = search.trim().toLowerCase();
-  const normalizedDigits = search.replace(/\D/g, "");
+  const debouncedSearch = useDebouncedValue(search.trim(), WORKER_SEARCH_DEBOUNCE_MS, "");
+  const normalizedSearch = normalizeWorkerSearchTerm(debouncedSearch);
+  const normalizedDigits = debouncedSearch.replace(/\D/g, "");
   const canQueryWorkers = Boolean(siteId) || normalizedSearch.length >= 2 || normalizedDigits.length >= 4;
-
-  useEffect(() => {
-    const timeoutId = window.setTimeout(() => {
-      setDebouncedSearch(search.trim());
-    }, 150);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [search]);
 
   const workerQuery = useAccreditationWorkers({
     search: debouncedSearch,

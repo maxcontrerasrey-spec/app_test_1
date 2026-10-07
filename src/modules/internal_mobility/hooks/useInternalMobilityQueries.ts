@@ -1,6 +1,11 @@
 import { useQuery, type QueryClient } from "@tanstack/react-query";
 import { queryKeys } from "../../../shared/lib/queryKeys";
 import {
+  createWorkerSearchQueryOptions,
+  WORKER_SEARCH_GC_TIME_MS,
+  normalizeRutAwareWorkerSearchTerm
+} from "../../../shared/lib/workerSearch";
+import {
   fetchInternalMobilityRequestDetail,
   fetchInternalMobilityRequests,
   fetchInternalMobilitySetupCatalogs,
@@ -12,7 +17,7 @@ export const INTERNAL_MOBILITY_CATALOGS_STALE_TIME_MS = 20_000;
 const INTERNAL_MOBILITY_REQUESTS_STALE_TIME_MS = 20_000;
 const INTERNAL_MOBILITY_REQUESTS_REFETCH_MS = 5 * 60_000;
 const INTERNAL_MOBILITY_WORKER_CONTEXT_STALE_TIME_MS = 60_000;
-const INTERNAL_MOBILITY_SEARCH_STALE_TIME_MS = 15_000;
+const INTERNAL_MOBILITY_SEARCH_STALE_TIME_MS = 60_000;
 const INTERNAL_MOBILITY_CACHE_GC_TIME_MS = 20 * 60_000;
 
 export function useInternalMobilitySetupCatalogs() {
@@ -28,13 +33,15 @@ export function useInternalMobilitySetupCatalogs() {
 }
 
 export function useInternalMobilityWorkerSearch(search: string, enabled = true) {
-  return useQuery({
-    queryKey: queryKeys.internalMobility.workerSearch(search),
-    queryFn: () => searchInternalMobilityWorkers(search),
+  return useQuery(createWorkerSearchQueryOptions({
+    search,
+    enabled,
+    normalizeSearch: normalizeRutAwareWorkerSearchTerm,
+    queryKey: (normalizedSearch) => queryKeys.internalMobility.workerSearch(normalizedSearch),
+    query: (normalizedSearch, signal) => searchInternalMobilityWorkers(normalizedSearch, 12, signal),
     staleTime: INTERNAL_MOBILITY_SEARCH_STALE_TIME_MS,
-    gcTime: INTERNAL_MOBILITY_CACHE_GC_TIME_MS,
-    enabled: enabled && search.trim().length >= 2
-  });
+    gcTime: WORKER_SEARCH_GC_TIME_MS
+  }));
 }
 
 export function useInternalMobilityWorkerContext(bukEmployeeId: string, enabled = true) {

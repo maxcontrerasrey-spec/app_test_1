@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { formatRut } from "../../lib/rut";
+import { WORKER_SEARCH_DEBOUNCE_MS, isWorkerSearchReady } from "../../lib/workerSearch";
+import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 
 type WorkerLookupSearchResult<TWorker> = {
   data?: TWorker[];
@@ -26,7 +28,6 @@ type WorkerLookupFieldProps<TWorker, TSearchContext = unknown> = {
   loadingMessage: string;
   emptyMessage?: string;
   clearLabel?: string;
-  debounceMs?: number;
   disabled?: boolean;
   required?: boolean;
   minSearchLength?: number;
@@ -34,15 +35,7 @@ type WorkerLookupFieldProps<TWorker, TSearchContext = unknown> = {
   filterResults?: (workers: TWorker[]) => TWorker[];
 };
 
-export function isWorkerLookupSearchReady(value: string, minSearchLength = 2) {
-  const normalizedValue = value.trim();
-  const digitCount = normalizedValue.replace(/\D/g, "").length;
-  const isNumericLookup = /^[\d.\-\skK]+$/.test(normalizedValue);
-
-  return isNumericLookup
-    ? digitCount >= Math.max(4, minSearchLength)
-    : normalizedValue.length >= minSearchLength;
-}
+export const isWorkerLookupSearchReady = isWorkerSearchReady;
 
 export function WorkerLookupField<TWorker, TSearchContext = unknown>({
   id,
@@ -59,7 +52,6 @@ export function WorkerLookupField<TWorker, TSearchContext = unknown>({
   loadingMessage,
   emptyMessage = "No hay coincidencias para la búsqueda actual.",
   clearLabel = "Limpiar",
-  debounceMs = 250,
   disabled = false,
   required = false,
   minSearchLength = 2,
@@ -69,8 +61,12 @@ export function WorkerLookupField<TWorker, TSearchContext = unknown>({
   const [searchValue, setSearchValue] = useState(
     selectedWorker ? getWorkerFullName(selectedWorker) : ""
   );
-  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [isOpen, setIsOpen] = useState(false);
+  const debouncedSearch = useDebouncedValue(
+    searchValue.trim(),
+    WORKER_SEARCH_DEBOUNCE_MS,
+    ""
+  );
   const lastSyncedWorkerIdRef = useRef<string | null>(
     selectedWorker ? getWorkerId(selectedWorker) : null
   );
@@ -85,18 +81,6 @@ export function WorkerLookupField<TWorker, TSearchContext = unknown>({
     lastSyncedWorkerIdRef.current = selectedWorkerId;
     setSearchValue(selectedWorker ? getWorkerFullName(selectedWorker) : "");
   }, [getWorkerFullName, getWorkerId, selectedWorker]);
-
-  useEffect(() => {
-    const timeoutId = window.setTimeout(() => {
-      setDebouncedSearch(searchValue.trim());
-    }, debounceMs);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [debounceMs, searchValue]);
-
-  useEffect(() => {
-    onSearchChange?.(debouncedSearch);
-  }, [debouncedSearch, onSearchChange]);
 
   const hasSearchableText = isWorkerLookupSearchReady(
     debouncedSearch,
@@ -139,6 +123,7 @@ export function WorkerLookupField<TWorker, TSearchContext = unknown>({
           onChange={(event) => {
             const nextValue = event.target.value;
             setSearchValue(nextValue);
+            onSearchChange?.(nextValue);
 
             if (selectedWorker) {
               lastSyncedWorkerIdRef.current = null;
@@ -155,6 +140,7 @@ export function WorkerLookupField<TWorker, TSearchContext = unknown>({
             className="hr-worker-lookup-clear"
             onClick={() => {
               setSearchValue("");
+              onSearchChange?.("");
               onSelect(null);
             }}
           >
@@ -191,6 +177,7 @@ export function WorkerLookupField<TWorker, TSearchContext = unknown>({
                   onClick={() => {
                     onSelect(worker);
                     setSearchValue(getWorkerFullName(worker));
+                    onSearchChange?.(getWorkerFullName(worker));
                     setIsOpen(false);
                   }}
                 >
