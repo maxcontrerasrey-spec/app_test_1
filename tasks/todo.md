@@ -4886,3 +4886,14 @@ Revisión final: PR #82 se integró como `7bfa40e4`; el run de producción `3768
 - [ ] Integrar y aplicar primero la migración, luego verificar en producción definiciones vigentes de ambas RPC, ACL, trabajador activo/jornada y ausencia de la restricción cruzada; publicar/verificar la vista operativa si el bundle necesita cambio.
 
 Revisión del plan: el contrato del despacho define la operación planificada y el permiso del despachador; el origen contractual del conductor no restringe su elegibilidad. Conductores y vehículos activos se consultan globalmente para usuarios operacionales autorizados, mientras que creación/lectura/transición de despachos sigue limitada al contrato asignado. La regla de igualdad se elimina en crear y pasar a listo. Se conserva ficha BUK activa, jornada laborada, estado de vehículo, rutas, conflictos, eventos y grants explícitos. El estado de jornada mostrado en la captura se verificó en base para 2026-10-08 como trabajado; el chip desactualizado queda fuera.
+# Reproducir y corregir HTTP 400 de simulación Ferrostar — 2026-10-07
+
+- [x] Inspeccionar el contrato real de Ferrostar 0.57 y capturar de forma segura URL, cabeceras y forma del JSON enviado por `getRoutes`, sin registrar coordenadas operacionales.
+- [x] Reproducir el 400 reportado, identificar cuál campo/parada/cabecera produce el rechazo y confirmar el cambio contra el mismo endpoint Valhalla.
+- [x] Implementar una corrección mínima con regresión que cubra el request real; mantener errores útiles y no exponer PII en logs/UI.
+- [x] Ejecutar pruebas focalizadas, build frontend, Guardian y `git diff --check`; probar la solicitud real representativa y actualizar la lección si corresponde.
+- [ ] Integrar y desplegar a producción solo después de comprobar la causa; verificar el bundle y el flujo de simulación publicado, indicando cualquier límite de verificación autenticada.
+
+Revisión inicial: el literal también aparece en respuestas OSRM-compatible de Valhalla. El registro más reciente de `OPERATIVO_MINA_4_GRUPO_1` en producción tiene 12 paradas. Reproduje con sus coordenadas (sin mostrarlas ni guardarlas en logs) que una solicitud única Ferrostar de 12 ubicaciones retorna HTTP 400 / `InvalidValue`; los tramos de 10 y 3 ubicaciones con punto de enlace compartido retornan HTTP 200. Causa confirmada: el simulador ignoraba el límite de 10 ubicaciones que ya resuelve el planificador.
+
+Resultado local: el simulador ahora calcula segmentos consecutivos de hasta 10 ubicaciones, libera el adaptador WASM entre solicitudes, y concatena geometría, pasos, waypoints, distancia y límites para iniciar una navegación continua. Las pruebas focalizadas (14/14), build frontend, Guardian (0 errores/0 advertencias) y `git diff --check` pasan. Vite mantiene la advertencia conocida del chunk de MapLibre (1.08 MB); el chunk de Ferrostar/WASM sigue bajo demanda. Falta integrar/publicar y comprobar el nuevo bundle servido.
