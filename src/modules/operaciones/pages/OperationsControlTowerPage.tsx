@@ -7,7 +7,7 @@ import { useRealtimeQueryInvalidation } from "../../../shared/hooks/useRealtimeQ
 import { queryKeys } from "../../../shared/lib/queryKeys";
 import { supabase } from "../../../shared/lib/supabase";
 import { purgeLegacyOperationsDrafts } from "../lib/legacyCleanup";
-import { estimateLocalRouteEnd } from "../lib/routeSchedule";
+import { estimateLocalRouteEnd, getRouteEndpoints } from "../lib/routeSchedule";
 import { OperationsLiveMap } from "../components/OperationsLiveMap";
 import {
   createAtlasDispatch,
@@ -164,6 +164,7 @@ function OperationsControlTowerApp() {
   const catalogsQuery = useQuery({ queryKey: queryKeys.operations.catalogs(), queryFn: getAtlasOperationsCatalogs, staleTime: 30_000 });
   const dispatchRoutesQuery = useQuery({ queryKey: queryKeys.operations.serviceRoutes(dispatchServiceTemplateId), queryFn: () => getAtlasServiceRoutes(Number(dispatchServiceTemplateId)), enabled: view === "planificacion" && Boolean(dispatchServiceTemplateId), staleTime: 30_000 });
   const selectedDispatchRoute = dispatchRoutesQuery.data?.find((route) => route.id === dispatchRouteId && route.is_active);
+  const dispatchRouteEndpoints = getRouteEndpoints(selectedDispatchRoute?.atlas_ops_service_route_stops);
   useEffect(() => {
     setPlannedEndLocal(estimateLocalRouteEnd(plannedStartLocal, selectedDispatchRoute?.planning_duration_seconds));
   }, [plannedStartLocal, selectedDispatchRoute?.id, selectedDispatchRoute?.planning_duration_seconds]);
@@ -376,12 +377,12 @@ function OperationsControlTowerApp() {
             <Field label="Servicio base"><select name="service_template_id" required value={dispatchServiceTemplateId} onChange={(event) => { setDispatchServiceTemplateId(event.target.value); setDispatchRouteId(""); }}><option value="" disabled>Selecciona servicio</option>{catalogs?.templates.map((item) => <option value={item.id} key={item.id}>{item.name} · {item.service_type}</option>)}</select></Field>
             <Field label="Ruta del servicio"><select name="route_id" value={dispatchRouteId} onChange={(event) => setDispatchRouteId(event.target.value)} required={(dispatchRoutesQuery.data?.filter((route) => route.is_active).length ?? 0) > 0} disabled={!dispatchServiceTemplateId || dispatchRoutesQuery.isLoading}><option value="">{dispatchRoutesQuery.isLoading ? "Cargando rutas…" : "Sin ruta asignada"}</option>{dispatchRoutesQuery.data?.filter((route) => route.is_active).map((route) => <option value={route.id} key={route.id}>{route.route_code} · versión {route.version}</option>)}</select></Field>
             <Field label="Inicio planificado"><input type="datetime-local" name="planned_start_at" required value={plannedStartLocal} onChange={(event) => setPlannedStartLocal(event.target.value)} /></Field>
-            <Field label="Fin estimado"><><input type="datetime-local" name="planned_end_at" value={plannedEndLocal} onChange={(event) => setPlannedEndLocal(event.target.value)} /><small>{selectedDispatchRoute?.planning_duration_seconds != null ? "Estimado con duración vial de la ruta; no incluye tiempo de detención. Puedes ajustarlo." : "Selecciona una ruta guardada para calcular el término automáticamente."}</small></></Field>
+            <Field label="Fin estimado"><><input type="datetime-local" name="planned_end_at" value={plannedEndLocal} readOnly /><small>{selectedDispatchRoute?.planning_duration_seconds != null ? "Calculado desde la duración vial guardada; no incluye detenciones y no se puede editar." : "Selecciona una ruta guardada con duración para calcular el término."}</small></></Field>
             <Field label="Turno"><input name="shift" placeholder="AM / PM / A / B" required /></Field>
             <Field label="Vehículo"><select name="vehicle_id" defaultValue=""><option value="">Pendiente de asignar</option>{catalogs?.vehicles.map((item) => <option value={item.id} key={item.id}>{item.code}{item.plate ? ` · ${item.plate}` : ""}</option>)}</select></Field>
             <PlanningDriverLookup serviceDate={day} disabled={!canOperate} />
-            <Field label="Origen"><input name="origin_label" placeholder="Taller / terminal" /></Field>
-            <Field label="Destino / postura"><input name="destination_label" placeholder="Faena o punto de servicio" /></Field>
+            <Field label="Origen"><input name="origin_label" value={dispatchRouteEndpoints.origin} placeholder="Se obtiene de la primera dirección de la ruta" readOnly /></Field>
+            <Field label="Destino / postura"><input name="destination_label" value={dispatchRouteEndpoints.destination} placeholder="Se obtiene de la última dirección de la ruta" readOnly /></Field>
             <Field label="Instrucciones" wide><textarea name="instructions" rows={3} placeholder="Indicaciones para coordinación y conductor" /></Field>
           </div>
           <div className="atlas-ops__form-footer"><span>El servicio se crea en planificación. Debe quedar listo antes de publicar.</span><button className="atlas-ops__button atlas-ops__button--primary" disabled={mutation.isPending || !canOperate}>Crear planificación</button></div>

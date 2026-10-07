@@ -4264,3 +4264,4 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - Al seleccionar automáticamente una ruta activa, cargar también sus paradas; no mostrar el ID de ruta como seleccionado mientras el editor dice cero direcciones.
 - Tratar “Crear nueva ruta” como una transición explícita que limpia ruta, geometría, búsqueda y prefijo; no pasar el valor vacío por un handler que solo resuelve IDs existentes.
 - Al programar un despacho, derivar el término desde la duración guardada de la ruta y el inicio local; aclarar que es duración vial sin detenciones y recalcular al cambiar ruta/inicio.
+- Si el despacho exige origen, destino y fin de una ruta guardada, no basta con bloquear los inputs: la RPC debe derivarlos de las paradas ordenadas y la duración persistida, ignorando cualquier valor alterado por el cliente.

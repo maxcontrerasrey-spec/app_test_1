@@ -15,6 +15,7 @@ const page = readFileSync(new URL("../../src/modules/operaciones/pages/Operation
 const router = readFileSync(new URL("../../src/app/router/AppRouter.tsx", import.meta.url), "utf8");
 const guards = readFileSync(new URL("../../src/modules/auth/components/RouteGuards.tsx", import.meta.url), "utf8");
 const navigation = readFileSync(new URL("../../src/shared/config/navigation.ts", import.meta.url), "utf8");
+const derivedDispatchMigration = readFileSync(new URL("../../supabase/migrations/20261007191119_atlas_dispatch_route_derived_fields.sql", import.meta.url), "utf8");
 
 describe("Atlas Operations greenfield replacement", () => {
   it("retires prior module-owned storage without importing rows into the new schema", () => {
@@ -34,6 +35,15 @@ describe("Atlas Operations greenfield replacement", () => {
     expect(page).toContain("OperationsControlTowerPage");
     expect(page).not.toContain("base_services");
     expect(page).not.toContain("service_entries");
+  });
+
+  it("derives dispatch endpoints and end time from the selected route on the server", () => {
+    expect(derivedDispatchMigration).toMatch(/order by stop\.stop_order asc/i);
+    expect(derivedDispatchMigration).toMatch(/order by stop\.stop_order desc/i);
+    expect(derivedDispatchMigration).toMatch(/start_at \+ make_interval\(secs => route_duration\)/i);
+    expect(derivedDispatchMigration).toMatch(/start_at, end_at, nullif\(trim\(origin_key\)/i);
+    expect(derivedDispatchMigration).toMatch(/revoke all on function public\.atlas_ops_create_dispatch\(jsonb\) from public, anon/i);
+    expect(derivedDispatchMigration).toMatch(/grant execute on function public\.atlas_ops_create_dispatch\(jsonb\) to authenticated/i);
   });
 
   it("limits the route, navigation and database policies to active profile superadmins", () => {

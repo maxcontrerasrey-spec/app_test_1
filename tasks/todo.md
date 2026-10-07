@@ -4827,3 +4827,12 @@ Revisión del plan: alcance confirmado como cambio solo frontend; los contratos 
 Validación local: 10/10 pruebas focalizadas; `npm run build:frontend-check` y `npm run guardian` pasan (0 errores/advertencias); `git diff --check` pasa. Build conserva la advertencia existente de chunk grande del planificador (1.2 MB).
 
 Revisión final productiva: PR #77 quedó integrado como `09f08bbe484c4976991016bd7e6894b2542ca027`. CI de producción `37667804087` y Cloudflare Pages terminaron exitosamente. `gestion.busesjm.cl` responde HTTP 200 y publica `OperationsControlTowerPage-DQb1erCl.js` con el cálculo de fin estimado y `OperationsRoutePlannerDemo-DOYHvHLR.js` con los estados de ruta guardada/nueva. Se confirmó en los bundles el texto del cálculo vial y el estado de nueva ruta; la carga de paradas está incluida en el chunk publicado. Sin cambios de Supabase, RLS, RPC ni datos. El tiempo estimado no suma detenciones y admite ajuste manual.
+# Despacho: campos derivados de ruta — 2026-10-07
+
+- [x] Inspeccionar la RPC productiva, el formulario y contratos; acordar derivación servidor/UI sin alterar permisos.
+- [x] Hacer fin estimado, origen y destino no editables; derivar extremos de paradas y fin desde duración vial guardada.
+- [x] Crear migración forward-only con CLI y regresiones de contrato preservando ACL y validaciones existentes.
+- [x] Ejecutar 11 pruebas focalizadas, auditorías de migraciones/seguridad, build frontend, Guardian (0 errores/advertencias) y `git diff --check`.
+- [ ] Publicar en producción en orden seguro y verificar migración, bundle y flujo disponible.
+
+Revisión técnica: la UI presenta campos `readOnly`; `atlas_ops_create_dispatch` toma primera/última parada y duración desde la ruta activa persistida. `planned_end_at`, `origin_label` y `destination_label` del cliente ya no son fuente de verdad. ACL original autenticada, validación del contrato, ruta, vehículo, roster, hitos y evento se conservaron. La estimación no incluye detenciones; ruta sin duración positiva deja el fin vacío. Supabase aplicó la migración como `20261007191119`; el archivo local se renombró a la versión registrada.
