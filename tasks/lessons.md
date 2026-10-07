@@ -4258,3 +4258,9 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - Una solicitud posterior y explícita de release productivo exige rehacer compatibilidad, permisos y gates sobre `origin/main`; no convierte resultados no medidos en evidencia ni autoriza pruebas de carga en producción.
 - Antes de publicar una RPC paginada, comparar su población contra el SQL vivo: `is_active = true` por sí solo no equivale al contrato productivo cuando existe una fecha de salida pasada.
 - Antes de liberar una migración Supabase aún no aplicada, comparar su versión con el máximo registrado en producción. Si quedó por debajo, reversionarla antes del PR; nunca permitir que un frontend dependiente llegue a producción antes que sus RPC.
+
+## 2026-10-07 - Un selector de ruta debe reflejar el contenido abierto en el editor
+
+- Al seleccionar automáticamente una ruta activa, cargar también sus paradas; no mostrar el ID de ruta como seleccionado mientras el editor dice cero direcciones.
+- Tratar “Crear nueva ruta” como una transición explícita que limpia ruta, geometría, búsqueda y prefijo; no pasar el valor vacío por un handler que solo resuelve IDs existentes.
+- Al programar un despacho, derivar el término desde la duración guardada de la ruta y el inicio local; aclarar que es duración vial sin detenciones y recalcular al cambiar ruta/inicio.
