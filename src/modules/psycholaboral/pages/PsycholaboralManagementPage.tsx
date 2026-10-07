@@ -21,7 +21,7 @@ import {
   usePsychCatalog,
   usePsychStatusSummary,
 } from "../hooks/usePsycholaboralQueries";
-import type { PsychAIOutput, PsychAIReviewDetail, PsychCandidate, PsychResultDetail } from "../types";
+import type { PsychAIOutput, PsychAIReviewDetail, PsychCandidate, PsychResultDetail, PsychStatusSummary } from "../types";
 import "../styles/psycholaboral.css";
 
 const statusLabels = {
@@ -83,7 +83,7 @@ export function PsycholaboralManagementPage() {
   const catalog = usePsychCatalog();
   const rows = candidates.data?.items ?? [];
   const totalVisible = candidates.data?.total_count ?? 0;
-  const counts: Record<string, number> = statusSummary.data ?? {};
+  const counts: Partial<PsychStatusSummary> = statusSummary.data ?? {};
   const statusItems = ["not_sent", "sent", "expired", "completed", "approved", "rejected"] as const;
   const tabs = [
     { key: "", label: "Todos" },
@@ -297,8 +297,8 @@ export function PsycholaboralManagementPage() {
               }}
             >
               <span className="micro-label">{statusLabels[item]}</span>
-              <strong>{counts[item] ?? 0}</strong>
-              <small>Total filtrado</small>
+              <strong>{statusSummary.isLoading ? "…" : statusSummary.isError ? "—" : counts[item] ?? 0}</strong>
+              <small>{statusSummary.isError ? "No disponible" : "Total filtrado"}</small>
             </button>
           ))}
         </div>
@@ -427,43 +427,9 @@ export function PsycholaboralManagementPage() {
                       ) : null}
                     </td>
                     <td className="psych-update-cell">
-                      <div className="psych-update-cell__content">
-                        <span>
-                          {dateTime(
-                            row.completed_at ?? row.started_at ?? row.issued_at,
-                          )}
-                        </span>
-                        {row.certificate_status === "generated" ? (
-                          <button
-                            type="button"
-                            className="psych-icon-action"
-                            title="Descargar certificado"
-                            aria-label={`Descargar certificado de ${row.full_name}`}
-                            disabled={busy === row.id}
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              void download(row);
-                            }}
-                          >
-                            PDF
-                          </button>
-                        ) : null}
-                        {row.report_status === "generated" ? (
-                          <button
-                            type="button"
-                            className="psych-icon-action"
-                            title="Descargar informe psicolaboral"
-                            aria-label={`Descargar informe psicolaboral de ${row.full_name}`}
-                            disabled={busy === row.id}
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              void downloadReport(row);
-                            }}
-                          >
-                            INF
-                          </button>
-                        ) : null}
-                      </div>
+                      {dateTime(
+                        row.completed_at ?? row.started_at ?? row.issued_at,
+                      )}
                     </td>
                   </tr>
                   {expanded === row.id ? (

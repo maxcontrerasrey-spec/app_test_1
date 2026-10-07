@@ -1,5 +1,10 @@
 # Lecciones Técnicas Aprendidas (Lessons)
 
+## 2026-10-07 - Las tarjetas de estado deben reflejar las mismas filas y filtros del listado
+
+- Mantener resumen y listado con idénticos criterios de elegibilidad, estado y normalización de búsqueda; cada estado mostrado debe tener su clave explícita en el agregado y en el tipo cliente, sin convertir una categoría ausente en cero silenciosamente.
+- Si una descarga vive en el detalle expandido, no duplicarla en la fila contraída; revisar la interacción final tras el cambio que movió esa acción.
+
 ## 2026-10-06 - El nombre visible de un área BUK no prueba que sea el centro operacional del contrato
 
 - Si el mismo nombre aparece en áreas padre y subáreas, no construir cargo-contrato por etiqueta sola: exigir el `buk_area_code` que coincida con el centro de costo o ID BUK y rechazar empates.

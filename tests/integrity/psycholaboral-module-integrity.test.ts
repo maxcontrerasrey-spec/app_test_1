@@ -19,6 +19,7 @@ const psychologistReviewHashFixMigration = readFileSync("supabase/migrations/202
 const psychologistDocumentTypeFixMigration = readFileSync("supabase/migrations/20260819131500_fix_psych_report_document_type_ambiguity.sql", "utf8");
 const decisionSeparationMigration = readFileSync("supabase/migrations/20260819230000_separate_psycholaboral_report_decisions.sql", "utf8");
 const terminalDecisionMigration = readFileSync("supabase/migrations/20261002124040_preserve_terminal_candidate_on_psycholaboral_rejection.sql", "utf8");
+const statusSummaryMigration = readFileSync("supabase/migrations/20261007145851_psycholaboral_status_summary_rejected.sql", "utf8");
 const contingencyEligibilityMigration = readFileSync("supabase/migrations/20260924120000_allow_psycholaboral_for_contingency_hires.sql", "utf8");
 const r2Migration = readFileSync("supabase/migrations/20260930231956_psycholaboral_cloudflare_r2_storage.sql", "utf8");
 const edge = readFileSync("supabase/functions/psycholaboral-assessment/index.ts", "utf8");
@@ -29,6 +30,7 @@ const psychAiSemantic = readFileSync("supabase/functions/_shared/psychAi/semanti
 const certificate = readFileSync("supabase/functions/generate-psycholaboral-certificate/index.ts", "utf8");
 const r2Gateway = readFileSync("functions/api/psycholaboral/storage.ts", "utf8");
 const bukSync = readFileSync("supabase/functions/sync-buk-candidates/index.ts", "utf8");
+const psycholaboralApi = readFileSync("src/modules/psycholaboral/services/psycholaboralApi.ts", "utf8");
 const resultDialog = readFileSync("src/modules/psycholaboral/components/PsychResultDialog.tsx", "utf8");
 const aiReviewDialog = readFileSync("src/modules/psycholaboral/components/PsychAIReviewDialog.tsx", "utf8");
 const managementPage = readFileSync("src/modules/psycholaboral/pages/PsycholaboralManagementPage.tsx", "utf8");
@@ -81,12 +83,26 @@ describe("Gestión Psicolaboral", () => {
     expect(assessmentPage).not.toContain("saveInFlight.current");
   });
 
-  it("mantiene la columna de actualización como celda de tabla para no desalinear separadores", () => {
+  it("mantiene la columna de actualización compacta sin duplicar descargas", () => {
     expect(managementPage).toContain('td className="psych-update-cell"');
-    expect(managementPage).toContain('className="psych-update-cell__content"');
+    expect(managementPage).not.toContain("psych-icon-action");
+    expect(managementPage).toContain("Descargar certificado");
+    expect(managementPage).toContain("Descargar informe psicolaboral");
     expect(assessmentStyles).toContain(".psych-update-cell{min-width:");
-    expect(assessmentStyles).toContain(".psych-update-cell__content{display:flex;");
+    expect(assessmentStyles).not.toContain("psych-icon-action");
+    expect(assessmentStyles).not.toContain("psych-update-cell__content");
     expect(assessmentStyles).not.toContain(".psych-update-cell{display:flex");
+  });
+
+  it("incluye rechazos en los conteos con el mismo buscador del listado", () => {
+    expect(statusSummaryMigration).toContain("'rejected', count(*) filter (where display_status = 'rejected')");
+    expect(statusSummaryMigration).toContain("when a.decision = 'rejected' then 'rejected'");
+    expect(statusSummaryMigration).toContain("nullif(lower(trim(cp.personal_email)), '')");
+    expect(statusSummaryMigration).toContain("nullif(lower(trim(cp.email)), '')");
+    expect(statusSummaryMigration).toContain("public.psycholaboral_candidate_has_eligible_process(rcc.id)");
+    expect(managementPage).toContain('statusSummary.isError ? "—"');
+    expect(psycholaboralApi).toContain('"rejected"');
+    expect(psycholaboralApi).toContain("El resumen psicolaboral está incompleto");
   });
 
   it("registra un módulo independiente y protege su ruta", () => {

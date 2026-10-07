@@ -105,6 +105,13 @@ Revisión final: `npm run build:frontend-check`, `npm run guardian` (0 errores, 
 
 # Tareas y Roadmap de Desarrollo
 
+## Corregir conteo de rechazos y retirar iconos de la fila contraída — 2026-10-07
+
+- [x] Comparar listado y resumen en producción; comprobar clasificación de decisiones rechazadas y revisar la captura.
+- [x] Incorporar `rejected` al resumen SQL y al tipo del cliente, con el mismo universo y búsqueda del listado; validar que una respuesta incompleta no se pinte como cero.
+- [x] Retirar `PDF`/`INF` de la fila contraída y conservar las descargas solo en la vista expandida.
+- [ ] Publicar migración y frontend; comprobar conteos y bundle productivos.
+
 ## Habilitar descarga del informe psicolaboral en cualquier estado — 2026-10-06
 
 - [x] Confirmar el informe final y su artefacto en producción para Edwar Muñoz; identificar si la causa está en la UI o en la autorización de R2/RPC.
