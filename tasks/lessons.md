@@ -1,5 +1,11 @@
 # Lecciones Técnicas Aprendidas (Lessons)
 
+## 2026-10-07 — El límite Valhalla `/route` también aplica a Ferrostar
+
+- El planificador ya divide rutas largas en solicitudes de hasta 10 ubicaciones, pero el simulador Ferrostar puede recibir la ruta completa; una ruta guardada con 12 paradas reproducía HTTP 400 `InvalidValue`.
+- Aplicar el límite en cada consumidor del proveedor y dividir conservando un punto de enlace; volver a unir geometría, pasos, waypoints, distancia y bounds antes de iniciar una sola navegación.
+- Verificar con las mismas ubicaciones de la ruta que la llamada sin dividir falla y que cada tramo vuelve HTTP 200, sin registrar ni exponer coordenadas.
+
 ## 2026-10-07 — Matriz y trazado Valhalla tienen límites diferentes
 
 - `sources_to_targets` admite hasta 100 pares por petición y `/route` admite solo diez ubicaciones; validar la matriz no valida la solicitud de trazado posterior.

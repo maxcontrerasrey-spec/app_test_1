@@ -9,7 +9,7 @@ import type { Route, TripState, UserLocation, Waypoint } from "@stadiamaps/ferro
 import { calculateAtlasValhallaRoute, getAtlasOperationsCatalogs, getAtlasServiceRoute, getAtlasServiceRoutes, optimizeAtlasOpenRoute, resolveAtlasTomTomSuggestion, saveAtlasServiceRoute, searchAtlasTomTom, type AtlasOptimizedRoute, type AtlasPlannedRoute, type AtlasServiceRoute, type TomTomSuggestion } from "../services/atlasOperationsApi";
 import { appendRouteStop, moveRouteStop, normalizeRouteStops, setFixedDestination } from "../lib/routeStopOrder";
 import { matchRouteDestinationPresets, type RouteDestinationPreset } from "../lib/routeDestinationCatalog";
-import { formatDriverSimulationError } from "../lib/routeSimulation";
+import { formatDriverSimulationError, mergeFerrostarRouteSegments, splitRouteStops } from "../lib/routeSimulation";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "../styles/route-planner-demo.css";
 
@@ -520,11 +520,21 @@ export function OperationsRoutePlannerDemo() {
       });
       coreRef.current = core;
       phase = "consultar Valhalla";
-      const initialLocation = locationAt(stops[0]!);
-      const waypoints: Waypoint[] = stops.slice(1).map((stop) => ({ coordinate: { lat: stop.lat, lng: stop.lng }, kind: "Break", properties: undefined }));
-      const routes = await core.getRoutes(initialLocation, waypoints);
-      if (!routes.length) throw new Error("Valhalla no devolvió una ruta para estas paradas.");
-      const driverRoute = routes[0]!;
+      const routeCore = runtime.createFerrostarCore(() => {});
+      const routeSegments: Route[] = [];
+      for (const segmentStops of splitRouteStops(stops)) {
+        let routes: Route[];
+        try {
+          const initialLocation = locationAt(segmentStops[0]!);
+          const waypoints: Waypoint[] = segmentStops.slice(1).map((stop) => ({ coordinate: { lat: stop.lat, lng: stop.lng }, kind: "Break", properties: undefined }));
+          routes = await routeCore.getRoutes(initialLocation, waypoints);
+        } finally {
+          await routeCore.stopNavigation();
+        }
+        if (!routes.length) throw new Error("Valhalla no devolvió una ruta para estas paradas.");
+        routeSegments.push(routes[0]!);
+      }
+      const driverRoute = mergeFerrostarRouteSegments(routeSegments);
       setRoute(driverRoute);
       phase = "iniciar Ferrostar";
       await core.stopNavigation();
