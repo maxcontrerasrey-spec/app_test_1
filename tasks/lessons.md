@@ -1,5 +1,11 @@
 # Lecciones Técnicas Aprendidas (Lessons)
 
+## 2026-10-07 — Matriz y trazado Valhalla tienen límites diferentes
+
+- `sources_to_targets` admite hasta 100 pares por petición y `/route` admite solo diez ubicaciones; validar la matriz no valida la solicitud de trazado posterior.
+- Para rutas largas, separar el recorrido en tramos consecutivos de hasta diez puntos solapando el último de un tramo con el primero del siguiente; combinar forma, distancia y duración en orden.
+- Reproducir por separado cada llamada externa del pipeline y verificar la ruta final completa con el número de paradas real.
+
 ## 2026-10-07 — La matriz Valhalla debe respetar el límite de pares del proveedor
 
 - `sources_to_targets` limita cada solicitud a 100 pares origen-destino, aunque el límite de paradas del producto sea mayor; una matriz 13×13 excede ese máximo y responde HTTP 400.
