@@ -10,13 +10,13 @@ import { hasFeatureAccess } from "../../auth/config/access";
 import { useAuth } from "../../auth/context/AuthContext";
 import {
   invalidateRosterQueries,
-  useRosterBulkCalendar,
-  useRosterCalendarSummary,
   useRosterSetupCatalogs,
   useWorkerSchedule
 } from "../hooks/useRosterQueries";
+import { useRosterCalendarBrowse } from "../hooks/useRosterCalendarBrowse";
 import {
   assignWorkerRoster,
+  fetchAllRosterBulkCalendarPages,
   setRosterExceptionStatus,
   upsertRosterException
 } from "../services/rosterApi";
@@ -24,14 +24,14 @@ import type {
   RosterExceptionSource,
   RosterExceptionType,
   RosterWorkerSearchItem,
-  WorkerRosterException,
   WorkerScheduleDay
 } from "../types";
 import { RosterAssignmentDialog } from "../components/RosterAssignmentDialog";
 import { RosterCalendar } from "../components/RosterCalendar";
-import { RosterBulkCalendar } from "../components/RosterBulkCalendar";
+import { RosterBulkCalendar, ROSTER_NO_PATTERN_FILTER } from "../components/RosterBulkCalendar";
 import { RosterPatternManager } from "../components/RosterPatternManager";
 import { RosterWorkerLookup } from "../components/RosterWorkerLookup";
+import { formatExceptionGroupRange, groupRosterExceptions } from "../lib/rosterExceptionUtils";
 import "../styles/roster.css";
 
 function buildMonthRange(monthValue: string) {
@@ -82,81 +82,6 @@ function getExceptionSourceLabel(source: RosterExceptionSource | null) {
         : "";
 }
 
-type RosterExceptionGroup = {
-  key: string;
-  exceptions: WorkerRosterException[];
-  startDate: string;
-  endDate: string;
-  dayCount: number;
-  exceptionLabel: string;
-  exceptionSource: RosterExceptionSource;
-  notes: string | null;
-  isActive: boolean;
-};
-
-function getDateTime(dateValue: string) {
-  const [year, month, day] = dateValue.split("-").map(Number);
-  return Date.UTC(year, month - 1, day);
-}
-
-function getNextDateValue(dateValue: string) {
-  const [year, month, day] = dateValue.split("-").map(Number);
-  const date = new Date(Date.UTC(year, month - 1, day + 1));
-  return date.toISOString().slice(0, 10);
-}
-
-function getExceptionGroupKey(exception: WorkerRosterException) {
-  return [
-    exception.exceptionType,
-    exception.exceptionLabel,
-    exception.exceptionSource,
-    exception.isActive ? "active" : "inactive",
-    exception.notes?.trim() ?? ""
-  ].join("|");
-}
-
-function groupRosterExceptions(exceptions: WorkerRosterException[]): RosterExceptionGroup[] {
-  return [...exceptions]
-    .sort((left, right) => getDateTime(left.exceptionDate) - getDateTime(right.exceptionDate))
-    .reduce<RosterExceptionGroup[]>((groups, exception) => {
-      const lastGroup = groups[groups.length - 1];
-      const groupKey = getExceptionGroupKey(exception);
-      const canAppend =
-        lastGroup?.key === groupKey &&
-        getNextDateValue(lastGroup.endDate) === exception.exceptionDate;
-
-      if (canAppend) {
-        lastGroup.exceptions.push(exception);
-        lastGroup.endDate = exception.exceptionDate;
-        lastGroup.dayCount += 1;
-        return groups;
-      }
-
-      groups.push({
-        key: groupKey,
-        exceptions: [exception],
-        startDate: exception.exceptionDate,
-        endDate: exception.exceptionDate,
-        dayCount: 1,
-        exceptionLabel: exception.exceptionLabel,
-        exceptionSource: exception.exceptionSource,
-        notes: exception.notes,
-        isActive: exception.isActive
-      });
-
-      return groups;
-    }, []);
-}
-
-function formatExceptionGroupRange(group: RosterExceptionGroup) {
-  const range =
-    group.startDate === group.endDate
-      ? formatRequestDate(group.startDate)
-      : `${formatRequestDate(group.startDate)} - ${formatRequestDate(group.endDate)}`;
-
-  return `${range} · ${group.dayCount === 1 ? "1 día" : `${group.dayCount} días`}`;
-}
-
 export function RosterPage() {
   const { accessibleFeatures, isSuperAdmin } = useAuth();
   const navigate = useNavigate();
@@ -171,6 +96,7 @@ export function RosterPage() {
     isSuperAdmin || hasFeatureAccess(accessibleFeatures, "roster_manage_patterns");
   const [selectedWorker, setSelectedWorker] = useState<RosterWorkerSearchItem | null>(null);
   const [workerSearchTerm, setWorkerSearchTerm] = useState("");
+  const [rosterCycleFilter, setRosterCycleFilter] = useState("");
   const [periodStart, setPeriodStart] = useState(() => monthStartDate(todayMonthValue()));
   const [periodEnd, setPeriodEnd] = useState(() => monthEndDate(todayMonthValue()));
   const [operationalAreaFilter, setOperationalAreaFilter] = useState("");
@@ -183,50 +109,32 @@ export function RosterPage() {
   const [statusMessage, setStatusMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const rosterProjectionMaxMonth = maxProjectionMonthValue();
-
   const setupCatalogsQuery = useRosterSetupCatalogs(canViewCalendar || canManagePatterns);
   const monthValue = periodStart.slice(0, 7);
-  const hasRosterScopeFilter = Boolean(
-    operationalAreaFilter.trim() || contractAdministratorFilter.trim()
-  );
-  const rosterCalendarSummaryQuery = useRosterCalendarSummary({
-    monthValue,
-    search: workerSearchTerm,
-    areaFilter: operationalAreaFilter,
-    enabled: !isPatternsView && !hasRosterScopeFilter
-  });
-  const rosterBulkCalendarQuery = useRosterBulkCalendar({
+  const rosterBrowse = useRosterCalendarBrowse({
+    workerSearchTerm,
     startDate: periodStart,
     endDate: periodEnd,
-    search: workerSearchTerm,
     areaFilter: operationalAreaFilter,
     contractAdministratorFilter,
-    enabled: !isPatternsView && hasRosterScopeFilter
+    cycleFilter: rosterCycleFilter,
+    isPatternsView
   });
-  const scopedRosterSummary = useMemo(() => {
-    if (!hasRosterScopeFilter || !rosterBulkCalendarQuery.data) {
-      return null;
-    }
-
-    const workers = rosterBulkCalendarQuery.data.workers;
-    const assignedCount = workers.filter((worker) =>
-      worker.days.some((day) => Boolean(day.assignmentId))
-    ).length;
-
-    return {
-      assignedCount,
-      pendingCount: workers.length - assignedCount
-    };
-  }, [hasRosterScopeFilter, rosterBulkCalendarQuery.data]);
-  const rosterSummaryIsLoading = hasRosterScopeFilter
-    ? rosterBulkCalendarQuery.isLoading
-    : rosterCalendarSummaryQuery.isLoading;
-  const visibleAssignedCount = scopedRosterSummary?.assignedCount
-    ?? rosterCalendarSummaryQuery.data?.assignedCount
-    ?? 0;
-  const visiblePendingCount = scopedRosterSummary?.pendingCount
-    ?? rosterCalendarSummaryQuery.data?.pendingCount
-    ?? 0;
+  const {
+    calendarSearchTerm,
+    isSearchPending: isCalendarSearchPending,
+    hasScopeFilter: hasRosterScopeFilter,
+    page: rosterCalendarPage,
+    pageSize: rosterCalendarPageSize,
+    resetPagination: resetRosterPagination,
+    changePage: changeRosterPage,
+    globalSummaryQuery: rosterCalendarSummaryQuery,
+    scopeSummaryQuery: rosterCalendarScopeSummaryQuery,
+    calendarPageQuery: rosterBulkCalendarQuery,
+    isSummaryLoading: rosterSummaryIsLoading,
+    assignedCount: visibleAssignedCount,
+    pendingCount: visiblePendingCount
+  } = rosterBrowse;
   const operationalAreaOptions = setupCatalogsQuery.data?.operationalAreas ?? [];
   const contractAdministratorOptions = setupCatalogsQuery.data?.contractAdministrators ?? [];
   const monthRange = useMemo(() => buildMonthRange(monthValue), [monthValue]);
@@ -253,6 +161,7 @@ export function RosterPage() {
   );
 
   const refreshRoster = useCallback(async () => {
+    resetRosterPagination();
     await invalidateRosterQueries(queryClient);
     if (selectedWorker) {
       await queryClient.invalidateQueries({
@@ -263,7 +172,16 @@ export function RosterPage() {
         })
       });
     }
-  }, [monthRange.endDate, monthRange.startDate, queryClient, selectedWorker]);
+  }, [monthRange.endDate, monthRange.startDate, queryClient, resetRosterPagination, selectedWorker]);
+
+  const loadAllRosterWorkersForExport = useCallback((signal: AbortSignal, cycleFilter: string) => fetchAllRosterBulkCalendarPages({
+    startDate: periodStart,
+    endDate: periodEnd,
+    search: calendarSearchTerm,
+    areaFilter: operationalAreaFilter,
+    contractAdministratorFilter,
+    cycleFilter
+  }, signal), [calendarSearchTerm, contractAdministratorFilter, operationalAreaFilter, periodEnd, periodStart]);
 
   useRealtimeQueryInvalidation({
     channelName: `roster:${isPatternsView ? "patterns" : selectedWorker?.bukEmployeeId ?? "calendar"}`,
@@ -385,7 +303,11 @@ export function RosterPage() {
                   label="Trabajador"
                   placeholder="Busca por nombre, RUT, contrato o cargo"
                   selectedWorker={selectedWorker}
-                  onSearchChange={setWorkerSearchTerm}
+                  onSearchChange={(value) => {
+                    setWorkerSearchTerm(value);
+                    resetRosterPagination();
+                    setRosterCycleFilter("");
+                  }}
                   onSelect={(worker) => {
                     setSelectedWorker(worker);
                     setStatusMessage("");
@@ -408,6 +330,8 @@ export function RosterPage() {
                         if (!nextDate) return;
                         setPeriodStart(nextDate);
                         setSelectedDate(nextDate);
+                        resetRosterPagination();
+                        setRosterCycleFilter("");
                       }}
                     />
                     <label htmlFor="roster-period-end">Hasta</label>
@@ -420,7 +344,11 @@ export function RosterPage() {
                       max={monthEndDate(rosterProjectionMaxMonth)}
                       onChange={(event) => {
                         const nextDate = event.target.value;
-                        if (nextDate) setPeriodEnd(nextDate);
+                        if (nextDate) {
+                          setPeriodEnd(nextDate);
+                          resetRosterPagination();
+                          setRosterCycleFilter("");
+                        }
                       }}
                     />
                   </div>
@@ -433,6 +361,8 @@ export function RosterPage() {
                   onChange={(event) => {
                     setOperationalAreaFilter(event.target.value);
                     setContractAdministratorFilter("");
+                    resetRosterPagination();
+                    setRosterCycleFilter("");
                   }}
                   options={operationalAreaOptions}
                   placeholder="Todos los contratos / áreas"
@@ -446,6 +376,8 @@ export function RosterPage() {
                   onChange={(event) => {
                     setContractAdministratorFilter(event.target.value);
                     setOperationalAreaFilter("");
+                    resetRosterPagination();
+                    setRosterCycleFilter("");
                   }}
                   options={contractAdministratorOptions}
                   placeholder="Todos los administradores"
@@ -480,14 +412,35 @@ export function RosterPage() {
               </section>
             ) : null}
 
+            {hasRosterScopeFilter && (rosterCalendarScopeSummaryQuery.error || rosterBulkCalendarQuery.error) ? (
+              <section className="info-card">
+                <p className="form-status form-status-error">
+                  {rosterCalendarScopeSummaryQuery.error?.message ?? rosterBulkCalendarQuery.error?.message}
+                </p>
+              </section>
+            ) : null}
+
             {hasRosterScopeFilter ? (
               <RosterBulkCalendar
-                key={`${operationalAreaFilter}:${contractAdministratorFilter}`}
+                key={`${periodStart}:${periodEnd}:${calendarSearchTerm}:${operationalAreaFilter}:${contractAdministratorFilter}`}
                 startDate={periodStart}
                 endDate={periodEnd}
                 workers={rosterBulkCalendarQuery.data?.workers ?? []}
                 patterns={setupCatalogsQuery.data?.patterns ?? []}
-                isLoading={rosterBulkCalendarQuery.isLoading}
+                cycleCounts={rosterCalendarScopeSummaryQuery.data?.patterns ?? []}
+                totalWorkers={rosterCalendarScopeSummaryQuery.data?.totalWorkers ?? 0}
+                page={rosterCalendarPage}
+                pageSize={rosterCalendarPageSize}
+                hasMore={rosterBulkCalendarQuery.data?.hasMore ?? false}
+                nextCursor={rosterBulkCalendarQuery.data?.nextCursor ?? null}
+                selectedPattern={rosterCycleFilter}
+                onSelectedPatternChange={(pattern) => {
+                  setRosterCycleFilter(pattern === ROSTER_NO_PATTERN_FILTER ? ROSTER_NO_PATTERN_FILTER : pattern);
+                  resetRosterPagination();
+                }}
+                onPageChange={changeRosterPage}
+                onLoadAllWorkersForExport={loadAllRosterWorkersForExport}
+                isLoading={isCalendarSearchPending || rosterCalendarScopeSummaryQuery.isLoading || rosterBulkCalendarQuery.isLoading}
               />
             ) : (
               <section className="info-card roster-bulk-card" aria-label="Calendario de trabajadores">

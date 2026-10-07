@@ -1,3 +1,48 @@
+# Release controlado ATLAS Fase 1B Jornadas — 2026-10-07
+
+- [x] Reanudar el objetivo completo y acotar esta entrega a los cambios ya implementados de Fase 1B; BI/Dashboard/Sync BUK continúan en el tracker, pero no se mezclarán en este release.
+- [x] Actualizar `origin/main` y comprobar que el único avance remoto posterior afecta Psicolaboral, no Jornadas ni las RPC de roster.
+- [x] Comparar los contratos SQL nuevos con las funciones productivas y sus ACL; confirmar que las funciones legacy permanecen y que los wrappers v2 conservan `user_can_view_hr_roster` y `authenticated`.
+- [x] Corregir la población por fecha de salida para mantener exactamente la semántica productiva y rechazar cursores keyset incompletos; agregar regresión.
+- [x] Ejecutar suite focalizada, TypeScript, build, auditorías de migraciones/seguridad/performance, Guardian completo y `git diff --check` sobre la versión reconciliada con `origin/main`; resultado final: 17/17 pruebas focalizadas y Guardian 0 errores / 0 warnings.
+- [x] Crear rama/commit, rebasear sobre `origin/main` y publicar un árbol remoto idéntico al local; GitHub rechazó `receive-pack` con HTTP 500, por lo que se usó la API de contenidos y se comprobó igualdad exacta del tree SHA antes de continuar.
+- [x] Reversionar la migración no aplicada por encima del último head productivo conocido y reconciliar Git con la versión registrada por Supabase (`20261007153510` > `20261007145851`) para que las RPC existan antes del despliegue frontend.
+- [ ] Abrir PR y exigir CI verde antes de aplicar SQL o integrar.
+- [x] Aplicar primero la migración aditiva en producción, verificar firmas, propietarios, ACL, autorización negativa y consultas funcionales acotadas; versión `20261007153510`, smoke de página limitada aprobado y sin carga ni estrés.
+- [ ] Integrar a `main`, esperar Cloudflare Pages y comprobar bundle/ruta autenticada de Jornadas en producción.
+- [ ] Documentar evidencia real, actualizar tracker/reporte y dejar el worktree sin cambios pendientes.
+
+# ATLAS Performance — reanudación del loop maestro (2026-10-07)
+
+- [x] Reanudar el objetivo a petición del usuario; conservar las modificaciones locales de Fase 1B y el worktree previo de Fase 0/P1 sin limpiar ni sobrescribirlos.
+- [x] Confirmar que no existe staging disponible y que el usuario no autoriza crear una rama con costo; no usar producción para carga ni aplicar cambios allí.
+- [ ] Fase 1B/Jornadas: mantener como `BLOCKED_VALIDATION` solo equivalencia SQL/PostgreSQL, EXPLAIN/BUFFERS, advisors y carga; conservar entregables y comandos locales.
+- [ ] BI Dotación: auditar flujo UI→hook→RPC→SQL, usar métricas históricas solo en lectura, identificar causa raíz sustentada, implementar cambios locales, probar y dejar mediciones staging bloqueadas explícitas.
+- [ ] Inicio/Dashboard: separar criticidad de widgets, llamadas duplicadas/costosas, cache y carga/render; implementar cambios con contratos y permisos preservados.
+- [ ] Sync BUK: seguir métricas/run IDs y etapas; mejorar solo brechas probadas preservando atomicidad, publicación autoritativa, idempotencia y seguridad.
+- [ ] Recorrer cada P2 del prompt maestro: Reclutamiento, Competencias, Sanciones, Acreditación, Comunicaciones/R2, Psicolaboral y Estructuras de Renta.
+- [ ] Revisar índices/FK/RLS caso por caso y cerrar observabilidad que pueda implementarse localmente; no hacer cambios masivos ni relajar permisos.
+- [ ] Por cada módulo, ejecutar pruebas focalizadas, TypeScript, build, auditorías aplicables, Guardian y `git diff --check`; registrar evidencia, rollback y SHA en el tracker.
+- [ ] Dejar fixtures/harness/comandos de equivalencia, EXPLAIN y carga preparados pero sin ejecutar hasta staging; al agotar trabajo local declarar `READY_FOR_RELEASE_BLOCKED_BY_EXTERNAL_DEPENDENCY`.
+
+# ATLAS Performance Fase 1B — Jornadas y cierre de evidencia Atlas/Movilidad — 2026-10-07
+
+- [x] Reconciliar versión: worktree limpio en `5b7f7217d22658e19ef2ab1b91a824c3af6672d3`, igual al `origin/main` actualizado; no tocar el checkout principal sucio ni el worktree de Fase 0/P1, que queda preservado sobre `6f3e2007`.
+- [x] Verificar entorno: proyecto Supabase productivo `pzblmbahnoyntrhistea`, 611 migraciones aplicadas hasta `20261007002101`, sin branches/staging disponibles. Producción conserva sobrecargas legacy y RPC bulk de seis argumentos. No aplicar SQL, ejecutar carga ni desplegar automáticamente.
+- [x] Reconstruir el contrato de Jornadas completo (RPCs, acceso, filtros, fechas, turnos, excepciones/salida, orden, fichas, React Query, chips de jornada y Excel) y documentar equivalencias que la paginación debe preservar.
+- [x] Diseñar y revisar solución de cardinalidad: filtrar/ordenar trabajadores antes de expandir días; separar resumen/facetas de página de calendario; paginar trabajadores; preservar filtros de ciclo y exportación completa; analizar el resumen mensual por separado.
+- [x] Implementar RPC paginada/versionada con grants iguales o más restrictivos y su frontend/servicio/hook; limitar carga inicial a un lote estable, cancelar solicitudes obsoletas y exportar todas las páginas bajo demanda sin mezclar datos ni romper “Sin Jornada”.
+- [x] Añadir pruebas locales de contrato y comportamiento para filtro de ciclos, Sin Jornada, paginación/keyset, permisos estáticos, límite de rango y cancelación; equivalencia old/new de SQL queda pendiente de staging.
+- [x] Extender el harness k6 reutilizable solo para staging, conservar guard anti-producción y documentar dataset sintético 1×/10×/50× sin PII; no ejecutar al no existir staging.
+- [x] Actualizar tracker e informe Fase 1B y baseline como `AFTER = NOT MEASURED` para PostgreSQL; documentar cardinalidad, límites, riesgos y rollback.
+- [x] Ejecutar Guardian y diff-check. Guardian final: 0 errores / 0 warnings; contratos y unit tests, TypeScript/build, baseline, migraciones y seguridad pasan. No cerrar backend ni liberar sin staging, equivalencia SQL, planes/advisors y medición representativa.
+
+Revisión inicial del plan (2026-10-07): aceptado sobre base actualizada `5b7f7217`; Atlas/Movilidad se mantiene parcial sin staging. No crear un branch Supabase con costo ni solicitar gasto en esta pasada; inspección de producción estrictamente read-only. La estrategia debe preservar conteos globales por ciclo y exportar el universo completo, no solo la página visible.
+
+Resultado local intermedio (2026-10-07): implementados los dos RPC v2, helper privado, página/cursor frontend y exportación por tandas. 50 × 184 = 9.200 celdas máximo por lectura de calendario. El SLO objetivo staging es el del plan (50 trabajadores, contrato/área definido, 31 días, p95 < 2.000 ms, error rate < 0,5%); no hay medición posterior. Producción sin cambios.
+
+Revisión final local (2026-10-07): corregido el filtro de ciclo para que una persona con más de una pauta dentro del rango coincida con las facetas globales; extraída la navegación del calendario y utilidades de excepciones para reducir `RosterPage.tsx` a 744 líneas. Guardian y `git diff --check` pasan sin errores ni warnings. La migración SQL continúa sin ejecutarse: no existe staging conectado, así que equivalencia/planes/rendimiento siguen pendientes y la fase no está lista para producción.
+
 # Corregir asociaciones cargo-área de Sync BUK — 2026-10-06
 
 - [x] Documentar el contrato productivo comprobado: cargo y área del folio RC-0114 frente a las áreas BUK habilitadas para el cargo; acotar errores independientes.

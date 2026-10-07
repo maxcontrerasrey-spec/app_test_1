@@ -15,6 +15,10 @@ const shortCircuitMigration = readFileSync(
 );
 const rosterApi = readFileSync("src/modules/roster/services/rosterApi.ts", "utf8");
 const rosterQueries = readFileSync("src/modules/roster/hooks/useRosterQueries.ts", "utf8");
+const rosterCalendarBrowse = readFileSync(
+  "src/modules/roster/hooks/useRosterCalendarBrowse.ts",
+  "utf8"
+);
 const rosterPage = readFileSync("src/modules/roster/pages/RosterPage.tsx", "utf8");
 const rosterLookup = readFileSync(
   "src/modules/roster/components/RosterWorkerLookup.tsx",
@@ -76,9 +80,13 @@ describe("roster and incentive selection performance", () => {
     expect(incentiveLookup).toContain("debounceMs={150}");
   });
 
-  it("derives scoped KPI counts from the already loaded calendar payload", () => {
-    expect(rosterPage).toContain("enabled: !isPatternsView && !hasRosterScopeFilter");
-    expect(rosterPage).toContain("const scopedRosterSummary = useMemo");
-    expect(rosterPage).toContain("worker.days.some((day) => Boolean(day.assignmentId))");
+  it("loads global KPI counts independently from the paginated calendar workers", () => {
+    expect(rosterPage).toContain("useRosterCalendarBrowse");
+    expect(rosterCalendarBrowse).toContain("useRosterCalendarScopeSummary");
+    expect(rosterCalendarBrowse).toContain("scopeSummaryQuery.data?.assignedCount");
+    expect(rosterCalendarBrowse).toContain("scopeSummaryQuery.data?.pendingCount");
+    expect(rosterCalendarBrowse).not.toContain("calendarPageQuery.data?.workers");
+    expect(rosterCalendarBrowse).not.toContain("worker.days.some");
+    expect(rosterApi).toContain('client.rpc("get_hr_roster_calendar_scope_summary_v2"');
   });
 });

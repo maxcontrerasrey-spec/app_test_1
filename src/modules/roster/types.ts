@@ -142,3 +142,27 @@ export type RosterBulkCalendarPayload = {
   range: WorkerSchedulePayload["range"];
   workers: RosterBulkWorker[];
 };
+
+export type RosterCalendarCycleCount = {
+  cycle: string;
+  count: number;
+};
+
+export type RosterCalendarScopeSummary = {
+  range: WorkerSchedulePayload["range"];
+  totalWorkers: number;
+  assignedCount: number;
+  pendingCount: number;
+  patterns: RosterCalendarCycleCount[];
+};
+
+export type RosterBulkCalendarPagePayload = RosterBulkCalendarPayload & {
+  page: number;
+  pageSize: number;
+  totalWorkers: number;
+  hasMore: boolean;
+  nextCursor: {
+    fullName: string;
+    bukEmployeeId: string;
+  } | null;
+};

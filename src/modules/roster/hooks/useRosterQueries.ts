@@ -2,7 +2,8 @@ import { useQuery, type QueryClient } from "@tanstack/react-query";
 import { queryKeys } from "../../../shared/lib/queryKeys";
 import {
   fetchRosterCalendarSummary,
-  fetchRosterBulkCalendar,
+  fetchRosterBulkCalendarPage,
+  fetchRosterCalendarScopeSummary,
   fetchRosterSetupCatalogs,
   fetchWorkerSchedule,
   searchRosterWorkers
@@ -59,7 +60,7 @@ export function useRosterCalendarSummary(params: {
   });
 }
 
-export function useRosterBulkCalendar(params: {
+export function useRosterCalendarScopeSummary(params: {
   startDate: string;
   endDate: string;
   search?: string;
@@ -77,21 +78,81 @@ export function useRosterBulkCalendar(params: {
     contractAdministratorFilter = "",
     enabled = true
   } = params;
+
   return useQuery({
-    queryKey: queryKeys.roster.bulkCalendar({
-      monthValue: `${startDate}:${endDate}`,
-      search,
-      contractFilter,
-      areaFilter,
-      contractAdministratorFilter
-    }),
-    queryFn: ({ signal }) => fetchRosterBulkCalendar({
+    queryKey: queryKeys.roster.calendarScopeSummary({
       startDate,
       endDate,
       search,
       contractFilter,
       areaFilter,
       contractAdministratorFilter
+    }),
+    queryFn: ({ signal }) => fetchRosterCalendarScopeSummary({
+      startDate,
+      endDate,
+      search,
+      contractFilter,
+      areaFilter,
+      contractAdministratorFilter
+    }, signal),
+    staleTime: ROSTER_STALE_TIME_MS,
+    gcTime: ROSTER_GC_TIME_MS,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    enabled: enabled && Boolean(startDate) && Boolean(endDate)
+  });
+}
+
+export function useRosterBulkCalendar(params: {
+  startDate: string;
+  endDate: string;
+  search?: string;
+  contractFilter?: string;
+  areaFilter?: string;
+  contractAdministratorFilter?: string;
+  cycleFilter?: string;
+  page?: number;
+  pageSize?: number;
+  cursor?: { fullName: string; bukEmployeeId: string } | null;
+  enabled?: boolean;
+}) {
+  const {
+    startDate,
+    endDate,
+    search = "",
+    contractFilter = "",
+    areaFilter = "",
+    contractAdministratorFilter = "",
+    cycleFilter = "",
+    page = 1,
+    pageSize = 50,
+    cursor = null,
+    enabled = true
+  } = params;
+  return useQuery({
+    queryKey: queryKeys.roster.bulkCalendar({
+      monthValue: `${startDate}:${endDate}`,
+      search,
+      contractFilter,
+      areaFilter,
+      contractAdministratorFilter,
+      cycleFilter,
+      page,
+      pageSize,
+      cursor
+    }),
+    queryFn: ({ signal }) => fetchRosterBulkCalendarPage({
+      startDate,
+      endDate,
+      search,
+      contractFilter,
+      areaFilter,
+      contractAdministratorFilter,
+      cycleFilter,
+      page,
+      pageSize,
+      cursor
     }, signal),
     staleTime: ROSTER_STALE_TIME_MS,
     gcTime: ROSTER_GC_TIME_MS,
