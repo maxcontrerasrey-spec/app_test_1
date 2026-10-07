@@ -14,6 +14,18 @@
 
 Revisión final productiva (2026-10-07): PR #68 fusionado en `main` como `34f4f51df782dd2f09210911b77e89ca7cc60642`. La migración aditiva `20261007153510` conserva ACL y guards existentes. Cloudflare Pages publicó el artefacto desde ese SHA; `gestion.busesjm.cl` sirve `index-xz0Yf4Yp.js` y `RosterPage-DbekQk1s.js`, cuyos SHA-256 coinciden con el build auditado. No se ejecutaron carga, estrés ni `EXPLAIN ANALYZE` en producción; equivalencia exhaustiva y mediciones continúan bloqueadas exclusivamente por falta de staging.
 
+## Auditoría de limpieza y conciliación de migraciones — 2026-10-07
+
+- [x] Registrar plan: inventariar `main`, cambios locales, worktrees y ramas; no borrar ni sobrescribir código de otras tareas.
+- [x] Comparar las 613 versiones de migración locales con el registro de Supabase producción; distinguir migraciones sin aplicar de diferencias de versionamiento.
+- [ ] Conciliar nombres de archivo y referencias únicamente para migraciones cuyo nombre lógico ya está aplicado en producción; no cambiar SQL, RLS, grants ni roles.
+- [ ] Ejecutar auditoría de migraciones, Guardian, pruebas pertinentes y `git diff --check`; verificar cero versiones locales faltantes en producción y cero versiones productivas sin archivo.
+- [ ] Archivar cambios locales ajenos en un stash nombrado y verificable antes de dejar el checkout principal limpio y en `main`; conservar sus commits/rama para recuperación.
+- [ ] Prune solo entradas de worktree cuyo directorio ya no existe; conservar worktrees presentes o sucios.
+- [ ] Registrar el resultado final, base SHA, migración, verificación y worktrees preservados.
+
+Revisión del plan: alcance limitado a metadatos/versiones de migración comprobables y limpieza Git reversible. No se ejecutarán `db push`, SQL DDL ni escrituras sobre producción; el registro productivo se consulta en modo lectura. La diferencia está acotada a diez entradas con nombre lógico coincidente; no hay versiones locales sin su equivalente productivo ni versiones productivas sin SQL local. La corrección cambia solamente nombres de archivo y referencias, no el contenido histórico.
+
 # ATLAS Performance — reanudación del loop maestro (2026-10-07)
 
 - [x] Reanudar el objetivo a petición del usuario; conservar las modificaciones locales de Fase 1B y el worktree previo de Fase 0/P1 sin limpiar ni sobrescribirlos.
@@ -388,7 +400,7 @@ Resultado: el orden visible es ahora la fuente de verdad; al agregar una direcci
 - [x] Publicar el frontend y comprobar el bundle productivo.
 - [x] Registrar resultado final y lección reutilizable.
 
-Resultado final: el catálogo productivo permite elegir uno o varios días de lunes a domingo junto a Jornada. La UI exige al menos uno; la RPC conserva la autorización superadmin y valida rango/unicidad, y la columna `operating_days` aplica el control en base de datos. La migración `20261002144349` quedó aplicada en Supabase; probé el guardado como superadmin con lunes/miércoles/viernes dentro de una transacción revertida y verifiqué que no quedaron filas de prueba. Cloudflare Pages sirve el chunk `OperationsControlTowerPage-DbFKKW1Q.js`, que contiene el selector. Build frontend y Guardian local pasan; CI `37023463456` terminó exitosamente. Commits `efbdf3a5` (implementación) y `d0a6058e` (baseline exacto de CI, tolerancia cero).
+Resultado final: el catálogo productivo permite elegir uno o varios días de lunes a domingo junto a Jornada. La UI exige al menos uno; la RPC conserva la autorización superadmin y valida rango/unicidad, y la columna `operating_days` aplica el control en base de datos. La migración figura en Git como `20261002144913` y quedó aplicada en Supabase; el nombre fuente previo fue `20261002144349`. Probé el guardado como superadmin con lunes/miércoles/viernes dentro de una transacción revertida y verifiqué que no quedaron filas de prueba. Cloudflare Pages sirve el chunk `OperationsControlTowerPage-DbFKKW1Q.js`, que contiene el selector. Build frontend y Guardian local pasan; CI `37023463456` terminó exitosamente. Commits `efbdf3a5` (implementación) y `d0a6058e` (baseline exacto de CI, tolerancia cero).
 
 ## TomTom en planificacion productiva Atlas — 2026-10-02
 

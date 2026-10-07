@@ -32,7 +32,7 @@ describe("retirement of the public DSAL intake", () => {
   });
 
   it("drops only retired storage and RPCs, with an in-migration guard for promoted candidates", () => {
-    const migrationPath = read("supabase/migrations/20261006201516_retire_dsal_precandidates.sql");
+    const migrationPath = read("supabase/migrations/20261006203118_retire_dsal_precandidates.sql");
     const migration = migrationPath.toLowerCase();
 
     for (const objectName of [
