@@ -4283,3 +4283,8 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - En Control Tower, el contrato autorizado del servicio y el contrato de origen BUK del conductor son dimensiones distintas. No deben igualarse para impedir un servicio intercontrato.
 - Los catálogos de conductores y equipos son globales para operadores autorizados; despachos, servicios, rutas y transiciones continúan protegidos por la asignación del usuario al contrato del servicio.
 - La validación del recurso sigue en servidor: ficha BUK activa, jornada laborada para esa fecha, equipo activo y sin conflictos horarios. Revisar create y transition juntos para evitar que una regla eliminada en planificación reaparezca al publicar.
+# 2026-10-07 - El cálculo mensual debe degradar al último período legal completo
+
+- Al calcular un mes cuya UF de cierre aún no existe, seleccionar el indicador mensual más reciente `period_month <= mes solicitado`; nunca exigir igualdad exacta ni copiar un valor futuro.
+- Separar la vigencia del indicador mensual de las tasas con calendario propio (AFP, UTM/IUSC), y mostrar cuál período se usó para que una estimación no parezca liquidación oficial del mes abierto.
+- Al cambiar el helper interno de renta, conservar su guard de autorización, ACL, búsqueda acotada de una estructura y no reintroducir proyecciones de jornadas/personas que causaron el timeout anterior.

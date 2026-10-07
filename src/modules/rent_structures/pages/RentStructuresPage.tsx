@@ -12,6 +12,12 @@ function formatAmount(amount: number | null) {
   return amount === null ? "—" : `$ ${money.format(amount)}`;
 }
 
+function formatLegalPeriod(period: string | null) {
+  if (!period || !/^\d{4}-\d{2}$/.test(period)) return null;
+  return new Intl.DateTimeFormat("es-CL", { month: "long", year: "numeric", timeZone: "UTC" })
+    .format(new Date(`${period}-01T00:00:00Z`));
+}
+
 function ClpAmountInput({ value, onChange, ariaLabel }: { value: number; onChange: (value: number) => void; ariaLabel: string }) {
   return (
     <input
@@ -304,7 +310,8 @@ export function RentStructuresPage() {
             {query.isFetching ? <div className="rent-skeleton-lines"><i /><i /><i /><i /></div> : detail ? <>
               <div className="rent-legal-context"><span>{detail.authorizedHeadcount} cupos autorizados</span><span>{detail.legalRegimeCode === "art_25" ? "Artículo 25" : detail.legalRegimeCode === "ordinario" ? "Régimen ordinario" : "Régimen pendiente"}</span><span>{detail.shiftName ?? "Jornada pendiente de asignar"}</span><span>{detail.legalScenario.afpName}</span><span>{detail.legalScenario.healthMode === "fonasa" ? "Fonasa" : detail.legalScenario.healthProviderName}</span><span>{detail.legalScenario.unemploymentContractType === "indefinite" ? "Contrato indefinido" : "Plazo fijo u obra"}</span>{detail.legalScenario.includeIncomeTax ? <span className="is-tax-active">Impuesto único incluido</span> : null}</div>
               {detail.shiftClassificationPending ? <div className="rent-feedback">Esta estructura existente se conserva y debe clasificarse con sus jornadas y régimen antes de considerarla completa.</div> : null}
-              {!detail.calculationAvailable ? <div className="rent-feedback rent-feedback-error">No existen parámetros legales vigentes para calcular la estimación.</div> : null}
+              {!detail.calculationAvailable ? <div className="rent-feedback rent-feedback-error">{detail.legalAssumptions[0] ?? "Falta un parámetro legal para calcular la estimación."}</div> : null}
+              {detail.calculationAvailable && detail.indicatorPeriod ? <div className="rent-indicator-period" role="note">Parámetros previsionales aplicados: <strong>{formatLegalPeriod(detail.indicatorPeriod)}</strong>{detail.requestedMonth && detail.requestedMonth !== detail.indicatorPeriod ? <>. Para estimar <strong>{formatLegalPeriod(detail.requestedMonth)}</strong> se utilizan los últimos datos mensuales completos disponibles.</> : null}</div> : null}
               <div className="rent-pay-slip">
                 <div className="rent-pay-slip-columns">
                   <div><StructureSection title="Haberes imponibles" code="imponible" lines={detail.lines} total={detail.totals.imponible} /><StructureSection title="Haberes no imponibles" code="no_imponible" lines={detail.lines} total={detail.totals.noImponible} /><div className="rent-column-total"><span>Total haberes</span><strong>{formatAmount(detail.totals.haberes)}</strong></div></div>
