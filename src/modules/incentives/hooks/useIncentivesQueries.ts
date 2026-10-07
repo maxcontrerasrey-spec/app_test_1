@@ -1,6 +1,12 @@
 import { useQuery, type QueryClient } from "@tanstack/react-query";
 import { queryKeys } from "../../../shared/lib/queryKeys";
 import {
+  createWorkerSearchQueryOptions,
+  WORKER_SEARCH_GC_TIME_MS,
+  WORKER_SEARCH_STALE_TIME_MS,
+  normalizeRutAwareWorkerSearchTerm
+} from "../../../shared/lib/workerSearch";
+import {
   fetchHrIncentivesAnalytics,
   fetchHrIncentiveApprovalQueuePage,
   fetchHrIncentiveEligibleTypes,
@@ -52,7 +58,7 @@ export function useHrIncentiveRequests(filters: HrIncentiveRequestsFilters, enab
 export function useHrIncentiveRequestsPage(filters: HrIncentiveRequestsPageFilters, enabled = true) {
   return useQuery({
     queryKey: queryKeys.incentives.requestsPage(filters),
-    queryFn: () => fetchHrIncentiveRequestsPage(filters),
+    queryFn: ({ signal }) => fetchHrIncentiveRequestsPage(filters, signal),
     staleTime: INCENTIVES_REQUESTS_STALE_TIME_MS,
     gcTime: INCENTIVES_CACHE_GC_TIME_MS,
     refetchInterval: INCENTIVES_REQUESTS_REFETCH_MS,
@@ -104,17 +110,16 @@ export function useHrIncentiveRequestDetail(requestId: string, enabled = true) {
 }
 
 export function useHrIncentiveWorkerSearch(search: string, enabled = true) {
-  const normalizedSearch = search.trim().toLocaleLowerCase("es-CL");
-
-  return useQuery({
-    queryKey: queryKeys.incentives.workerSearch(normalizedSearch),
-    queryFn: ({ signal }) => searchHrIncentiveEligibleWorkers(normalizedSearch, 12, signal),
-    staleTime: 5 * 60_000,
-    gcTime: INCENTIVES_CACHE_GC_TIME_MS,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-    enabled: enabled && normalizedSearch.length >= 2
-  });
+  return useQuery(createWorkerSearchQueryOptions({
+    search,
+    enabled,
+    normalizeSearch: normalizeRutAwareWorkerSearchTerm,
+    queryKey: (normalizedSearch) => queryKeys.incentives.workerSearch(normalizedSearch),
+    query: (normalizedSearch, signal) =>
+      searchHrIncentiveEligibleWorkers(normalizedSearch, 12, signal),
+    staleTime: WORKER_SEARCH_STALE_TIME_MS,
+    gcTime: WORKER_SEARCH_GC_TIME_MS
+  }));
 }
 
 export function useHrIncentiveWorkerContext(bukEmployeeId: string, enabled = true) {

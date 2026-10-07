@@ -69,15 +69,17 @@ describe("roster and incentive selection performance", () => {
 
   it("cancels superseded roster requests and reuses normalized worker searches", () => {
     expect(rosterApi).toContain("request.abortSignal(signal)");
-    expect(rosterQueries).toContain("queryFn: ({ signal }) => searchRosterWorkers");
-    expect(rosterQueries).toContain("queryFn: ({ signal }) =>\n      fetchRosterCalendarSummary");
-    expect(rosterQueries).toContain("5 * 60_000");
-    expect(incentiveQueries).toContain(
-      "queryKeys.incentives.workerSearch(normalizedSearch)"
+    expect(rosterQueries).toContain(
+      "query: (normalizedSearch, signal) => searchRosterWorkers"
     );
+    expect(rosterQueries).toContain("queryFn: ({ signal }) =>\n      fetchRosterCalendarSummary");
+    expect(rosterQueries).toContain("WORKER_SEARCH_STALE_TIME_MS");
+    expect(incentiveQueries).toContain("createWorkerSearchQueryOptions");
+    expect(incentiveQueries).toContain("WORKER_SEARCH_STALE_TIME_MS");
     expect(incentiveQueries).toContain("refetchOnWindowFocus: false");
-    expect(rosterLookup).toContain("debounceMs={150}");
-    expect(incentiveLookup).toContain("debounceMs={150}");
+    expect(rosterLookup).not.toContain("debounceMs=");
+    expect(incentiveLookup).not.toContain("debounceMs=");
+    expect(rosterQueries).toContain("createWorkerSearchQueryOptions");
   });
 
   it("loads global KPI counts independently from the paginated calendar workers", () => {

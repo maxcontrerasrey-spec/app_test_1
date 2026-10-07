@@ -38,7 +38,6 @@ type StandardWorkerLookupFieldProps<
   loadingMessage: string;
   emptyMessage?: string;
   clearLabel?: string;
-  debounceMs?: number;
   disabled?: boolean;
   required?: boolean;
   minSearchLength?: number;

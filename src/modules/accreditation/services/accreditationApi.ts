@@ -325,14 +325,15 @@ export async function searchAccreditationWorkers(filters: {
   siteId?: string | null;
   status?: string | null;
   limit?: number;
-}) {
+}, signal?: AbortSignal) {
   const client = getSupabaseClient();
-  const { data, error } = await client.rpc("search_accreditation_workers", {
+  const request = client.rpc("search_accreditation_workers", {
     p_search: filters.search?.trim() || null,
     p_site_id: filters.siteId || null,
     p_status: filters.status?.trim() || null,
     p_limit: filters.limit ?? 50
   });
+  const { data, error } = await (signal ? request.abortSignal(signal) : request);
   if (error) {
     throw new Error(
       getSupabaseErrorMessage(

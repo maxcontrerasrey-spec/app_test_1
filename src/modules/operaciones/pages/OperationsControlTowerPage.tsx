@@ -5,6 +5,12 @@ import { useAuth } from "../../auth/context/AuthContext";
 import { MultiSelectField, PageShell, StandardWorkerLookupField } from "../../../shared/ui";
 import { useRealtimeQueryInvalidation } from "../../../shared/hooks/useRealtimeQueryInvalidation";
 import { queryKeys } from "../../../shared/lib/queryKeys";
+import {
+  createWorkerSearchQueryOptions,
+  WORKER_SEARCH_DEBOUNCE_MS,
+  normalizeRutAwareWorkerSearchTerm
+} from "../../../shared/lib/workerSearch";
+import { useDebouncedValue } from "../../../shared/hooks/useDebouncedValue";
 import { supabase } from "../../../shared/lib/supabase";
 import { purgeLegacyOperationsDrafts } from "../lib/legacyCleanup";
 import { estimateLocalRouteEnd, getRouteEndpoints } from "../lib/routeSchedule";
@@ -50,13 +56,20 @@ type PlanningDriver = {
   isRestDay: boolean;
 };
 
-function useAtlasPlanningDriverSearch(search: string, enabled: boolean, serviceDate = localDate()) {
-  const query = useQuery({
-    queryKey: queryKeys.operations.driverLookup({ search, serviceDate }),
-    queryFn: () => searchAtlasDrivers(search, serviceDate),
-    enabled: enabled && search.trim().length >= 2,
+function useAtlasDriverSearch(search: string, enabled: boolean, serviceDate = localDate()) {
+  return useQuery(createWorkerSearchQueryOptions({
+    search,
+    enabled,
+    normalizeSearch: normalizeRutAwareWorkerSearchTerm,
+    queryKey: (normalizedSearch) =>
+      queryKeys.operations.driverSearch({ search: normalizedSearch, day: serviceDate }),
+    query: (normalizedSearch, signal) => searchAtlasDrivers(normalizedSearch, serviceDate, signal),
     staleTime: 15_000
-  });
+  }));
+}
+
+function useAtlasPlanningDriverSearch(search: string, enabled: boolean, serviceDate = localDate()) {
+  const query = useAtlasDriverSearch(search, enabled, serviceDate);
 
   return {
     data: query.data?.map(mapPlanningDriver),
@@ -151,6 +164,11 @@ function OperationsControlTowerApp() {
   const [filterContract, setFilterContract] = useState("");
   const [selectedDispatch, setSelectedDispatch] = useState("");
   const [driverSearch, setDriverSearch] = useState("");
+  const debouncedDriverSearch = useDebouncedValue(
+    driverSearch.trim(),
+    WORKER_SEARCH_DEBOUNCE_MS,
+    ""
+  );
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [incidentFor, setIncidentFor] = useState("");
@@ -209,7 +227,11 @@ function OperationsControlTowerApp() {
   }, [activeVehicleIds, isAdmin, presentation, queryClient, view]);
   const alertDispatchIds = (dispatchQuery.data ?? []).map((row) => row.id);
   const alertQuery = useQuery({ queryKey: queryKeys.operations.alerts(day, alertDispatchIds), queryFn: () => getAtlasAlerts(alertDispatchIds), enabled: (view === "excepciones" || view === "control-tower") && dispatchQuery.isSuccess, staleTime: 10_000 });
-  const driverQuery = useQuery({ queryKey: queryKeys.operations.driverSearch({ search: driverSearch, day }), queryFn: () => searchAtlasDrivers(driverSearch, day), enabled: view === "configuracion" && canOperate && driverSearch.trim().length >= 2, staleTime: 15_000 });
+  const driverQuery = useAtlasDriverSearch(
+    debouncedDriverSearch,
+    view === "configuracion" && canOperate,
+    day
+  );
   const driverDispatchQuery = useQuery({ queryKey: queryKeys.operations.driverDispatches(), queryFn: getAtlasDriverDispatches, enabled: view === "conductor", retry: false });
   const eventsQuery = useQuery({ queryKey: queryKeys.operations.events(selectedDispatch), queryFn: () => getAtlasDispatchEvents(selectedDispatch), enabled: Boolean(selectedDispatch) });
   const adminUsersQuery = useQuery({ queryKey: queryKeys.operations.adminUsers(), queryFn: getAtlasAdminUsers, enabled: view === "configuracion" && isAdmin });

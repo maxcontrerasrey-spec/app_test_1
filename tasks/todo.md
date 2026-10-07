@@ -1,3 +1,23 @@
+## Unificar y acelerar búsquedas de personal BUK — 2026-10-07
+
+- [x] Inventariar campos BUK, hooks/query keys, RPCs, proyecciones e índices; detectar consultas por tecla, vigencias de caché dispares y falta de cancelación.
+- [x] Diseñar una capa compartida de debounce/normalización/caché que conserve filtros, autorización y contrato de cada módulo.
+- [x] Implementar únicamente reutilización y optimizaciones sustentadas; mantener alcances aislados cuando la semántica o autorización difiera.
+- [x] Agregar regresiones para normalización, reutilización dentro del mismo alcance, separación entre alcances, tildes/RUT terminado en K y cancelación de respuestas obsoletas.
+- [x] Ejecutar pruebas focalizadas, TypeScript, build, auditorías Supabase aplicables, Guardian y `git diff --check`; registrar limitaciones de staging/producción.
+
+Verificación previa a publicar frontend: TypeScript, build, tests focalizados (9/9), suites unit (174/174) y contract (139/139), auditorías aplicables y `git diff --check` PASS. Guardian 1 error/0 warnings: los bundles `supabase-vendor` (+4.381 B) y `app-framework` (+600 B) coinciden con el baseline ya presente en `main`; los demás gates PASS. Migración productiva aplicada como versión `20261007195115`; respaldo físico programado del 07-10-2026 07:52:25 UTC confirmado. RPC, shape, owner, SECURITY DEFINER, search_path y ACL verificados después del DDL; UI productiva devuelve la misma lista para `Gonzalez` y `González`. Pendiente integrar/desplegar el cliente compartido y comprobarlo en su bundle publicado.
+
+Revisión del plan: las RPC de movilidad, incentivos, jornadas, sanciones, competencias, acreditación y conductores operacionales tienen resultados o permisos distintos y no se fusionarán. Se compartirá infraestructura de búsqueda y solo se reutilizará caché entre pantallas cuando RPC, filtros y resultado sean idénticos.
+
+### Requisito de búsqueda sin tildes
+
+- [x] Confirmar el contrato de normalización de las RPC: dos comparaban campos con `lower()` literal y podían exigir tildes.
+- [x] Normalizar simétricamente texto buscado y campos candidatos dentro de esas RPC; conservar checks de autorización y resultados, sin tocar ACL existentes.
+- [x] Alinear cliente, agregar pruebas de regresión, validar migración estática/Guardian local y actualizar tracker.
+- [x] Aplicar el SQL aditivo autorizado en producción después de verificar el backup y compatibilidad; confirmar firma/resultado/owner/seguridad/ACL y prueba funcional con/sin tilde. Migración `20261007195115`; equivalencia por fixtures y análisis EXPLAIN/performance/carga no se ejecutan contra producción.
+- [ ] Integrar el frontend común, desplegarlo y verificar bundle/UI de producción para que la política de búsqueda rápida llegue a todos los módulos.
+
 # Release controlado ATLAS Fase 1B Jornadas — 2026-10-07
 
 - [x] Reanudar el objetivo completo y acotar esta entrega a los cambios ya implementados de Fase 1B; BI/Dashboard/Sync BUK continúan en el tracker, pero no se mezclarán en este release.

@@ -13,17 +13,23 @@ baseline_date: 2026-07-22
 
 ## Estado
 
-PASS
+FAIL
 
 ## Resumen
 
-- Errores: 0
+- Errores: 1
 - Warnings: 0
-- Info: 24
+- Info: 23
 
 ## Errores
 
-- Sin errores bloqueantes.
+- EEES-GATE · `audit:performance-baseline` · > app_test_1@0.1.0 audit:performance-baseline
+> node scripts/audit-performance-baseline.mjs
+
+
+Performance baseline audit failed:
+- supabase-vendor aumento 4381 bytes (1.97%), sobre presupuesto 0%
+- app-framework aumento 600 bytes (0.20%), sobre presupuesto 0%
 
 ## Warnings
 
@@ -53,5 +59,4 @@ PASS
 - audit:supabase-security: PASS
 - audit:competency-catalog-guards: PASS
 - build:frontend-check: PASS
-- audit:performance-baseline: PASS
 - git diff --check: PASS

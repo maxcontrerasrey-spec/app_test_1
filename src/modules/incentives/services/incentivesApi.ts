@@ -287,12 +287,15 @@ export async function fetchHrIncentiveRequests(filters: HrIncentiveRequestsFilte
   return asArray<Record<string, unknown>>(data).map(mapRequestRow);
 }
 
-export async function fetchHrIncentiveRequestsPage(filters: HrIncentiveRequestsPageFilters) {
+export async function fetchHrIncentiveRequestsPage(
+  filters: HrIncentiveRequestsPageFilters,
+  signal?: AbortSignal
+) {
   const client = getSupabaseClient();
   const resolvedStatuses = normalizeFilterArray(filters.status, filters.statuses);
   const resolvedContractCodes = normalizeFilterArray(filters.contractCode, filters.contractCodes);
   const resolvedTypeIds = normalizeFilterArray(filters.typeId, filters.typeIds);
-  const { data, error } = await client.rpc("get_hr_incentive_requests", {
+  const request = client.rpc("get_hr_incentive_requests", {
     p_period_code: filters.periodCode?.trim() || null,
     p_statuses: resolvedStatuses,
     p_contract_codes: resolvedContractCodes,
@@ -304,6 +307,7 @@ export async function fetchHrIncentiveRequestsPage(filters: HrIncentiveRequestsP
     p_sort_column: filters.sortColumn ?? null,
     p_sort_direction: filters.sortDirection ?? "desc"
   });
+  const { data, error } = await (signal ? request.abortSignal(signal) : request);
 
   if (error) {
     throw new Error(

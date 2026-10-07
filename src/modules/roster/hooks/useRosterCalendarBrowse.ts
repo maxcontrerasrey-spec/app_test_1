@@ -1,4 +1,9 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useDebouncedValue } from "../../../shared/hooks/useDebouncedValue";
+import {
+  normalizeRutAwareWorkerSearchTerm,
+  WORKER_SEARCH_DEBOUNCE_MS
+} from "../../../shared/lib/workerSearch";
 import {
   useRosterBulkCalendar,
   useRosterCalendarScopeSummary,
@@ -27,17 +32,17 @@ export function useRosterCalendarBrowse(params: {
     cycleFilter,
     isPatternsView
   } = params;
-  const [calendarSearchTerm, setCalendarSearchTerm] = useState("");
+  const normalizedWorkerSearchTerm = normalizeRutAwareWorkerSearchTerm(workerSearchTerm);
+  const calendarSearchTerm = useDebouncedValue(
+    normalizedWorkerSearchTerm,
+    WORKER_SEARCH_DEBOUNCE_MS,
+    ""
+  );
   const [page, setPage] = useState(1);
   const [pageCursors, setPageCursors] = useState<Array<RosterCalendarCursor | null>>([null]);
   const hasScopeFilter = Boolean(areaFilter.trim() || contractAdministratorFilter.trim());
-  const isSearchPending = calendarSearchTerm !== workerSearchTerm.trim();
+  const isSearchPending = calendarSearchTerm !== normalizedWorkerSearchTerm;
   const currentCursor = pageCursors[page - 1] ?? null;
-
-  useEffect(() => {
-    const timeoutId = window.setTimeout(() => setCalendarSearchTerm(workerSearchTerm.trim()), 250);
-    return () => window.clearTimeout(timeoutId);
-  }, [workerSearchTerm]);
 
   const resetPagination = useCallback(() => {
     setPage(1);

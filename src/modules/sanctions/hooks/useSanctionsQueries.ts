@@ -1,6 +1,12 @@
 import { useQuery, type QueryClient } from "@tanstack/react-query";
 import { queryKeys } from "../../../shared/lib/queryKeys";
 import {
+  createWorkerSearchQueryOptions,
+  WORKER_SEARCH_GC_TIME_MS,
+  WORKER_SEARCH_STALE_TIME_MS,
+  normalizeRutAwareWorkerSearchTerm
+} from "../../../shared/lib/workerSearch";
+import {
   fetchHrSanctionRequestsPage,
   fetchHrSanctionSetupCatalogs,
   searchHrSanctionWorkers
@@ -9,7 +15,6 @@ import type { HrSanctionRequestsPageFilters } from "../types";
 
 const SANCTIONS_CATALOGS_STALE_TIME_MS = 5 * 60_000;
 const SANCTIONS_REQUESTS_STALE_TIME_MS = 30_000;
-const SANCTIONS_SEARCH_STALE_TIME_MS = 15_000;
 const SANCTIONS_CACHE_GC_TIME_MS = 20 * 60_000;
 
 export function useHrSanctionSetupCatalogs(enabled = true) {
@@ -23,13 +28,15 @@ export function useHrSanctionSetupCatalogs(enabled = true) {
 }
 
 export function useHrSanctionWorkerSearch(search: string, enabled = true) {
-  return useQuery({
-    queryKey: queryKeys.sanctions.workerSearch(search),
-    queryFn: () => searchHrSanctionWorkers(search),
-    staleTime: SANCTIONS_SEARCH_STALE_TIME_MS,
-    gcTime: SANCTIONS_CACHE_GC_TIME_MS,
-    enabled: enabled && search.trim().length >= 2
-  });
+  return useQuery(createWorkerSearchQueryOptions({
+    search,
+    enabled,
+    normalizeSearch: normalizeRutAwareWorkerSearchTerm,
+    queryKey: (normalizedSearch) => queryKeys.sanctions.workerSearch(normalizedSearch),
+    query: (normalizedSearch, signal) => searchHrSanctionWorkers(normalizedSearch, 12, signal),
+    staleTime: WORKER_SEARCH_STALE_TIME_MS,
+    gcTime: WORKER_SEARCH_GC_TIME_MS
+  }));
 }
 
 export function useHrSanctionRequestsPage(filters: HrSanctionRequestsPageFilters, enabled = true) {

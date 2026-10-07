@@ -195,12 +195,17 @@ export async function fetchCompetencyCatalogs() {
   return mapCatalogs(data);
 }
 
-export async function searchCompetencyWorkers(searchText: string, limit = 20) {
+export async function searchCompetencyWorkers(
+  searchText: string,
+  limit = 20,
+  signal?: AbortSignal
+) {
   const client = getSupabaseClient();
-  const { data, error } = await client.rpc("search_competency_workers", {
+  const request = client.rpc("search_competency_workers", {
     search_text: searchText,
     result_limit: limit
   });
+  const { data, error } = await (signal ? request.abortSignal(signal) : request);
 
   if (error) {
     throw new Error(getSupabaseErrorMessage(error, "No fue posible buscar trabajadores BUK.", "message"));

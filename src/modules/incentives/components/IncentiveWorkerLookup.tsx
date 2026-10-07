@@ -31,7 +31,6 @@ export function IncentiveWorkerLookup({
       disabled={disabled}
       useSearchQuery={useHrIncentiveWorkerSearch}
       loadingMessage="Buscando trabajadores elegibles..."
-      debounceMs={150}
       filterResults={(workers) =>
         workers.filter((worker) => worker.bukEmployeeId !== excludeBukEmployeeId)
       }
