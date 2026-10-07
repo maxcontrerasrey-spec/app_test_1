@@ -6,7 +6,7 @@ const migration = readFileSync(
   "utf8"
 );
 const readOptimizationMigration = readFileSync(
-  "supabase/migrations/20261007001020_optimize_rent_structure_detail_read.sql",
+  "supabase/migrations/20261007002101_optimize_rent_structure_detail_read.sql",
   "utf8"
 );
 const page = readFileSync("src/modules/rent_structures/pages/RentStructuresPage.tsx", "utf8");

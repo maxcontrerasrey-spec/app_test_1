@@ -4722,8 +4722,10 @@ Resultado final: PR #46 quedó integrado en `main` como `58331a90`. Guardian/CI 
 Hallazgo confirmado: los cargos sin estructura abren; las estructuras históricas con `legal_regime_code IS NULL` reinician la selección. La RPC envolvente pasaba `to_jsonb(regime_code)` directamente a `jsonb_set`; cuando el régimen SQL es NULL, `jsonb_set` devolvía SQL NULL para todo el payload. La consulta productiva confirmó el caso en `CODELCO - DSAL / ASEADOR` (contrato 98, cargo 15) y preserva sus datos sin régimen asignado.
 ## Estructuras de renta: selección única y carga productiva — 2026-10-06
 
-- [ ] Confirmar en logs de producción por qué falla el detalle y revisar el contrato de la RPC y las relaciones vigentes, sin modificar datos.
-- [ ] Sustituir los dos controles de jornada por una sola lista clara por cargo, con estados de estructura configurada/pendiente y alta desde esa misma lista.
-- [ ] Corregir la consulta backend para que el catálogo y el detalle no ejecuten cálculos de asistencia que bloquean este mantenedor; conservar permisos y forma de respuesta.
-- [ ] Añadir pruebas de regresión para el selector único y la RPC optimizada; ejecutar build, Guardian, auditorías SQL y `git diff --check`.
+- [x] Confirmar en logs de producción por qué falla el detalle y revisar el contrato de la RPC y las relaciones vigentes, sin modificar datos.
+- [x] Sustituir los dos controles de jornada por una sola lista clara por cargo, con estados de estructura configurada/pendiente y alta desde esa misma lista.
+- [x] Corregir la consulta backend para que el catálogo y el detalle no ejecuten cálculos de asistencia que bloquean este mantenedor; conservar permisos y forma de respuesta.
+- [x] Añadir pruebas de regresión para el selector único y la RPC optimizada; ejecutar build, Guardian, auditorías SQL y `git diff --check`.
 - [ ] Integrar y publicar en producción; verificar el bundle servido y las consultas de la RPC sin timeouts.
+
+Incidente confirmado en producción: la RPC terminaba en `500` por `statement timeout` al recalcular presencia mensual de la nómina desde el helper de detalle. La migración quedó aplicada como `20261007002101` y el helper ya no invoca `resolve_hr_roster_day_status`; el nombre local se alineó con el registro productivo. La interfaz está integrada en `main`; falta confirmar el bundle visible de Cloudflare.
