@@ -4865,3 +4865,13 @@ Revisión técnica: la UI presenta campos `readOnly`; `atlas_ops_create_dispatch
 - [ ] Publicar en producción y verificar bundle y flujo de simulación desplegado.
 
 Revisión técnica: la prueba HTTP de referencia a `valhalla1.openstreetmap.de` respondió 200 y ruta transitable en 0,99 s, pero no reproduce las paradas exactas de la captura. El cambio corrige la causa comprobable del mensaje genérico y permitirá ver un error HTTP/WASM más específico si el intento sigue fallando; el origen exacto del error anterior no puede afirmarse sin datos de esa solicitud.
+
+# Ferrostar diferido y diagnóstico HTTP 400 — 2026-10-07
+
+- [x] Comparar el contrato del request Ferrostar/Valhalla sin usar ubicaciones operativas, añadir explícitamente `Content-Type: application/json` y cubrir headers/errores del proveedor con pruebas. La ruta HTTP 400 de la captura no se reprodujo con coordenadas sintéticas; no se atribuye una causa a los puntos reales.
+- [x] Aislar runtime Ferrostar y su elemento `<ferrostar-map>` en un módulo importado solo desde “Probar navegación del conductor”; conservar MapLibre para planificación.
+- [x] Medir build y waterfall de `vite preview`: antes del clic no se descargan Ferrostar/WASM; tras el clic se cargan y una ruta sintética de Calama calcula 1 ruta, 3,04 km y 13 instrucciones. No elevar el warning limit ni fragmentar MapLibre sin ahorro real.
+- [x] Ejecutar pruebas unitarias y de contrato, build frontend, Guardian y `git diff --check`; registrar medidas antes/después.
+- [ ] Publicar por PR tras CI y verificar en producción el fix de ruta y la carga bajo demanda.
+
+Revisión local: el request sintético del mismo runtime y opciones respondió correctamente; el cambio asegura el tipo JSON requerido por el body binario que Ferrostar entrega a `fetch` y conserva el detalle HTTP de Valhalla. Eso no prueba que los puntos de la captura sean válidos, porque no se usaron ni se reprodujo su HTTP 400. Ferrostar/WASM salen del inicio de la navegación: el chunk del planificador bajó de 1.217,21 kB (319,61 kB gzip) a 1.079,34 kB (293,81 kB gzip); runtime separado 139,05 kB (26,90 kB gzip) y WASM 883,42 kB (315,07 kB gzip), diferido al clic. El aviso de chunk >520 kB persiste por MapLibre; el límite se conserva.
