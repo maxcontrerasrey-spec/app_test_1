@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const migration = readFileSync(
-  "supabase/migrations/20261007124815_roster_calendar_pagination_v2.sql",
+  "supabase/migrations/20261007153000_roster_calendar_pagination_v2.sql",
   "utf8"
 );
 const api = readFileSync("src/modules/roster/services/rosterApi.ts", "utf8");

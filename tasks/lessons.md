@@ -4245,3 +4245,4 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - Si una validación requiere exclusivamente PostgreSQL/staging, clasificar solo ese gate como `BLOCKED_VALIDATION` y continuar con análisis, implementación y pruebas locales de los demás hallazgos.
 - Una solicitud posterior y explícita de release productivo exige rehacer compatibilidad, permisos y gates sobre `origin/main`; no convierte resultados no medidos en evidencia ni autoriza pruebas de carga en producción.
 - Antes de publicar una RPC paginada, comparar su población contra el SQL vivo: `is_active = true` por sí solo no equivale al contrato productivo cuando existe una fecha de salida pasada.
+- Antes de liberar una migración Supabase aún no aplicada, comparar su versión con el máximo registrado en producción. Si quedó por debajo, reversionarla antes del PR; nunca permitir que un frontend dependiente llegue a producción antes que sus RPC.

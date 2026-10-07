@@ -26,7 +26,7 @@ No está listo para liberar: no existe una rama/instancia Supabase staging dispo
 - El mapeo legacy de `effective_status` al marcar `termination` como `medical_leave` se conserva exactamente para no cambiar semántica; requiere comparación funcional existente y posible issue separado.
 - Guardian local completado: 0 errores / 0 warnings, incluidos `git diff --check`; las pruebas PostgreSQL staging siguen pendientes. El build local y el gate de baseline pasan.
 - Build TypeScript/producción y auditor de bundle: `dist` 7.418.066 B, JS 5.304.179 B y CSS 534.713 B; los límites machine-readable no se ampliaron. El total medido no es una comparación causal con el bundle productivo.
-- Tests unitarios: 160 en 34 archivos; tests focalizados Jornadas/contrato: 16 en 3 archivos. Auditoría de nombres/historial: 612 migraciones canónicas, sin duplicados. Auditoría estática Supabase: 88 avisos históricos; la salida no listó la migración nueva como origen de un aviso. Guardian final: 0 errores / 0 warnings.
+- Tests unitarios: 160 en 34 archivos; tests focalizados Jornadas/contrato: 17 en 3 archivos. Auditoría de nombres/historial: 613 migraciones canónicas, sin duplicados. Auditoría estática Supabase: 88 avisos históricos; la salida no listó la migración nueva como origen de un aviso. Guardian final: 0 errores / 0 warnings.
 
 ## 4. Pendientes fuera de esta fase
 
@@ -56,6 +56,6 @@ No pueden pasar a `RESUELTO`. Continúan `PARCIAL / EN VALIDACIÓN` por falta de
 
 ## 8. Migración y rollback
 
-Migración local: `supabase/migrations/20261007124815_roster_calendar_pagination_v2.sql`. Añade dos entrypoints authenticated y un helper privado; mantiene las firmas legacy. Rollback funcional: revertir frontend a RPC existente. La migración no se aplicó y no se desplegó el frontend.
+Migración local: `supabase/migrations/20261007153000_roster_calendar_pagination_v2.sql`. Su versión es posterior al último head productivo conocido (`20261007145851`) para impedir que el frontend se libere antes que sus RPC. Añade dos entrypoints authenticated y un helper privado; mantiene las firmas legacy. Rollback funcional: revertir frontend a RPC existente. La migración no se aplicó y no se desplegó el frontend.
 
 ADR: [ADR-ROSTER-CALENDAR-PAGINATION.md](ADR-ROSTER-CALENDAR-PAGINATION.md). Tracker vivo: [PERFORMANCE_REMEDIATION_TRACKER.md](PERFORMANCE_REMEDIATION_TRACKER.md).
