@@ -4875,3 +4875,14 @@ Revisión técnica: la prueba HTTP de referencia a `valhalla1.openstreetmap.de` 
 - [ ] Publicar por PR tras CI y verificar en producción el fix de ruta y la carga bajo demanda.
 
 Revisión local: el request sintético del mismo runtime y opciones respondió correctamente; el cambio asegura el tipo JSON requerido por el body binario que Ferrostar entrega a `fetch` y conserva el detalle HTTP de Valhalla. Eso no prueba que los puntos de la captura sean válidos, porque no se usaron ni se reprodujo su HTTP 400. Ferrostar/WASM salen del inicio de la navegación: el chunk del planificador bajó de 1.217,21 kB (319,61 kB gzip) a 1.079,34 kB (293,81 kB gzip); runtime separado 139,05 kB (26,90 kB gzip) y WASM 883,42 kB (315,07 kB gzip), diferido al clic. El aviso de chunk >520 kB persiste por MapLibre; el límite se conserva.
+
+## Atlas: permitir asignar conductores activos entre contratos — 2026-10-07
+
+- [x] Mantener una rama aislada y revisar estado/versiones; rebasar sobre el `origin/main` actualizado antes del PR.
+- [x] Corregir con migración forward-only las RPC de creación y transición: el contrato pertenece al servicio, no se compara con el de origen BUK.
+- [x] Mantener la autorización por contrato del servicio y exponer globalmente conductores/equipos a superadministradores y usuarios con contrato operacional asignado; conservar actividad BUK, jornada, vehículo/ruta, conflictos, eventos y grants.
+- [x] Agregar regresiones para recursos globales autorizados y evitar que el contrato de origen bloquee al trabajador activo.
+- [x] Ejecutar pruebas focalizadas, auditoría de migraciones/seguridad, Guardian y `git diff --check`.
+- [ ] Integrar y aplicar primero la migración, luego verificar en producción definiciones vigentes de ambas RPC, ACL, trabajador activo/jornada y ausencia de la restricción cruzada; publicar/verificar la vista operativa si el bundle necesita cambio.
+
+Revisión del plan: el contrato del despacho define la operación planificada y el permiso del despachador; el origen contractual del conductor no restringe su elegibilidad. Conductores y vehículos activos se consultan globalmente para usuarios operacionales autorizados, mientras que creación/lectura/transición de despachos sigue limitada al contrato asignado. La regla de igualdad se elimina en crear y pasar a listo. Se conserva ficha BUK activa, jornada laborada, estado de vehículo, rutas, conflictos, eventos y grants explícitos. El estado de jornada mostrado en la captura se verificó en base para 2026-10-08 como trabajado; el chip desactualizado queda fuera.

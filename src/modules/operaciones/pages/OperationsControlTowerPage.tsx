@@ -158,7 +158,6 @@ function OperationsControlTowerApp() {
   const queryClient = useQueryClient();
   const auth = useAuth();
   const isAdmin = auth.isSuperAdmin;
-  const canOperate = auth.isSuperAdmin;
   const view = (VIEWS.some((item) => item.id === routeView) ? routeView : "control-tower") as View;
   const [day, setDay] = useState(localDate());
   const [filterContract, setFilterContract] = useState("");
@@ -180,6 +179,7 @@ function OperationsControlTowerApp() {
   const [plannedEndLocal, setPlannedEndLocal] = useState("");
 
   const catalogsQuery = useQuery({ queryKey: queryKeys.operations.catalogs(), queryFn: getAtlasOperationsCatalogs, staleTime: 30_000 });
+  const canOperate = isAdmin || (catalogsQuery.data?.editableContractIds.length ?? 0) > 0;
   const dispatchRoutesQuery = useQuery({ queryKey: queryKeys.operations.serviceRoutes(dispatchServiceTemplateId), queryFn: () => getAtlasServiceRoutes(Number(dispatchServiceTemplateId)), enabled: view === "planificacion" && Boolean(dispatchServiceTemplateId), staleTime: 30_000 });
   const selectedDispatchRoute = dispatchRoutesQuery.data?.find((route) => route.id === dispatchRouteId && route.is_active);
   const dispatchRouteEndpoints = getRouteEndpoints(selectedDispatchRoute?.atlas_ops_service_route_stops);

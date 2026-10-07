@@ -4271,3 +4271,9 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 
 - No basta con quitar tildes al texto que escribe la persona: si la RPC compara contra nombres/campos con `lower()` literal, consultas como `Jose` no encontrarán `José` y consultas `José` pueden fallar tras normalizar solo el término.
 - Normalizar simétricamente el término y los campos concatenados en servidor, usando el helper aprobado y manteniendo intactos autorización, filtros, límite y scope; añadir regresión para pares con/sin tilde antes de release.
+
+## 2026-10-07 - Despacho de recursos entre contratos
+
+- En Control Tower, el contrato autorizado del servicio y el contrato de origen BUK del conductor son dimensiones distintas. No deben igualarse para impedir un servicio intercontrato.
+- Los catálogos de conductores y equipos son globales para operadores autorizados; despachos, servicios, rutas y transiciones continúan protegidos por la asignación del usuario al contrato del servicio.
+- La validación del recurso sigue en servidor: ficha BUK activa, jornada laborada para esa fecha, equipo activo y sin conflictos horarios. Revisar create y transition juntos para evitar que una regla eliminada en planificación reaparezca al publicar.

@@ -18,6 +18,7 @@ const router = readFileSync(new URL("../../src/app/router/AppRouter.tsx", import
 const guards = readFileSync(new URL("../../src/modules/auth/components/RouteGuards.tsx", import.meta.url), "utf8");
 const navigation = readFileSync(new URL("../../src/shared/config/navigation.ts", import.meta.url), "utf8");
 const derivedDispatchMigration = readFileSync(new URL("../../supabase/migrations/20261007191119_atlas_dispatch_route_derived_fields.sql", import.meta.url), "utf8");
+const crossContractDriversMigration = readFileSync(new URL("../../supabase/migrations/20261007195521_allow_atlas_cross_contract_drivers.sql", import.meta.url), "utf8");
 
 describe("Atlas Operations greenfield replacement", () => {
   it("retires prior module-owned storage without importing rows into the new schema", () => {
@@ -48,6 +49,27 @@ describe("Atlas Operations greenfield replacement", () => {
     expect(derivedDispatchMigration).toMatch(/grant execute on function public\.atlas_ops_create_dispatch\(jsonb\) to authenticated/i);
   });
 
+  it("permits an active, roster-eligible BUK worker to serve a different contract", () => {
+    expect(crossContractDriversMigration).toContain("El despacho queda limitado al contrato asignado al usuario; los recursos operacionales");
+    expect(crossContractDriversMigration).toMatch(/atlas_ops_is_current_super_admin()[\s\S]*?requested_contract_id/i);
+    expect(crossContractDriversMigration).toMatch(/atlas_ops_can_access_global_resources\(auth\.uid\(\)\)/i);
+    expect(crossContractDriversMigration).toMatch(/atlas_ops_vehicles_select[\s\S]*?atlas_ops_can_access_global_resources/i);
+    expect(crossContractDriversMigration).toMatch(/atlas_ops_contract_editors_select[\s\S]*?user_id = \(select auth\.uid\(\)\)/i);
+    expect(crossContractDriversMigration).toMatch(/if not public\.atlas_ops_can_access_global_resources\(auth\.uid\(\)\) then/i);
+    expect(crossContractDriversMigration).not.toMatch(/driver_row\.contract_code|e\.contract_code\s*=\s*\(select c\.code/i);
+    expect(crossContractDriversMigration).not.toContain("La ficha BUK activa no corresponde al contrato seleccionado.");
+    expect(crossContractDriversMigration).toMatch(/atlas_ops_can_edit_contract\(actor, contract_key\)/);
+    expect(crossContractDriversMigration).toMatch(/where e\.buk_employee_id = driver_key and e\.is_active = true/);
+    expect(crossContractDriversMigration).toMatch(/resolve_hr_roster_day_status\(driver_key, \(start_at at time zone 'America\/Santiago'\)::date\)/);
+    expect(crossContractDriversMigration).toMatch(/where e\.buk_employee_id = d\.driver_buk_employee_id and e\.is_active/);
+    expect(crossContractDriversMigration).toMatch(/resolve_hr_roster_day_status\(d\.driver_buk_employee_id, d\.service_date\)/);
+    expect(crossContractDriversMigration).toMatch(/planning_duration_seconds/);
+    expect(crossContractDriversMigration).toMatch(/revoke all on function public\.atlas_ops_create_dispatch\(jsonb\) from public, anon/i);
+    expect(crossContractDriversMigration).toMatch(/grant execute on function public\.atlas_ops_create_dispatch\(jsonb\) to authenticated/i);
+    expect(crossContractDriversMigration).toMatch(/revoke all on function public\.atlas_ops_transition_dispatch\(uuid, text\) from public, anon/i);
+    expect(crossContractDriversMigration).toMatch(/grant execute on function public\.atlas_ops_transition_dispatch\(uuid, text\) to authenticated/i);
+  });
+
   it("keeps the operational planner free of demo data and reports actionable driver simulation errors", () => {
     expect(routePlannerPage).not.toContain("Cargar ejemplo Calama");
     expect(ferrostarHttpClient).toContain("response.ok");
@@ -64,7 +86,7 @@ describe("Atlas Operations greenfield replacement", () => {
     expect(migration).toMatch(/p\.status = 'active' and p\.is_super_admin = true/);
     expect(migration).toMatch(/delete from public\.role_module_access where module_code = 'operaciones'/);
     expect(migration).not.toMatch(/user_is_admin\(\)/);
-    expect(page).toContain("const canOperate = auth.isSuperAdmin");
+    expect(page).toContain("const canOperate = isAdmin || (catalogsQuery.data?.editableContractIds.length ?? 0) > 0");
     for (const rpc of [
       "atlas_ops_driver_acknowledge",
       "atlas_ops_driver_mark_milestone",
