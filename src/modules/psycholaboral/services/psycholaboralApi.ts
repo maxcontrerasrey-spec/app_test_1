@@ -9,6 +9,7 @@ import type {
   PsychCandidate,
   PsychInstrumentCatalog,
   PsychResultDetail,
+  PsychStatusSummary,
 } from "../types";
 
 const FUNCTION = "psycholaboral-assessment";
@@ -81,7 +82,26 @@ export async function fetchPsychStatusSummary(search: string) {
   );
   if (error)
     throw new Error(getSupabaseErrorMessage(error, "No fue posible cargar el resumen."));
-  return data as Record<"not_sent" | "sent" | "expired" | "completed" | "approved" | "hired" | "total", number>;
+  const summary = data as Record<string, unknown> | null;
+  const requiredStatuses: Array<keyof PsychStatusSummary> = [
+    "not_sent",
+    "sent",
+    "expired",
+    "completed",
+    "approved",
+    "rejected",
+    "hired",
+    "total",
+  ];
+  if (
+    !summary ||
+    requiredStatuses.some((key) =>
+      typeof summary[key] !== "number" || !Number.isFinite(summary[key])
+    )
+  ) {
+    throw new Error("El resumen psicolaboral está incompleto. Actualiza nuevamente.");
+  }
+  return summary as PsychStatusSummary;
 }
 export async function sendPsychBattery(
   caseCandidateId: string,

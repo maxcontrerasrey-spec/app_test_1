@@ -39,6 +39,10 @@ export type PsychCandidate = {
   ai_interpretation_status?: PsychAIStatus | null;
   instruments: PsychInstrumentProgress[];
 };
+export type PsychStatusSummary = Record<
+  "not_sent" | "sent" | "expired" | "completed" | "approved" | "rejected" | "hired" | "total",
+  number
+>;
 export type PsychQuestion = { order: number; text: string };
 export type PsychOption = { value: number; label: string };
 export type CandidateInstrument = {
