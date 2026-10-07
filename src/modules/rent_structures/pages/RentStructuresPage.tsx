@@ -142,7 +142,7 @@ export function RentStructuresPage() {
   const [jobPositionId, setJobPositionId] = useState<number | null>(null);
   const [selectedStructureId, setSelectedStructureId] = useState<string | null>(null);
   const [selectedShiftId, setSelectedShiftId] = useState<number | null>(null);
-  const [applicableShiftIds, setApplicableShiftIds] = useState<number[]>([]);
+  const [addShiftMenuOpen, setAddShiftMenuOpen] = useState(false);
   const [creatingStructure, setCreatingStructure] = useState(false);
   const [authorizedHeadcount, setAuthorizedHeadcount] = useState(0);
   const [configLines, setConfigLines] = useState<RentStructureConfigLine[]>([]);
@@ -161,7 +161,6 @@ export function RentStructuresPage() {
     : null;
   const usedShiftIds = selectedPosition?.structures.flatMap((variant) => variant.shiftId === null ? [] : [variant.shiftId]) ?? [];
   const savedApplicableShiftIds = selectedPosition?.applicableShiftIds ?? [];
-  const applicableShiftsDirty = JSON.stringify([...applicableShiftIds].sort((a, b) => a - b)) !== JSON.stringify([...savedApplicableShiftIds].sort((a, b) => a - b));
 
   useEffect(() => {
     if (!contractId && contracts.length) {
@@ -173,10 +172,6 @@ export function RentStructuresPage() {
     }
   }, [contractId, contracts]);
   useEffect(() => { if (jobPositionId && !positions.some((position) => position.id === jobPositionId)) { setJobPositionId(null); setSelectedStructureId(null); setSelectedShiftId(null); setCreatingStructure(false); } }, [jobPositionId, positions]);
-  useEffect(() => {
-    if (!selectedPosition || query.isPlaceholderData) return;
-    setApplicableShiftIds(selectedPosition.applicableShiftIds);
-  }, [jobPositionId, query.isPlaceholderData, selectedPosition?.applicableShiftIds]);
   useEffect(() => {
     if (!selectedPosition || query.isPlaceholderData || selectedStructureId || selectedShiftId !== null || creatingStructure) return;
     const firstVariant = selectedPosition.structures[0];
@@ -212,16 +207,42 @@ export function RentStructuresPage() {
       }
     });
   };
-  const saveApplicable = () => saveApplicableMutation.mutate(applicableShiftIds);
-  const selectVariant = (value: string) => {
-    if (value.startsWith("new:")) {
-      const nextShiftId = Number(value.slice(4));
-      setSelectedStructureId(null);
-      setSelectedShiftId(Number.isFinite(nextShiftId) ? nextShiftId : null);
-      setCreatingStructure(true);
-      setView("configuracion");
+  const addApplicableShift = (shiftId: number) => {
+    if (savedApplicableShiftIds.includes(shiftId)) return;
+    saveApplicableMutation.mutate([...savedApplicableShiftIds, shiftId], {
+      onSuccess: () => {
+        setSelectedStructureId(null);
+        setSelectedShiftId(shiftId);
+        setCreatingStructure(true);
+        setView("configuracion");
+        setAddShiftMenuOpen(false);
+      }
+    });
+  };
+  const removeApplicableShift = (shiftId: number) => {
+    if (usedShiftIds.includes(shiftId)) return;
+    saveApplicableMutation.mutate(savedApplicableShiftIds.filter((id) => id !== shiftId), {
+      onSuccess: () => {
+        if (selectedShiftId === shiftId) {
+          setSelectedStructureId(null);
+          setSelectedShiftId(null);
+          setCreatingStructure(false);
+          setView("control");
+        }
+      }
+    });
+  };
+  const openShift = (shiftId: number, structureId: string | null) => {
+    if (structureId) {
+      selectVariant(structureId);
       return;
     }
+    setSelectedStructureId(null);
+    setSelectedShiftId(shiftId);
+    setCreatingStructure(true);
+    setView("configuracion");
+  };
+  const selectVariant = (value: string) => {
     const variant = selectedPosition?.structures.find((item) => item.id === value);
     if (!variant) return;
     setSelectedStructureId(variant.id);
@@ -239,7 +260,7 @@ export function RentStructuresPage() {
       {saveApplicableMutation.isError ? <div className="rent-feedback rent-feedback-error">{(saveApplicableMutation.error as Error).message}</div> : null}
 
       <section className="rent-selector-panel" aria-label="Selección de contrato">
-        <label><span>Contrato</span><select value={contractId ?? ""} onChange={(event) => { setContractId(Number(event.target.value) || null); setJobPositionId(null); setSelectedStructureId(null); setSelectedShiftId(null); setCreatingStructure(false); }} disabled={query.isLoading && !contracts.length}><option value="">Seleccione un contrato</option>{contracts.map((contract) => <option value={contract.id} key={contract.id}>{contract.contractName}</option>)}</select></label>
+        <label><span>Contrato</span><select value={contractId ?? ""} onChange={(event) => { setContractId(Number(event.target.value) || null); setJobPositionId(null); setSelectedStructureId(null); setSelectedShiftId(null); setCreatingStructure(false); setAddShiftMenuOpen(false); }} disabled={query.isLoading && !contracts.length}><option value="">Seleccione un contrato</option>{contracts.map((contract) => <option value={contract.id} key={contract.id}>{contract.contractName}</option>)}</select></label>
         <div className="rent-selector-meta">{contractId ? `${positions.length} cargos asociados` : "Catálogo inicial: Codelco DSAL"}</div>
       </section>
 
@@ -248,21 +269,36 @@ export function RentStructuresPage() {
           <div className="rent-panel-heading"><div><span>Contrato seleccionado</span><h2>Cargos asociados</h2></div><b>{positions.length}</b></div>
           {!contractId ? <div className="rent-empty-panel">Selecciona un contrato para ver sus cargos.</div> : null}
           {contractId && query.isFetching && !positions.length ? <div className="rent-skeleton-list" aria-label="Cargando cargos"><i /><i /><i /></div> : null}
-          <div className="rent-position-list">{positions.map((position) => <button type="button" className={`rent-position-item ${position.id === jobPositionId ? "is-active" : ""}`} key={position.id} onClick={() => { setJobPositionId(position.id); setSelectedStructureId(null); setSelectedShiftId(null); setCreatingStructure(false); setView("control"); }}><span><strong>{position.name}</strong><small>{position.code}</small></span><span className={`rent-position-status ${position.hasStructure ? "is-ready" : ""}`}>{position.structures.length ? `${position.structures.length} ${position.structures.length === 1 ? "estructura" : "estructuras"}` : "Sin estructura"}</span></button>)}</div>
+          <div className="rent-position-list">{positions.map((position) => <button type="button" className={`rent-position-item ${position.id === jobPositionId ? "is-active" : ""}`} key={position.id} onClick={() => { setJobPositionId(position.id); setSelectedStructureId(null); setSelectedShiftId(null); setCreatingStructure(false); setAddShiftMenuOpen(false); setView("control"); }}><span><strong>{position.name}</strong><small>{position.code}</small></span><span className={`rent-position-status ${position.hasStructure ? "is-ready" : ""}`}>{position.structures.length ? `${position.structures.length} ${position.structures.length === 1 ? "estructura" : "estructuras"}` : "Sin estructura"}</span></button>)}</div>
         </aside>
 
         <section className="rent-detail-panel">
-          <div className="rent-panel-heading"><div><span>{view === "control" ? "Estructura vigente" : "Mantenedor de renta"}</span><h2>{selectedPosition?.name ?? "Selecciona un cargo"}</h2></div></div>
-          {selectedPosition ? <section className="rent-applicable-shifts" aria-label="Jornadas aplicables al cargo">
-            <div className="rent-applicable-heading"><div><span>Jornadas aplicables</span><small>{query.data?.canConfigure ? "Selecciona las jornadas que corresponden a este cargo." : "Jornadas definidas para este cargo."}</small></div>{query.data?.canConfigure ? <button type="button" className="rent-secondary-button" onClick={saveApplicable} disabled={!applicableShiftsDirty || saveApplicableMutation.isPending}>{saveApplicableMutation.isPending ? "Guardando…" : "Guardar jornadas"}</button> : null}</div>
-            <div className="rent-applicable-options">{(query.data?.shiftCatalog ?? []).map((shift) => {
-              const checked = applicableShiftIds.includes(shift.id);
-              const locked = usedShiftIds.includes(shift.id) && checked;
-              return <label className={`rent-applicable-option ${checked ? "is-selected" : ""}`} key={shift.id}><input type="checkbox" checked={checked} disabled={!query.data?.canConfigure || locked || saveApplicableMutation.isPending} onChange={() => setApplicableShiftIds((current) => checked ? current.filter((id) => id !== shift.id) : [...current, shift.id])} /><span>{shift.name}</span>{locked ? <small>Con estructura</small> : null}</label>;
-            })}</div>
-            {!savedApplicableShiftIds.length ? <p className="rent-config-note">Guarda al menos una jornada para habilitar la creación de estructuras.</p> : null}
+          <div className="rent-panel-heading"><div><span>{view === "control" ? "Estructura de renta" : "Mantenedor de renta"}</span><h2>{selectedPosition?.name ?? "Selecciona un cargo"}</h2></div></div>
+          {selectedPosition ? <section className="rent-applicable-shifts" aria-label="Jornadas y estructuras del cargo">
+            <div className="rent-applicable-heading">
+              <div><span>Jornadas del cargo</span><small>Cada jornada tiene su propia remuneración y cupos.</small></div>
+              {query.data?.canConfigure ? <button type="button" className="rent-secondary-button" onClick={() => setAddShiftMenuOpen((open) => !open)} disabled={saveApplicableMutation.isPending || !query.data?.shiftCatalog.length || query.data.shiftCatalog.every((shift) => savedApplicableShiftIds.includes(shift.id))}>{addShiftMenuOpen ? "Cerrar" : "+ Agregar jornada"}</button> : null}
+            </div>
+            {addShiftMenuOpen ? <div className="rent-shift-add-menu" aria-label="Jornadas disponibles">{(query.data?.shiftCatalog ?? []).filter((shift) => !savedApplicableShiftIds.includes(shift.id)).map((shift) => <button type="button" key={shift.id} onClick={() => addApplicableShift(shift.id)} disabled={saveApplicableMutation.isPending}>{shift.name}<span>Agregar</span></button>)}{!(query.data?.shiftCatalog ?? []).some((shift) => !savedApplicableShiftIds.includes(shift.id)) ? <p>Todas las jornadas disponibles ya están asociadas.</p> : null}</div> : null}
+            <div className="rent-shift-list">
+              {savedApplicableShiftIds.map((shiftId) => {
+                const shift = (query.data?.shiftCatalog ?? []).find((item) => item.id === shiftId);
+                if (!shift) return null;
+                const variant = selectedPosition.structures.find((item) => item.shiftId === shiftId);
+                const active = (variant && selectedStructureId === variant.id) || (creatingStructure && selectedShiftId === shiftId);
+                return <div className={`rent-shift-row ${active ? "is-selected" : ""}`} key={shiftId}>
+                  <button type="button" className="rent-shift-open" onClick={() => openShift(shiftId, variant?.id ?? null)} aria-pressed={Boolean(active)}>
+                    <span className="rent-shift-name">{shift.name}</span>
+                    <span className="rent-shift-state">{variant ? "Estructura configurada" : "Pendiente de configurar"}</span>
+                    <span className={`rent-shift-action ${variant ? "is-ready" : ""}`}>{variant ? "Ver estructura" : "Crear estructura"}<span aria-hidden="true">›</span></span>
+                  </button>
+                  {query.data?.canConfigure && !usedShiftIds.includes(shiftId) ? <button type="button" className="rent-shift-remove" aria-label={`Quitar jornada ${shift.name}`} onClick={() => removeApplicableShift(shiftId)} disabled={saveApplicableMutation.isPending}>×</button> : null}
+                </div>;
+              })}
+              {selectedPosition.structures.filter((variant) => variant.shiftId === null).map((variant) => <button type="button" className={`rent-shift-row rent-shift-legacy ${selectedStructureId === variant.id ? "is-selected" : ""}`} key={variant.id} onClick={() => openShift(selectedShiftId ?? 0, variant.id)} aria-pressed={selectedStructureId === variant.id}><span className="rent-shift-open"><span className="rent-shift-name">Jornada pendiente de asignar</span><span className="rent-shift-state">Estructura histórica sin clasificar</span></span><span className="rent-shift-action">Revisar y clasificar<span aria-hidden="true">›</span></span></button>)}
+              {!savedApplicableShiftIds.length && !selectedPosition.structures.some((variant) => variant.shiftId === null) ? <div className="rent-empty-panel">{query.data?.canConfigure ? "Agrega una jornada para crear la primera estructura de este cargo." : "Este cargo aún no tiene jornadas asociadas."}</div> : null}
+            </div>
           </section> : null}
-          {selectedPosition ? <div className="rent-variant-picker"><label><span>Estructura por jornada</span><select aria-label="Estructura por jornada" value={creatingStructure ? `new:${selectedShiftId ?? ""}` : selectedStructureId ?? ""} onChange={(event) => selectVariant(event.target.value)}><option value="">Selecciona una estructura o jornada</option>{selectedPosition.structures.map((variant) => <option key={variant.id} value={variant.id}>{variant.shiftName ?? "Jornada pendiente de asignar"}</option>)}{query.data?.canConfigure ? savedApplicableShiftIds.filter((shiftId) => !usedShiftIds.includes(shiftId)).map((shiftId) => { const shift = (query.data?.shiftCatalog ?? []).find((item) => item.id === shiftId); return shift ? <option key={`new-${shift.id}`} value={`new:${shift.id}`}>Nueva estructura · {shift.name}</option> : null; }) : null}</select></label><small>Cada jornada aplicable tendrá su propia remuneración y cupos.</small></div> : null}
           {!selectedPosition ? <div className="rent-empty-panel">Elige un cargo a la izquierda para revisar o configurar sus conceptos.</div> : null}
           {selectedPosition && view === "control" ? <>
             {query.isFetching ? <div className="rent-skeleton-lines"><i /><i /><i /><i /></div> : detail ? <>
