@@ -15,7 +15,7 @@ const page = readFileSync(new URL("../../src/modules/operaciones/pages/Operation
 const router = readFileSync(new URL("../../src/app/router/AppRouter.tsx", import.meta.url), "utf8");
 const guards = readFileSync(new URL("../../src/modules/auth/components/RouteGuards.tsx", import.meta.url), "utf8");
 const navigation = readFileSync(new URL("../../src/shared/config/navigation.ts", import.meta.url), "utf8");
-const derivedDispatchMigration = readFileSync(new URL("../../supabase/migrations/20261007185209_atlas_dispatch_route_derived_fields.sql", import.meta.url), "utf8");
+const derivedDispatchMigration = readFileSync(new URL("../../supabase/migrations/20261007191119_atlas_dispatch_route_derived_fields.sql", import.meta.url), "utf8");
 
 describe("Atlas Operations greenfield replacement", () => {
   it("retires prior module-owned storage without importing rows into the new schema", () => {
