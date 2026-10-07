@@ -4111,6 +4111,12 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - En una estimación por cargo, mostrar visualmente haberes imponibles, haberes no imponibles, descuentos legales y líquido estimado, dejando explícito que no es una liquidación individual.
 - No mezclar el catálogo contrato-cargo de este mantenedor con fichas o dotación BUK. La asociación de cargos debe pertenecer al dominio de estructuras de renta y BUK no debe participar en la lectura ni en el guardado.
 
+## 2026-10-06 - El detalle de renta no debe recalcular la asistencia de toda la nómina
+
+- Una lectura de una estructura por cargo debe consultar solo conceptos, parámetros y datos de esa variante; no debe volver a calcular presencia mensual para cada trabajador del catálogo.
+- Cuando producción muestre carga perpetua, correlacionar el estado de UI con el log PostgREST y su causa en PostgreSQL. Un `500` por `statement timeout` requiere quitar el trabajo ajeno al detalle, no aumentar el timeout ni esconder el error con reintentos.
+- Para jornada, mostrar una sola lista por cargo con estado y acción (`ver` o `crear`); no duplicar la misma decisión en un catálogo de casillas y un segundo selector de estructura.
+
 ## 2026-10-06 — Cada jornada puede requerir una estructura de renta independiente
 
 - Si el mismo cargo se remunera de forma distinta según la jornada, la clave de una estructura debe incluir contrato, cargo y jornada. No guardar varias jornadas en una lista vinculada a una sola remuneración.
