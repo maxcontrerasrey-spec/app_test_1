@@ -61,6 +61,8 @@ export type RentLegalCatalog = {
 export type RentStructureDetail = {
   id: string;
   jobPositionId: number;
+  requestedMonth: string | null;
+  indicatorPeriod: string | null;
   monthlyBudget: number | null;
   authorizedHeadcount: number;
   currencyCode: string;
@@ -101,7 +103,7 @@ type RawPayload = {
   positions?: Array<{ id: number; code: string; name: string; has_structure: boolean; authorized_headcount: number; monthly_budget: number | null; currency_code: string; applicable_shift_ids?: number[]; structure_variants?: Array<{ id: string; shift_id: number | null; shift_name: string | null; legal_regime_code: "art_25" | "ordinario" | null; authorized_headcount: number }> }>;
   legal_catalog?: { afps?: Array<{ code: string; name: string; commission_rate: number }> };
   shift_catalog?: RentShift[];
-  structure?: { id: string; job_position_id: number; authorized_headcount: number; monthly_budget: number | null; currency_code: string; shift_ids?: number[]; shift_id?: number | null; shift_name?: string | null; legal_regime_code?: "art_25" | "ordinario" | null; shift_classification_pending?: boolean; calculation_available?: boolean; legal_scenario?: { afp_code: string; afp_name: string; afp_commission_rate: number | null; health_mode: RentLegalScenario["healthMode"]; health_provider_name: string; health_plan_value: number; unemployment_contract_type: RentLegalScenario["unemploymentContractType"]; include_income_tax?: boolean; iusc_utm_clp?: number | null }; lines?: Array<{ id: string; concept_code: string; concept_name: string; concept_type: string; section_code: string; calculation_mode: string; amount: number; detail?: string; sort_order: number }>; totals?: { imponible: number; no_imponible: number; haberes: number; pension_health_base: number; unemployment_base: number; taxable_base?: number | null; income_tax?: number | null; legal_discounts: number | null; liquido_estimated: number; authorized_payroll: number }; legal_assumptions?: string[] };
+  structure?: { id: string; job_position_id: number; authorized_headcount: number; monthly_budget: number | null; currency_code: string; requested_month?: string | null; indicator_period?: string | null; shift_ids?: number[]; shift_id?: number | null; shift_name?: string | null; legal_regime_code?: "art_25" | "ordinario" | null; shift_classification_pending?: boolean; calculation_available?: boolean; legal_scenario?: { afp_code: string; afp_name: string; afp_commission_rate: number | null; health_mode: RentLegalScenario["healthMode"]; health_provider_name: string; health_plan_value: number; unemployment_contract_type: RentLegalScenario["unemploymentContractType"]; include_income_tax?: boolean; iusc_utm_clp?: number | null }; lines?: Array<{ id: string; concept_code: string; concept_name: string; concept_type: string; section_code: string; calculation_mode: string; amount: number; detail?: string; sort_order: number }>; totals?: { imponible: number; no_imponible: number; haberes: number; pension_health_base: number; unemployment_base: number; taxable_base?: number | null; income_tax?: number | null; legal_discounts: number | null; liquido_estimated: number; authorized_payroll: number }; legal_assumptions?: string[] };
   can_configure?: boolean;
 };
 
@@ -148,6 +150,8 @@ export async function fetchRentStructureControl(contractId: number | null, jobPo
       ? {
           id: payload.structure.id,
           jobPositionId: payload.structure.job_position_id,
+          requestedMonth: payload.structure.requested_month ?? null,
+          indicatorPeriod: payload.structure.indicator_period ?? null,
           authorizedHeadcount: payload.structure.authorized_headcount ?? 0,
           monthlyBudget: payload.structure.monthly_budget,
           currencyCode: payload.structure.currency_code,
