@@ -6,6 +6,7 @@ declare module "@stadiamaps/ferrostar-webcomponents" {
     valhallaEndpointUrl: string;
     profile: string;
     options: object;
+    httpClient?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
     locationProvider: SimulatedLocationProvider | null;
     onTripStateChange?: (tripState: TripState | null) => void;
     getRoutes(initialLocation: UserLocation, waypoints: Waypoint[]): Promise<Route[]>;

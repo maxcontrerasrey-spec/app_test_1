@@ -4836,3 +4836,12 @@ Revisión final productiva: PR #77 quedó integrado como `09f08bbe484c4976991016
 - [ ] Publicar en producción en orden seguro y verificar migración, bundle y flujo disponible.
 
 Revisión técnica: la UI presenta campos `readOnly`; `atlas_ops_create_dispatch` toma primera/última parada y duración desde la ruta activa persistida. `planned_end_at`, `origin_label` y `destination_label` del cliente ya no son fuente de verdad. ACL original autenticada, validación del contrato, ruta, vehículo, roster, hitos y evento se conservaron. La estimación no incluye detenciones; ruta sin duración positiva deja el fin vacío. Supabase aplicó la migración como `20261007191119`; el archivo local se renombró a la versión registrada.
+# Planificador Atlas: retirar ejemplo y corregir simulación — 2026-10-07
+
+- [x] Revisar el CTA de ejemplo, el estado y el flujo completo de simulación Ferrostar/Valhalla; comprobar que Valhalla responde HTTP 200 a una ruta de prueba y localizar la pérdida del detalle de errores no-`Error`.
+- [x] Retirar el botón de ejemplo de la planificación operativa y el fixture TomTom solo accesible desde ese botón; mantener el centro del mapa y los destinos frecuentes confirmados.
+- [x] Validar HTTP antes de parsear respuesta Ferrostar; normalizar errores string/objeto y distinguir consulta Valhalla de inicio Ferrostar.
+- [x] Ejecutar 17 pruebas focalizadas, build frontend, Guardian (0 errores/advertencias) y `git diff --check`.
+- [ ] Publicar en producción y verificar bundle y flujo de simulación desplegado.
+
+Revisión técnica: la prueba HTTP de referencia a `valhalla1.openstreetmap.de` respondió 200 y ruta transitable en 0,99 s, pero no reproduce las paradas exactas de la captura. El cambio corrige la causa comprobable del mensaje genérico y permitirá ver un error HTTP/WASM más específico si el intento sigue fallando; el origen exacto del error anterior no puede afirmarse sin datos de esa solicitud.
