@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate, useSearchParams } from "react-router";
 import * as maplibregl from "maplibre-gl";
 import { setWorkerUrl, type Map as MapLibreMap, type Marker } from "maplibre-gl";
 import mapLibreWorkerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
-import { FerrostarCore, FerrostarMap, SimulatedLocationProvider } from "@stadiamaps/ferrostar-webcomponents";
+import type { FerrostarCore, FerrostarMap, SimulatedLocationProvider } from "@stadiamaps/ferrostar-webcomponents";
 import type { Route, TripState, UserLocation, Waypoint } from "@stadiamaps/ferrostar";
 import { calculateAtlasValhallaRoute, getAtlasOperationsCatalogs, getAtlasServiceRoute, getAtlasServiceRoutes, optimizeAtlasOpenRoute, resolveAtlasTomTomSuggestion, saveAtlasServiceRoute, searchAtlasTomTom, type AtlasOptimizedRoute, type AtlasPlannedRoute, type AtlasServiceRoute, type TomTomSuggestion } from "../services/atlasOperationsApi";
 import { appendRouteStop, moveRouteStop, normalizeRouteStops, setFixedDestination } from "../lib/routeStopOrder";
@@ -15,7 +15,6 @@ import "../styles/route-planner-demo.css";
 
 setWorkerUrl(mapLibreWorkerUrl);
 
-const VALHALLA_URL = "https://valhalla1.openstreetmap.de/route";
 const CALAMA = { lat: -22.4544, lng: -68.9294 };
 const MAP_STYLE = {
   version: 8 as const,
@@ -157,6 +156,7 @@ export function OperationsRoutePlannerDemo() {
   const [routeState, setRouteState] = useState<"idle" | "loading" | "ready" | "error">("idle");
   const [activeView, setActiveView] = useState<"planning" | "driver">("planning");
   const [tripState, setTripState] = useState<TripState | null>(null);
+  const [simulationLoading, setSimulationLoading] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [adding, setAdding] = useState(false);
@@ -205,32 +205,6 @@ export function OperationsRoutePlannerDemo() {
     }).catch((reason: unknown) => { if (active) setError(reason instanceof Error ? reason.message : "No fue posible leer las rutas del servicio."); });
     return () => { active = false; };
   }, [selectedServiceId, searchParams]);
-
-  const core = useMemo(() => {
-    const instance = new FerrostarCore();
-    instance.valhallaEndpointUrl = VALHALLA_URL;
-    instance.profile = "auto";
-    instance.options = { costing_options: { auto: { use_ferry: 0, use_tolls: 0.5 } }, directions_options: { language: "es-ES", units: "kilometers" } };
-    instance.httpClient = async (input: RequestInfo | URL, init?: RequestInit) => {
-      const response = await fetch(input, init);
-      if (response.ok) return response;
-      let providerMessage = "";
-      try {
-        const payload = await response.clone().json() as { error?: unknown; message?: unknown };
-        const detail = [payload.error, payload.message].find((value): value is string => typeof value === "string" && value.trim().length > 0);
-        if (detail) providerMessage = `: ${detail.trim().replace(/[\u0000-\u001f]+/g, " ").slice(0, 180)}`;
-      } catch {
-        // Keep the HTTP status when Valhalla returns a non-JSON proxy error.
-      }
-      throw new Error(`Valhalla respondió HTTP ${response.status}${providerMessage}.`);
-    };
-    instance.onTripStateChange = (state) => {
-      setTripState(state);
-      followNavigationCamera(mapRef.current, state);
-    };
-    coreRef.current = instance;
-    return instance;
-  }, []);
 
   const hasEnteredDirection = (proposal?.stops ?? stops).some((stop) => stop.label.trim().length > 0);
 
@@ -297,16 +271,24 @@ export function OperationsRoutePlannerDemo() {
   }, [stops, route, planningRoute, proposal, activeView, mapReady]);
 
   useEffect(() => {
+    if (activeView !== "driver") return;
     const ferrostarMap = ferrostarMapRef.current;
     const map = mapRef.current;
-    if (!ferrostarMap || !map) return;
+    const core = coreRef.current;
+    if (!ferrostarMap || !map || !core || !route) return;
     ferrostarMap.map = map;
     ferrostarMap.system = "metric";
     ferrostarMap.addGeolocateControl = false;
     ferrostarMap.geolocateOnLoad = false;
     ferrostarMap.linkWith(core, true);
     ferrostarMap.route = route;
-  }, [core, route, activeView]);
+  }, [route, activeView]);
+
+  useEffect(() => () => {
+    locationProviderRef.current?.stop();
+    const core = coreRef.current;
+    if (core) void core.stopNavigation();
+  }, []);
 
   useEffect(() => {
     const searchId = search?.id;
@@ -527,8 +509,17 @@ export function OperationsRoutePlannerDemo() {
   async function startSimulation() {
     if (!planningRoute || stops.length < 2) return;
     setError("");
-    let phase = "consultar Valhalla";
+    if (simulationLoading) return;
+    setSimulationLoading(true);
+    let phase = "cargar Ferrostar";
     try {
+      const runtime = await import("../lib/ferrostarDriverRuntime");
+      const core = coreRef.current ?? runtime.createFerrostarCore((state) => {
+        setTripState(state);
+        followNavigationCamera(mapRef.current, state);
+      });
+      coreRef.current = core;
+      phase = "consultar Valhalla";
       const initialLocation = locationAt(stops[0]!);
       const waypoints: Waypoint[] = stops.slice(1).map((stop) => ({ coordinate: { lat: stop.lat, lng: stop.lng }, kind: "Break", properties: undefined }));
       const routes = await core.getRoutes(initialLocation, waypoints);
@@ -537,24 +528,23 @@ export function OperationsRoutePlannerDemo() {
       setRoute(driverRoute);
       phase = "iniciar Ferrostar";
       await core.stopNavigation();
-      const provider = new SimulatedLocationProvider();
-      provider.warpFactor = 8;
+      const provider = runtime.createSimulatedLocationProvider();
       core.locationProvider = provider;
       locationProviderRef.current = provider;
-      ferrostarMapRef.current?.linkWith(core, true);
-      if (ferrostarMapRef.current) ferrostarMapRef.current.route = driverRoute;
       core.startNavigation(driverRoute, navigationConfig());
       provider.setSimulatedRoute(driverRoute);
       setActiveView("driver");
       setError("");
     } catch (reason) {
       setError(`Falló al ${phase}: ${formatDriverSimulationError(reason)}`);
+    } finally {
+      setSimulationLoading(false);
     }
   }
 
   async function stopSimulation() {
     locationProviderRef.current?.stop();
-    await core.stopNavigation();
+    if (coreRef.current) await coreRef.current.stopNavigation();
     setTripState(null);
     setActiveView("planning");
   }
@@ -691,7 +681,7 @@ export function OperationsRoutePlannerDemo() {
           {(proposal || planningRoute) && routeState === "ready" && <div className="ops-route-demo__summary"><div><span>Distancia · Valhalla</span><strong>{formatDistance((proposal?.route ?? planningRoute!).distanceMeters)}</strong></div><div><span>Tiempo estimado</span><strong>{formatDuration((proposal?.route ?? planningRoute!).durationSeconds)}</strong></div></div>}
           <div className="ops-route-demo__actions"><button type="button" className="ops-route-demo__primary" disabled={!allStopsPresent || routeState === "loading"} onClick={() => void generateRoute()}>{routeState === "loading" ? "Buscando mejor orden…" : "Proponer recorrido optimizado"}</button></div>
           {proposal && <div className="ops-route-demo__message" role="status"><strong>Propuesta de recorrido abierto</strong><p>Inicio: {proposal.stops[0]?.label}</p><p>Destino: {proposal.stops[proposal.stops.length - 1]?.label}</p><details><summary>Ver las {proposal.stops.length} direcciones en orden</summary><ol>{proposal.stops.map((stop) => <li key={stop.id}>{stop.label}</li>)}</ol></details>{proposal.route.inputOrderMatrixDurationSeconds !== null && <small>{proposal.route.inputOrderMatrixDurationSeconds > proposal.route.matrixDurationSeconds ? `Ahorro estimado: ${formatDuration(proposal.route.inputOrderMatrixDurationSeconds - proposal.route.matrixDurationSeconds)} frente al orden ingresado.` : "El orden ingresado ya es equivalente o más rápido según la matriz."}</small>}<div className="ops-route-demo__actions"><button type="button" className="ops-route-demo__primary" onClick={applyProposal}>Aplicar este orden</button><button type="button" className="ops-route-demo__secondary" onClick={() => { setProposal(null); setRouteState("idle"); }}>Descartar propuesta</button></div></div>}
-          {planningRoute && !proposal && <><button type="button" className="ops-route-demo__driver-launch" onClick={() => void startSimulation()}><span><strong>Probar navegación del conductor</strong><small>Ferrostar + Valhalla desde el orden aplicado</small></span><span>→</span></button><button type="button" className="ops-route-demo__primary ops-route-demo__save-route" disabled={!selectedServiceId || !routePrefix.trim() || saving || !isOptimizedRoute(planningRoute)} onClick={() => void saveRoute()}>{saving ? "Guardando ruta…" : selectedSavedRouteId ? "Guardar nueva versión" : "Guardar ruta en servicio base"}</button>{!isOptimizedRoute(planningRoute) && <small>Para guardar una nueva versión, vuelve a proponer el recorrido.</small>}</>}
+          {planningRoute && !proposal && <><button type="button" className="ops-route-demo__driver-launch" disabled={simulationLoading} onClick={() => void startSimulation()}><span><strong>{simulationLoading ? "Preparando navegación…" : "Probar navegación del conductor"}</strong><small>Ferrostar + Valhalla desde el orden aplicado</small></span><span>→</span></button><button type="button" className="ops-route-demo__primary ops-route-demo__save-route" disabled={!selectedServiceId || !routePrefix.trim() || saving || !isOptimizedRoute(planningRoute)} onClick={() => void saveRoute()}>{saving ? "Guardando ruta…" : selectedSavedRouteId ? "Guardar nueva versión" : "Guardar ruta en servicio base"}</button>{!isOptimizedRoute(planningRoute) && <small>Para guardar una nueva versión, vuelve a proponer el recorrido.</small>}</>}
         </> : <div className="ops-route-demo__driver-panel"><div className="ops-route-demo__guidance"><span>PRÓXIMA INSTRUCCIÓN</span><strong>{nextInstruction}</strong><small>Ferrostar + Valhalla · simulación de referencia</small></div><div className="ops-route-demo__driver-stats"><div><span>Recorrido</span><strong>{route ? formatDistance(route.distance) : "—"}</strong></div><div><span>Tiempo base</span><strong>{route ? formatDuration(route.steps.reduce((total, step) => total + step.duration, 0)) : "—"}</strong></div></div><button type="button" className="ops-route-demo__secondary" onClick={() => void stopSimulation()}>Detener navegación</button><p>Se usan las coordenadas guardadas de las paradas; Valhalla puede elegir calles distintas a la vista previa de TomTom.</p></div>}
         {error && <div className="ops-route-demo__message ops-route-demo__message--error" role="alert">{error}</div>}
         {notice && <div className="ops-route-demo__message" role="status">{notice}</div>}
