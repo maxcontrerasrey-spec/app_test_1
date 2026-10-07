@@ -4820,8 +4820,10 @@ Revisión final productiva: PR #75 integrado en `main` como `345c0a75`; Guardian
 - [x] Corregir carga de ruta para mostrar sus direcciones en orden, iniciar explícitamente una ruta nueva y evitar selector activo con editor vacío.
 - [x] Conectar inicio planificado + duración de la ruta seleccionada con `Fin estimado`, editable y recalculado al cambiar ruta o inicio; aclarar que no incluye tiempos de detención.
 - [x] Agregar verificación focalizada; ejecutar build frontend, Guardian y `git diff --check`.
-- [ ] Publicar en producción con CI y comprobar que el bundle de `gestion.busesjm.cl` corresponde al commit integrado; dejar evidencia y límites.
+- [x] Publicar en producción con CI y comprobar que el bundle de `gestion.busesjm.cl` corresponde al commit integrado; dejar evidencia y límites.
 
 Revisión del plan: alcance confirmado como cambio solo frontend; los contratos existentes ya exponen paradas ordenadas y `planning_duration_seconds`, por lo que no se requiere migración ni cambio de permisos. El fin estimado representa recorrido vial desde el primer hasta el último punto guardado; excluye detenciones y queda editable.
 
 Validación local: 10/10 pruebas focalizadas; `npm run build:frontend-check` y `npm run guardian` pasan (0 errores/advertencias); `git diff --check` pasa. Build conserva la advertencia existente de chunk grande del planificador (1.2 MB).
+
+Revisión final productiva: PR #77 quedó integrado como `09f08bbe484c4976991016bd7e6894b2542ca027`. CI de producción `37667804087` y Cloudflare Pages terminaron exitosamente. `gestion.busesjm.cl` responde HTTP 200 y publica `OperationsControlTowerPage-DQb1erCl.js` con el cálculo de fin estimado y `OperationsRoutePlannerDemo-DOYHvHLR.js` con los estados de ruta guardada/nueva. Se confirmó en los bundles el texto del cálculo vial y el estado de nueva ruta; la carga de paradas está incluida en el chunk publicado. Sin cambios de Supabase, RLS, RPC ni datos. El tiempo estimado no suma detenciones y admite ajuste manual.
