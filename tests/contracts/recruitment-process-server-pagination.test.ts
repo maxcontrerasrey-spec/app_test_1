@@ -2,11 +2,11 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const migration = readFileSync(
-  "supabase/migrations/20261006190322_fix_recruitment_process_server_pagination.sql",
+  "supabase/migrations/20261006202956_recruitment_process_server_pagination.sql",
   "utf8"
 );
 const triggerMigration = readFileSync(
-  "supabase/migrations/20261006190317_harden_atlas_trigger_function_execute.sql",
+  "supabase/migrations/20261006202923_20261006190317_harden_atlas_trigger_function_execute.sql",
   "utf8"
 );
 const view = readFileSync(

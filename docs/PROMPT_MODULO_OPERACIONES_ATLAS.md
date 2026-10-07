@@ -126,7 +126,7 @@ Antes de cambiar Operaciones:
 - API Atlas/TomTom: `src/modules/operaciones/services/atlasOperationsApi.ts`.
 - Mapa de Control Tower: `src/modules/operaciones/components/OperationsLiveMap.tsx`.
 - Contrato de telemática: `src/modules/operaciones/telematics/provider.ts` y `docs/operations-control-tower/TRACKTEC_INTEGRATION_CONTRACT.md`.
-- Esquema Atlas: migraciones `20260930174145_atlas_operations_control_tower.sql`, `20261002130716_atlas_ops_service_routes_and_tomtom.sql` y `20261002144349_atlas_ops_service_template_operating_days.sql`.
+- Esquema Atlas: migraciones `20260930174145_atlas_operations_control_tower.sql`, `20261002130716_atlas_ops_service_routes_and_tomtom.sql` y `20261002144913_atlas_ops_service_template_operating_days.sql`.
 - Proxy TomTom: `supabase/functions/atlas-tomtom-planning/index.ts`.
 
 **Fin del contexto.** Antes de ejecutar una tarea, confirma qué está realmente publicado y respeta los límites y distinciones de este prompt.

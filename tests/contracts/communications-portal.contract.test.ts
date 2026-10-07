@@ -1,10 +1,10 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-const migration = readFileSync("supabase/migrations/20261005165138_communications_portal.sql", "utf8");
-const designMigration = readFileSync("supabase/migrations/20261005165140_communications_visual_editor.sql", "utf8");
-const quickLinksMigration = readFileSync("supabase/migrations/20261006111015_communications_quick_access_links.sql", "utf8");
-const nestingMigration = readFileSync("supabase/migrations/20261005180221_nest_communications_portal_under_hr.sql", "utf8");
+const migration = readFileSync("supabase/migrations/20261005170407_communications_portal.sql", "utf8");
+const designMigration = readFileSync("supabase/migrations/20261005170414_communications_visual_editor.sql", "utf8");
+const quickLinksMigration = readFileSync("supabase/migrations/20261006112120_communications_quick_access_links.sql", "utf8");
+const nestingMigration = readFileSync("supabase/migrations/20261005181519_nest_communications_portal_under_hr.sql", "utf8");
 const cmsMigration = readFileSync("supabase/migrations/20261005190355_communications_editorial_official_cms.sql", "utf8");
 const bulletinEditorialMigration = readFileSync("supabase/migrations/20261006123602_communications_bulletin_editorial_icon.sql", "utf8");
 const storageRoute = readFileSync("functions/api/comunicaciones/files.ts", "utf8");
