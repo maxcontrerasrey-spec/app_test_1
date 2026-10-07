@@ -13,8 +13,10 @@ import type {
   WorkerRosterAssignment,
   WorkerRosterException,
   WorkerScheduleDay,
-  WorkerSchedulePayload
-  ,RosterBulkCalendarPayload
+  WorkerSchedulePayload,
+  RosterBulkCalendarPayload,
+  RosterBulkCalendarPagePayload,
+  RosterCalendarScopeSummary
 } from "../types";
 
 function readRosterExceptionSource(value: unknown) {
@@ -68,6 +70,24 @@ function mapRosterCalendarSummary(payload: unknown): RosterCalendarSummary {
     assignedCount: Number(source.assigned_count ?? 0),
     pendingCount: Number(source.pending_count ?? 0),
     totalCount: Number(source.total_count ?? 0)
+  };
+}
+
+function mapRosterCalendarScopeSummary(payload: unknown): RosterCalendarScopeSummary {
+  const source = (payload ?? {}) as Record<string, unknown>;
+  const range = (source.range ?? {}) as Record<string, unknown>;
+  return {
+    range: {
+      startDate: String(range.start_date ?? ""),
+      endDate: String(range.end_date ?? "")
+    },
+    totalWorkers: Number(source.total_workers ?? 0),
+    assignedCount: Number(source.assigned_count ?? 0),
+    pendingCount: Number(source.pending_count ?? 0),
+    patterns: asArray<Record<string, unknown>>(source.patterns).map((item) => ({
+      cycle: String(item.cycle ?? ""),
+      count: Number(item.count ?? 0)
+    }))
   };
 }
 
@@ -198,6 +218,23 @@ function mapBulkCalendar(payload: unknown): RosterBulkCalendarPayload {
   };
 }
 
+function mapBulkCalendarPage(payload: unknown): RosterBulkCalendarPagePayload {
+  const source = (payload ?? {}) as Record<string, unknown>;
+  return {
+    ...mapBulkCalendar(source),
+    page: Number(source.page ?? 1),
+    pageSize: Number(source.page_size ?? 50),
+    totalWorkers: Number(source.total_workers ?? 0),
+    hasMore: Boolean(source.has_more),
+    nextCursor: source.next_cursor && typeof source.next_cursor === "object"
+      ? {
+          fullName: String((source.next_cursor as Record<string, unknown>).full_name ?? ""),
+          bukEmployeeId: String((source.next_cursor as Record<string, unknown>).buk_employee_id ?? "")
+        }
+      : null
+  };
+}
+
 export async function fetchRosterSetupCatalogs() {
   const client = getSupabaseClient();
   const { data, error } = await client.rpc("get_hr_roster_setup_catalogs");
@@ -242,6 +279,30 @@ export async function fetchRosterCalendarSummary(params: {
   return mapRosterCalendarSummary(data);
 }
 
+export async function fetchRosterCalendarScopeSummary(params: {
+  startDate: string;
+  endDate: string;
+  search?: string;
+  contractFilter?: string;
+  areaFilter?: string;
+  contractAdministratorFilter?: string;
+}, signal?: AbortSignal) {
+  const client = getSupabaseClient();
+  const request = client.rpc("get_hr_roster_calendar_scope_summary_v2", {
+    p_start_date: params.startDate,
+    p_end_date: params.endDate,
+    p_search: params.search?.trim() || null,
+    p_contract_filter: params.contractFilter?.trim() || null,
+    p_area_filter: params.areaFilter?.trim() || null,
+    p_contract_admin_filter: params.contractAdministratorFilter?.trim() || null
+  });
+  const { data, error } = await (signal ? request.abortSignal(signal) : request);
+  if (error) {
+    throw new Error(getSupabaseErrorMessage(error, "No fue posible cargar el resumen de jornadas.", "message"));
+  }
+  return mapRosterCalendarScopeSummary(data);
+}
+
 export async function fetchRosterBulkCalendar(params: {
   startDate: string;
   endDate: string;
@@ -264,6 +325,76 @@ export async function fetchRosterBulkCalendar(params: {
     throw new Error(getSupabaseErrorMessage(error, "No fue posible cargar el calendario de trabajadores.", "message"));
   }
   return mapBulkCalendar(data);
+}
+
+export async function fetchRosterBulkCalendarPage(params: {
+  startDate: string;
+  endDate: string;
+  search?: string;
+  contractFilter?: string;
+  areaFilter?: string;
+  contractAdministratorFilter?: string;
+  cycleFilter?: string;
+  page: number;
+  pageSize?: number;
+  cursor?: { fullName: string; bukEmployeeId: string } | null;
+}, signal?: AbortSignal) {
+  const client = getSupabaseClient();
+  const request = client.rpc("get_hr_roster_bulk_calendar_page_v2", {
+    p_start_date: params.startDate,
+    p_end_date: params.endDate,
+    p_search: params.search?.trim() || null,
+    p_contract_filter: params.contractFilter?.trim() || null,
+    p_area_filter: params.areaFilter?.trim() || null,
+    p_contract_admin_filter: params.contractAdministratorFilter?.trim() || null,
+    p_cycle_filter: params.cycleFilter?.trim() || null,
+    p_page: params.page,
+    p_page_size: params.pageSize ?? 50,
+    p_after_full_name: params.cursor?.fullName ?? null,
+    p_after_buk_employee_id: params.cursor?.bukEmployeeId ?? null
+  });
+  const { data, error } = await (signal ? request.abortSignal(signal) : request);
+  if (error) {
+    throw new Error(getSupabaseErrorMessage(error, "No fue posible cargar la página del calendario.", "message"));
+  }
+  return mapBulkCalendarPage(data);
+}
+
+export async function fetchAllRosterBulkCalendarPages(params: {
+  startDate: string;
+  endDate: string;
+  search?: string;
+  contractFilter?: string;
+  areaFilter?: string;
+  contractAdministratorFilter?: string;
+  cycleFilter?: string;
+  pageSize?: number;
+}, signal: AbortSignal) {
+  const pageSize = 50;
+  let cursor: { fullName: string; bukEmployeeId: string } | null = null;
+  let page = 1;
+  const firstPage = await fetchRosterBulkCalendarPage({ ...params, page, pageSize, cursor }, signal);
+  const workers = [...firstPage.workers];
+  let nextPage = firstPage;
+  while (nextPage.hasMore && nextPage.nextCursor) {
+    if (signal.aborted) throw new DOMException("La exportación fue cancelada.", "AbortError");
+    if (page >= 10000) throw new Error("La exportación excede el máximo de páginas permitido.");
+    if (
+      cursor?.fullName === nextPage.nextCursor.fullName &&
+      cursor?.bukEmployeeId === nextPage.nextCursor.bukEmployeeId
+    ) {
+      throw new Error("La paginación del calendario no avanzó; cancela y vuelve a intentar la exportación.");
+    }
+    cursor = nextPage.nextCursor;
+    page += 1;
+    nextPage = await fetchRosterBulkCalendarPage({ ...params, page, pageSize, cursor }, signal);
+    workers.push(...nextPage.workers);
+  }
+  if (nextPage.hasMore && !nextPage.nextCursor) {
+    throw new Error("La exportación no pudo continuar porque el servidor no devolvió el cursor siguiente.");
+  }
+
+  return { range: firstPage.range, workers };
 }
 
 export async function searchRosterWorkers(

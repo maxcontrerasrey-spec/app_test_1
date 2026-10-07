@@ -94,6 +94,18 @@
   white-space: nowrap;
 }
 
+.roster-bulk-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding-top: 0.25rem;
+}
+
+.roster-bulk-pagination button {
+  min-height: 34px;
+}
+
 .roster-bulk-scroll {
   max-height: min(68vh, 760px);
   overflow: auto;
@@ -673,6 +685,10 @@
 
   .roster-bulk-export-button {
     width: 100%;
+  }
+
+  .roster-bulk-pagination {
+    justify-content: space-between;
   }
 
   .roster-bulk-pattern-chips {

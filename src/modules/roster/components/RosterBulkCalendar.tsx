@@ -1,10 +1,32 @@
 import { parseDateValue, formatDateValue, toTodayDateValue } from "../../../shared/lib/date";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
-import type { RosterBulkWorker, ShiftPattern, WorkerScheduleDay } from "../types";
+import type {
+  RosterBulkCalendarPayload,
+  RosterBulkWorker,
+  RosterCalendarCycleCount,
+  ShiftPattern,
+  WorkerScheduleDay
+} from "../types";
 
-type Props = { startDate: string; endDate: string; workers: RosterBulkWorker[]; patterns: ShiftPattern[]; isLoading?: boolean };
-const NO_PATTERN_FILTER = "__no_pattern__";
+type Props = {
+  startDate: string;
+  endDate: string;
+  workers: RosterBulkWorker[];
+  patterns: ShiftPattern[];
+  cycleCounts: RosterCalendarCycleCount[];
+  totalWorkers: number;
+  page: number;
+  pageSize: number;
+  hasMore: boolean;
+  nextCursor: { fullName: string; bukEmployeeId: string } | null;
+  selectedPattern: string;
+  onSelectedPatternChange: (pattern: string) => void;
+  onPageChange: (page: number, cursor?: { fullName: string; bukEmployeeId: string }) => void;
+  onLoadAllWorkersForExport: (signal: AbortSignal, cycleFilter: string) => Promise<RosterBulkCalendarPayload>;
+  isLoading?: boolean;
+};
+export const ROSTER_NO_PATTERN_FILTER = "__no_pattern__";
 const SHIFT_CYCLE_PATTERN = /\b\d+\s*[xX]\s*\d+(?:\s*\+\s*\d+)?\b/;
 
 export function resolvePatternCycle(patternName: string | null | undefined) {
@@ -68,13 +90,22 @@ export function resolveRosterExportContractLabel(worker: Pick<RosterBulkWorker, 
   return worker.areaName?.trim() || worker.contractCode?.trim() || "—";
 }
 
+export function filterRosterWorkersByCycle<T extends Pick<RosterBulkWorker, "days">>(workers: T[], selectedPattern: string) {
+  if (!selectedPattern) return workers;
+  return workers.filter((worker) =>
+    selectedPattern === ROSTER_NO_PATTERN_FILTER
+      ? worker.days.every((day) => !day.patternName)
+      : worker.days.some((day) => resolvePatternCycle(day.patternName) === selectedPattern)
+  );
+}
+
 async function exportRosterCalendar(
   workers: RosterBulkWorker[],
   dates: Array<{ value: string }>,
   selectedPattern: string
 ) {
   const { utils, writeFile } = await import("@mylinkpi/xlsx");
-  const isNoPatternExport = selectedPattern === NO_PATTERN_FILTER;
+  const isNoPatternExport = selectedPattern === ROSTER_NO_PATTERN_FILTER;
   const rows = isNoPatternExport
     ? workers.map((worker) => ({
         Nombre: worker.fullName,
@@ -107,47 +138,43 @@ async function exportRosterCalendar(
     : [{ wch: 32 }, { wch: 16 }, { wch: 34 }, { wch: 34 }, { wch: 18 }, { wch: 24 }, { wch: 14 }, { wch: 24 }];
   const workbook = utils.book_new();
   utils.book_append_sheet(workbook, worksheet, "Calendario");
-  const suffix = selectedPattern === NO_PATTERN_FILTER ? "sin-jornada" : "sabana-calendario";
+  const suffix = selectedPattern === ROSTER_NO_PATTERN_FILTER ? "sin-jornada" : "sabana-calendario";
   writeFile(workbook, `${suffix}-${new Date().toISOString().slice(0, 10)}.xlsx`);
 }
 
-export function RosterBulkCalendar({ startDate, endDate, workers, patterns, isLoading = false }: Props) {
-  const [selectedPattern, setSelectedPattern] = useState("");
+export function RosterBulkCalendar({
+  startDate,
+  endDate,
+  workers,
+  patterns,
+  cycleCounts,
+  totalWorkers,
+  page,
+  pageSize,
+  hasMore,
+  nextCursor,
+  selectedPattern,
+  onSelectedPatternChange,
+  onPageChange,
+  onLoadAllWorkersForExport,
+  isLoading = false
+}: Props) {
   const [isExporting, setIsExporting] = useState(false);
+  const [exportError, setExportError] = useState("");
+  const exportAbortRef = useRef<AbortController | null>(null);
   const patternsById = useMemo(() => new Map(patterns.map((pattern) => [pattern.id, pattern])), [patterns]);
-  const patternOptions = useMemo(() => {
-    const workerCounts = new Map<string, number>();
-    workers.forEach((worker) => {
-      const workerPatterns = new Set(
-        worker.days
-          .map((day) => day.patternName)
-          .filter((pattern): pattern is string => Boolean(pattern))
-          .map(resolvePatternCycle)
-          .filter(Boolean)
-      );
-      if (workerPatterns.size === 0) {
-        workerCounts.set(NO_PATTERN_FILTER, (workerCounts.get(NO_PATTERN_FILTER) ?? 0) + 1);
-      } else {
-        workerPatterns.forEach((pattern) => workerCounts.set(pattern, (workerCounts.get(pattern) ?? 0) + 1));
-      }
-    });
-    return [...workerCounts.entries()].sort(([left], [right]) => {
-      if (left === NO_PATTERN_FILTER) return 1;
-      if (right === NO_PATTERN_FILTER) return -1;
-      return left.localeCompare(right, "es");
-    });
-  }, [workers]);
-  const visibleWorkers = useMemo(
-    () =>
-      selectedPattern
-        ? workers.filter((worker) =>
-            selectedPattern === NO_PATTERN_FILTER
-              ? worker.days.every((day) => !day.patternName)
-              : worker.days.some((day) => resolvePatternCycle(day.patternName) === selectedPattern)
-          )
-        : workers,
-    [selectedPattern, workers]
+  const patternOptions = useMemo(
+    () => [...cycleCounts].sort((left, right) => {
+      if (left.cycle === ROSTER_NO_PATTERN_FILTER) return 1;
+      if (right.cycle === ROSTER_NO_PATTERN_FILTER) return -1;
+      return left.cycle.localeCompare(right.cycle, "es");
+    }),
+    [cycleCounts]
   );
+  const selectedWorkerCount = selectedPattern
+    ? patternOptions.find((item) => item.cycle === selectedPattern)?.count ?? 0
+    : totalWorkers;
+  const pageCount = Math.ceil(selectedWorkerCount / pageSize);
   const start = parseDateValue(startDate);
   const end = parseDateValue(endDate);
   const todayValue = toTodayDateValue();
@@ -163,21 +190,35 @@ export function RosterBulkCalendar({ startDate, endDate, workers, patterns, isLo
   });
 
   const handleExport = async () => {
-    if (visibleWorkers.length === 0 || isExporting) return;
+    if (selectedWorkerCount === 0 || isExporting || isLoading) return;
+    const controller = new AbortController();
+    exportAbortRef.current = controller;
     setIsExporting(true);
+    setExportError("");
     try {
-      await exportRosterCalendar(visibleWorkers, dates, selectedPattern);
+      const completeCalendar = await onLoadAllWorkersForExport(controller.signal, selectedPattern);
+      const exportWorkers = filterRosterWorkersByCycle(completeCalendar.workers, selectedPattern);
+      await exportRosterCalendar(exportWorkers, dates, selectedPattern);
+    } catch (error) {
+      if (!controller.signal.aborted) {
+        setExportError(error instanceof Error ? error.message : "No fue posible exportar el calendario.");
+      }
     } finally {
+      if (exportAbortRef.current === controller) exportAbortRef.current = null;
       setIsExporting(false);
     }
   };
+
+  useEffect(() => () => exportAbortRef.current?.abort(), []);
 
   return (
     <section className="info-card roster-bulk-card" aria-label="Calendario de trabajadores">
       <div className="roster-bulk-header">
         <div className="tracking-toolbar-copy">
           <h3>Calendario general</h3>
-          <span className="tracking-filter-caption">{visibleWorkers.length} trabajadores · desplázate para revisar la nómina completa</span>
+          <span className="tracking-filter-caption">
+            {selectedWorkerCount} trabajadores · {pageCount > 0 ? `página ${page} de ${pageCount}` : "sin páginas"}
+          </span>
         </div>
         <div className="roster-bulk-header-actions">
           {patternOptions.length > 0 ? (
@@ -187,21 +228,23 @@ export function RosterBulkCalendar({ startDate, endDate, workers, patterns, isLo
                 <button
                   type="button"
                   className={`approval-chip ${selectedPattern === "" ? "tracking-kpi-card-active" : ""}`}
-                  onClick={() => setSelectedPattern("")}
+                  onClick={() => onSelectedPatternChange("")}
+                  disabled={isLoading || selectedPattern === ""}
                 >
-                  Todas <span>{workers.length}</span>
+                  Todas <span>{totalWorkers}</span>
                 </button>
-                {patternOptions.map(([pattern, workerCount]) => {
-                  const patternLabel = pattern === NO_PATTERN_FILTER ? "Sin Jornada" : pattern;
+                {patternOptions.map(({ cycle, count }) => {
+                  const patternLabel = cycle === ROSTER_NO_PATTERN_FILTER ? "Sin Jornada" : cycle;
                   return (
                     <button
                       type="button"
-                      className={`approval-chip ${selectedPattern === pattern ? "tracking-kpi-card-active" : ""}`}
-                      key={pattern}
-                      onClick={() => setSelectedPattern(pattern)}
+                      className={`approval-chip ${selectedPattern === cycle ? "tracking-kpi-card-active" : ""}`}
+                      key={cycle}
+                      onClick={() => onSelectedPatternChange(cycle)}
+                      disabled={isLoading || selectedPattern === cycle}
                       title={`Mostrar trabajadores ${patternLabel.toLowerCase()}`}
                     >
-                      {patternLabel} <span>{workerCount}</span>
+                      {patternLabel} <span>{count}</span>
                     </button>
                   );
                 })}
@@ -212,16 +255,17 @@ export function RosterBulkCalendar({ startDate, endDate, workers, patterns, isLo
             type="button"
             className="soft-primary-button roster-bulk-export-button"
             onClick={handleExport}
-            disabled={isLoading || isExporting || visibleWorkers.length === 0}
-            title="Exportar los trabajadores y fechas actualmente visibles"
+            disabled={isLoading || isExporting || selectedWorkerCount === 0}
+            title="Exportar todos los trabajadores y fechas de los filtros aplicados"
           >
             {isExporting ? "Preparando..." : "Exportar Excel"}
           </button>
         </div>
       </div>
       {isLoading ? <p className="tracking-filter-caption">Cargando calendario...</p> : null}
-      {!isLoading && visibleWorkers.length === 0 ? <p className="tracking-filter-caption">No hay trabajadores para los filtros seleccionados.</p> : null}
-      {visibleWorkers.length > 0 ? (
+      {exportError ? <p className="form-status form-status-error" role="alert">{exportError}</p> : null}
+      {!isLoading && selectedWorkerCount === 0 ? <p className="tracking-filter-caption">No hay trabajadores para los filtros seleccionados.</p> : null}
+      {!isLoading && workers.length > 0 ? (
         <div className="roster-bulk-scroll">
           <div className="roster-bulk-grid" style={{ "--roster-day-count": totalDays } as CSSProperties}>
             <div className="roster-bulk-worker-header">Trabajador</div>
@@ -236,7 +280,7 @@ export function RosterBulkCalendar({ startDate, endDate, workers, patterns, isLo
                 <strong>{date.day}</strong>
               </div>
             ))}
-            {visibleWorkers.map((worker) => {
+            {workers.map((worker) => {
               const days = new Map(worker.days.map((day) => [day.date, day]));
               const jornadaLabel = resolveWorkerPatternLabel(worker.days);
               return <div className="roster-bulk-row" key={worker.bukEmployeeId}>
@@ -264,6 +308,17 @@ export function RosterBulkCalendar({ startDate, endDate, workers, patterns, isLo
             })}
           </div>
         </div>
+      ) : null}
+      {!isLoading && (page > 1 || hasMore) ? (
+        <nav className="roster-bulk-pagination" aria-label="Paginación del calendario">
+          <button type="button" className="secondary-button" onClick={() => onPageChange(Math.max(1, page - 1))} disabled={page <= 1}>
+            Anterior
+          </button>
+          <span className="tracking-filter-caption">Mostrando {workers.length} de {selectedWorkerCount}</span>
+          <button type="button" className="secondary-button" onClick={() => nextCursor && onPageChange(page + 1, nextCursor)} disabled={!hasMore || !nextCursor}>
+            Siguiente
+          </button>
+        </nav>
       ) : null}
     </section>
   );

@@ -4240,3 +4240,8 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - Las flechas deben poder mover todo punto dentro de los límites de la lista; después de cada movimiento, actualizar las etiquetas y enviar coordenadas en ese mismo orden al proveedor.
 - Envolver errores HTTP de un proveedor de rutas con un código genérico destruye el diagnóstico. Conservar los códigos estructurados permitidos y traducirlos en el cliente, sin propagar payloads arbitrarios ni secretos.
 - Un estado vacío del mapa debe depender de que no existan puntos ingresados, no solo de que aún no haya geometría calculada. Ocultar el overlay cuando aparece la primera dirección para evitar tapar el mapa y sus marcadores.
+## 2026-10-07 - Un bloqueo de staging no pausa el loop completo
+
+- Si una validación requiere exclusivamente PostgreSQL/staging, clasificar solo ese gate como `BLOCKED_VALIDATION` y continuar con análisis, implementación y pruebas locales de los demás hallazgos.
+- Una solicitud posterior y explícita de release productivo exige rehacer compatibilidad, permisos y gates sobre `origin/main`; no convierte resultados no medidos en evidencia ni autoriza pruebas de carga en producción.
+- Antes de publicar una RPC paginada, comparar su población contra el SQL vivo: `is_active = true` por sí solo no equivale al contrato productivo cuando existe una fecha de salida pasada.

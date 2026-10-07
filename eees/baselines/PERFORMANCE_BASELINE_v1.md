@@ -1,7 +1,7 @@
 ---
 document_id: EEES-BASELINE-PERFORMANCE-P4-V1
 title: Performance Baseline P4 v1
-version: 1.0.56
+version: 1.0.57
 status: Activo
 language: es-CL
 owner: Quality
@@ -381,3 +381,5 @@ Revision 2026-10-05 estructura Editorial/Oficial del Portal: el build local mide
 Revision 2026-10-06 boletines del Portal: la medición local aumenta 563 bytes totales; JS baja 911 bytes y CSS sube 1.474 bytes para mostrar bajada e icono en las fichas editoriales. No agrega dependencias ni aumenta el JavaScript. Se actualizaron las métricas locales exactas; la medición canónica de CI se reconciliará con su artefacto antes de cerrar.
 
 Revision 2026-10-06 boletines del Portal, CI Ubuntu/Node 24: Guardian run 37464976692 mide 7.465.193 bytes totales, 5.336.470 bytes JS y 538.986 bytes CSS. Frente a macOS, dist y JS suman 2.120 bytes por variación de bundle/minificador; CSS coincide. Se registra la medición canónica del artefacto con tolerancia cero.
+
+Revision local 2026-10-07 ATLAS Jornadas Fase 1B: `npm run build:frontend-check` y `npm run audit:performance-baseline` miden el artefacto del worktree en 7,418,066 bytes `dist`, 5,304,179 bytes JS y 534,713 bytes CSS. Los assets vigilados miden fondo 65,132 B, ECharts 512,488 B, XLSX 331,827 B, Supabase 219,110 B y app-framework 296,608 B. El gate de baseline pasa; los límites machine-readable no se elevan. Estas cifras son una medición local del checkout, no comparativa controlada atribuible a esta funcionalidad ni un bundle desplegado. La mejora backend, bytes JSON y percentiles quedan `AFTER = NOT MEASURED` sin staging.
