@@ -6,7 +6,7 @@ Estados permitidos: `PENDING`, `IN_ANALYSIS`, `IMPLEMENTED_UNVALIDATED`, `VALIDA
 
 ## Contexto de ejecución
 
-- Base del release activo: `bbae9dacf7bfabe4efc44d3ef32b6438a28ecb93`; PR #68 publicado con árbol remoto idéntico al local y CI Enterprise verde.
+- Release productivo: PR #68 integrado en `main` como `34f4f51df782dd2f09210911b77e89ca7cc60642`; árbol de salida idéntico al auditado y CI Enterprise verde.
 - Supabase producción: `pzblmbahnoyntrhistea`. El inventario previo encontró cero branches; no hay PostgreSQL local (Docker/psql). El usuario rechazó crear una rama Preview facturable y pidió esperar staging existente.
 - Alcance seguro actualizado por instrucción expresa del usuario: release productivo controlado, SQL aditivo antes del frontend, sin carga, estrés ni pruebas destructivas contra producción.
 - `BLOCKED_VALIDATION` identifica gates externos no ejecutables; no impide análisis, implementación o validación local de ese mismo módulo.
@@ -15,7 +15,7 @@ Estados permitidos: `PENDING`, `IN_ANALYSIS`, `IMPLEMENTED_UNVALIDATED`, `VALIDA
 
 | ID | Módulo / severidad | Estado | Evidencia original / siguiente trabajo |
 |---|---|---|---|
-| P0-RELEASE | SHA ↔ esquema y release gate | `VALIDATING` | Fase 1B en PR #68; migración productiva `20261007153510`, smoke autenticado y autorización negativa aprobados. Pendientes: merge, Cloudflare producción y smoke UI. |
+| P0-RELEASE | SHA ↔ esquema y release gate | `RESOLVED` | PR #68 integrado como `34f4f51d`; migración `20261007153510`, smoke autenticado y autorización negativa aprobados. Cloudflare producción sirve el bundle exacto auditado. La sesión de navegador disponible estaba en `/login`, por lo que no se simuló una sesión ni se usaron credenciales. |
 | P0-OBS | Telemetría UI/RPC/render, percentiles, bytes, throughput | `BLOCKED_VALIDATION` | Instrumentación local disponible; muestreo integrado por ruta/acción exige staging. |
 | P1-ATLAS | Atlas `atlas_ops_search_drivers` | `BLOCKED_VALIDATION` | Implementación local P1; equivalencia, permisos, plan y carga aún requieren PostgreSQL/staging. |
 | P1-MOB | Movilidad `search_internal_mobility_workers` + catálogos | `BLOCKED_VALIDATION` | Cambios locales de búsqueda/cancelación; validar multiplicidad, acentos, RUT, permisos, plan y latencia en staging. |
@@ -47,7 +47,7 @@ Cada ficha registra: **fuente/baseline; causa raíz; cambio; pruebas; before/aft
 - Before/after y p50/p95/p99: before solo diagnósticos anteriores no equivalentes; after `NOT MEASURED`; percentiles `NO MEDIDO`.
 - EXPLAIN/BUFFERS/equivalencia/carga: `BLOCKED_VALIDATION` sin PostgreSQL staging. Advisors productivos revisados después de DDL, sin hallazgos de performance asociados; los avisos `SECURITY DEFINER` para las dos RPC son intencionales y están mitigados por guard interno, `search_path` fijo y ACL autenticada.
 - Residual: validar personas con varias pautas, excepciones, salidas, `Sin Jornada`, filtros, facetas y consistencia temporal de exportación. Rollback: restaurar cliente/RPC legacy mediante migración forward-only compensatoria; no revertir migraciones aplicadas.
-- SHA: base `bbae9dacf7bfabe4efc44d3ef32b6438a28ecb93`; commits locales `6a043e7c` y `f3adb6b9`; PR #68 publicado mediante árbol equivalente por indisponibilidad transitoria de `receive-pack`.
+- SHA: base `bbae9dacf7bfabe4efc44d3ef32b6438a28ecb93`; commits de implementación `6a043e7c`, `f3adb6b9` y `a0ad0030`; PR #68 integrado como `34f4f51d` tras restablecerse `receive-pack`.
 
 ### P1-BI — Dotación — auditoría en curso
 
@@ -68,9 +68,10 @@ Cada ficha registra: **fuente/baseline; causa raíz; cambio; pruebas; before/aft
 3. Capturar `EXPLAIN (ANALYZE, BUFFERS)` y advisors donde aplique; comparar bloques/temp spill y resultado.
 4. Ejecutar harness k6 por tiers sintéticos autorizados; registrar p50/p95/p99, error rate, bytes, CPU/IO/conexiones y validar gates antes del siguiente tier.
 5. Revisar consistencia temporal de exportación de Jornadas y hacer smoke autenticado por rol.
-6. Reabrir todos los `BLOCKED_VALIDATION`; solo después de los gates se puede proponer un release (este loop no despliega producción).
+6. Reabrir todos los `BLOCKED_VALIDATION` para cerrar afirmaciones de rendimiento y escala. El release funcional ya fue autorizado y ejecutado de forma controlada; estos gates no deben correrse contra producción.
 
 ## Historia
 
 - 2026-10-07: Fase 1B Jornadas quedó implementada, validada localmente y compilada en PostgreSQL productivo mediante migración `20261007153510`; performance posterior aún no medida.
+- 2026-10-07: PR #68 integrado como `34f4f51d`; Cloudflare producción publica el build auditado. Los hashes productivos de `index-xz0Yf4Yp.js`, `RosterPage-DbekQk1s.js` e `index-DczyPlkl.css` coinciden con `dist`.
 - 2026-10-07: reanudado loop maestro. Se mantiene la negativa del usuario a crear una rama temporal de costo; staging sigue externo. Sin escrituras ni carga a producción.

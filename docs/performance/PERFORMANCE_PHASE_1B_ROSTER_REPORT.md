@@ -1,12 +1,12 @@
 # ATLAS Performance — Fase 1B: Jornadas
 
-Fecha: 2026-10-07. Base de release: `bbae9dacf7bfabe4efc44d3ef32b6438a28ecb93` (`origin/main` verificado). Alcance: calendario general de Jornadas, filtros/facetas, paginación y Excel. PR #68; migración SQL aplicada antes del frontend como `20261007153510`.
+Fecha: 2026-10-07. Base de release: `bbae9dacf7bfabe4efc44d3ef32b6438a28ecb93`. Release: PR #68 integrado en `main` como `34f4f51df782dd2f09210911b77e89ca7cc60642`. Alcance: calendario general de Jornadas, filtros/facetas, paginación y Excel. Migración SQL aplicada antes del frontend como `20261007153510`.
 
 ## 1. Resumen ejecutivo
 
 Se implementó localmente una lectura paginada por trabajador con cursor compuesto y un resumen/facetas que no genera el producto trabajador×día. La página limita la expansión a 50 trabajadores antes de `generate_series`, rango máximo 184 días (máximo teórico 9.200 celdas por respuesta). La exportación explícita consume el mismo RPC en lotes. Se conservan las funciones legacy para rollback.
 
-El backend quedó listo para un release frontend controlado: la migración compiló y se ejecutó en PostgreSQL productivo, el smoke acotado devolvió el contrato esperado y la autorización negativa bloqueó una llamada sin identidad. No se ejecutaron carga, estrés, `EXPLAIN ANALYZE` ni una equivalencia exhaustiva sin staging; por eso `AFTER = NOT MEASURED` y la mejora de latencia no se declara resuelta todavía.
+El backend y el frontend quedaron publicados de forma controlada: la migración compiló y se ejecutó en PostgreSQL productivo, el smoke acotado devolvió el contrato esperado y la autorización negativa bloqueó una llamada sin identidad. Cloudflare Pages sirve el build auditado en `gestion.busesjm.cl`; el JS principal, el chunk de Jornadas y el CSS tienen el mismo SHA-256 remoto y local. No se ejecutaron carga, estrés, `EXPLAIN ANALYZE` ni una equivalencia exhaustiva sin staging; por eso `AFTER = NOT MEASURED` y la mejora de latencia no se declara resuelta todavía.
 
 ## 2. Hallazgos resueltos en código local
 
@@ -27,6 +27,7 @@ El backend quedó listo para un release frontend controlado: la migración compi
 - Guardian local completado: 0 errores / 0 warnings, incluidos `git diff --check`; las pruebas PostgreSQL staging siguen pendientes. El build local y el gate de baseline pasan.
 - Build TypeScript/producción y auditor de bundle: `dist` 7.418.066 B, JS 5.304.179 B y CSS 534.713 B; los límites machine-readable no se ampliaron. El total medido no es una comparación causal con el bundle productivo.
 - Tests unitarios: 160 en 34 archivos; tests focalizados Jornadas/contrato: 17 en 3 archivos. Auditoría de nombres/historial: 613 migraciones canónicas, sin duplicados. Auditoría estática Supabase: 88 avisos históricos; la salida no listó la migración nueva como origen de un aviso. Guardian final: 0 errores / 0 warnings.
+- Release: CI Enterprise verde; commit de merge `34f4f51d`. Cloudflare deployment `a574bafe-bc64-4b45-9171-7e63a399777c`; `index-xz0Yf4Yp.js`, `RosterPage-DbekQk1s.js` e `index-DczyPlkl.css` coinciden byte a byte con el build local. La sesión de navegador disponible redirigió a `/login`, por lo que no se introdujeron credenciales ni se simuló una sesión.
 
 ## 4. Pendientes fuera de esta fase
 
