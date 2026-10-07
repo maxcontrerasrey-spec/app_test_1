@@ -8,7 +8,8 @@ import { FerrostarCore, FerrostarMap, SimulatedLocationProvider } from "@stadiam
 import type { Route, TripState, UserLocation, Waypoint } from "@stadiamaps/ferrostar";
 import { calculateAtlasValhallaRoute, getAtlasOperationsCatalogs, getAtlasServiceRoute, getAtlasServiceRoutes, optimizeAtlasOpenRoute, resolveAtlasTomTomSuggestion, saveAtlasServiceRoute, searchAtlasTomTom, type AtlasOptimizedRoute, type AtlasPlannedRoute, type AtlasServiceRoute, type TomTomSuggestion } from "../services/atlasOperationsApi";
 import { appendRouteStop, moveRouteStop, normalizeRouteStops, setFixedDestination } from "../lib/routeStopOrder";
-import { buildCalamaExampleStops, CALAMA_EXAMPLE_ADDRESS_QUERIES, matchRouteDestinationPresets, type RouteDestinationPreset } from "../lib/routeDestinationCatalog";
+import { matchRouteDestinationPresets, type RouteDestinationPreset } from "../lib/routeDestinationCatalog";
+import { formatDriverSimulationError } from "../lib/routeSimulation";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "../styles/route-planner-demo.css";
 
@@ -210,6 +211,19 @@ export function OperationsRoutePlannerDemo() {
     instance.valhallaEndpointUrl = VALHALLA_URL;
     instance.profile = "auto";
     instance.options = { costing_options: { auto: { use_ferry: 0, use_tolls: 0.5 } }, directions_options: { language: "es-ES", units: "kilometers" } };
+    instance.httpClient = async (input: RequestInfo | URL, init?: RequestInit) => {
+      const response = await fetch(input, init);
+      if (response.ok) return response;
+      let providerMessage = "";
+      try {
+        const payload = await response.clone().json() as { error?: unknown; message?: unknown };
+        const detail = [payload.error, payload.message].find((value): value is string => typeof value === "string" && value.trim().length > 0);
+        if (detail) providerMessage = `: ${detail.trim().replace(/[\u0000-\u001f]+/g, " ").slice(0, 180)}`;
+      } catch {
+        // Keep the HTTP status when Valhalla returns a non-JSON proxy error.
+      }
+      throw new Error(`Valhalla respondió HTTP ${response.status}${providerMessage}.`);
+    };
     instance.onTripStateChange = (state) => {
       setTripState(state);
       followNavigationCamera(mapRef.current, state);
@@ -474,34 +488,6 @@ export function OperationsRoutePlannerDemo() {
       : (search?.id === stopId ? null : search));
   }
 
-  async function loadExample() {
-    setError("");
-    setNotice("Buscando las direcciones de ejemplo en Calama…");
-    setPlanningRoute(null);
-    setProposal(null);
-    setRoute(null);
-    setRouteState("idle");
-    try {
-      const sessions = CALAMA_EXAMPLE_ADDRESS_QUERIES.map(() => crypto.randomUUID());
-      const located = await Promise.all(CALAMA_EXAMPLE_ADDRESS_QUERIES.map((query, index) => searchAtlasTomTom(query, sessions[index]!)));
-      const matches = await Promise.all(located.map((list, index) => {
-        const suggestion = list[0];
-        if (!suggestion) throw new Error(`TomTom no encontró: ${CALAMA_EXAMPLE_ADDRESS_QUERIES[index]}`);
-        return resolveAtlasTomTomSuggestion(suggestion, sessions[index]!);
-      }));
-      const mapped = buildCalamaExampleStops(matches.map((match) => ({ label: match.label, lat: match.lat, lng: match.lng, providerPlaceId: match.id })), uid);
-      setStops(mapped);
-      setPlanningRoute(null);
-      setProposal(null);
-      setRoute(null);
-      setRouteState("idle");
-      setNotice("Ejemplo cargado. Genera la ruta para continuar.");
-    } catch (reason) {
-      setNotice("");
-      setError(reason instanceof Error ? reason.message : "No fue posible cargar el ejemplo de Calama.");
-    }
-  }
-
   async function generateRoute() {
     if (stops.length < 2 || stops.some((stop) => !stop.label || !Number.isFinite(stop.lat) || !Number.isFinite(stop.lng))) {
       setError("Agrega al menos dos direcciones verificadas para proponer el recorrido.");
@@ -541,6 +527,7 @@ export function OperationsRoutePlannerDemo() {
   async function startSimulation() {
     if (!planningRoute || stops.length < 2) return;
     setError("");
+    let phase = "consultar Valhalla";
     try {
       const initialLocation = locationAt(stops[0]!);
       const waypoints: Waypoint[] = stops.slice(1).map((stop) => ({ coordinate: { lat: stop.lat, lng: stop.lng }, kind: "Break", properties: undefined }));
@@ -548,6 +535,7 @@ export function OperationsRoutePlannerDemo() {
       if (!routes.length) throw new Error("Valhalla no devolvió una ruta para estas paradas.");
       const driverRoute = routes[0]!;
       setRoute(driverRoute);
+      phase = "iniciar Ferrostar";
       await core.stopNavigation();
       const provider = new SimulatedLocationProvider();
       provider.warpFactor = 8;
@@ -560,7 +548,7 @@ export function OperationsRoutePlannerDemo() {
       setActiveView("driver");
       setError("");
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "No fue posible iniciar la simulación.");
+      setError(`Falló al ${phase}: ${formatDriverSimulationError(reason)}`);
     }
   }
 
@@ -701,7 +689,7 @@ export function OperationsRoutePlannerDemo() {
           {stops.some((stop) => !stop.label.trim()) && <p id="ops-route-pending-stop" className="ops-route-demo__pending-stop" role="status">Completa o elimina la dirección {stops.findIndex((stop) => !stop.label.trim()) + 1} para proponer el recorrido.</p>}
           <div className="ops-route-demo__panel-divider" />
           {(proposal || planningRoute) && routeState === "ready" && <div className="ops-route-demo__summary"><div><span>Distancia · Valhalla</span><strong>{formatDistance((proposal?.route ?? planningRoute!).distanceMeters)}</strong></div><div><span>Tiempo estimado</span><strong>{formatDuration((proposal?.route ?? planningRoute!).durationSeconds)}</strong></div></div>}
-          <div className="ops-route-demo__actions"><button type="button" className="ops-route-demo__primary" disabled={!allStopsPresent || routeState === "loading"} onClick={() => void generateRoute()}>{routeState === "loading" ? "Buscando mejor orden…" : "Proponer recorrido optimizado"}</button><button type="button" className="ops-route-demo__secondary" onClick={() => void loadExample()}>Cargar ejemplo Calama</button></div>
+          <div className="ops-route-demo__actions"><button type="button" className="ops-route-demo__primary" disabled={!allStopsPresent || routeState === "loading"} onClick={() => void generateRoute()}>{routeState === "loading" ? "Buscando mejor orden…" : "Proponer recorrido optimizado"}</button></div>
           {proposal && <div className="ops-route-demo__message" role="status"><strong>Propuesta de recorrido abierto</strong><p>Inicio: {proposal.stops[0]?.label}</p><p>Destino: {proposal.stops[proposal.stops.length - 1]?.label}</p><details><summary>Ver las {proposal.stops.length} direcciones en orden</summary><ol>{proposal.stops.map((stop) => <li key={stop.id}>{stop.label}</li>)}</ol></details>{proposal.route.inputOrderMatrixDurationSeconds !== null && <small>{proposal.route.inputOrderMatrixDurationSeconds > proposal.route.matrixDurationSeconds ? `Ahorro estimado: ${formatDuration(proposal.route.inputOrderMatrixDurationSeconds - proposal.route.matrixDurationSeconds)} frente al orden ingresado.` : "El orden ingresado ya es equivalente o más rápido según la matriz."}</small>}<div className="ops-route-demo__actions"><button type="button" className="ops-route-demo__primary" onClick={applyProposal}>Aplicar este orden</button><button type="button" className="ops-route-demo__secondary" onClick={() => { setProposal(null); setRouteState("idle"); }}>Descartar propuesta</button></div></div>}
           {planningRoute && !proposal && <><button type="button" className="ops-route-demo__driver-launch" onClick={() => void startSimulation()}><span><strong>Probar navegación del conductor</strong><small>Ferrostar + Valhalla desde el orden aplicado</small></span><span>→</span></button><button type="button" className="ops-route-demo__primary ops-route-demo__save-route" disabled={!selectedServiceId || !routePrefix.trim() || saving || !isOptimizedRoute(planningRoute)} onClick={() => void saveRoute()}>{saving ? "Guardando ruta…" : selectedSavedRouteId ? "Guardar nueva versión" : "Guardar ruta en servicio base"}</button>{!isOptimizedRoute(planningRoute) && <small>Para guardar una nueva versión, vuelve a proponer el recorrido.</small>}</>}
         </> : <div className="ops-route-demo__driver-panel"><div className="ops-route-demo__guidance"><span>PRÓXIMA INSTRUCCIÓN</span><strong>{nextInstruction}</strong><small>Ferrostar + Valhalla · simulación de referencia</small></div><div className="ops-route-demo__driver-stats"><div><span>Recorrido</span><strong>{route ? formatDistance(route.distance) : "—"}</strong></div><div><span>Tiempo base</span><strong>{route ? formatDuration(route.steps.reduce((total, step) => total + step.duration, 0)) : "—"}</strong></div></div><button type="button" className="ops-route-demo__secondary" onClick={() => void stopSimulation()}>Detener navegación</button><p>Se usan las coordenadas guardadas de las paradas; Valhalla puede elegir calles distintas a la vista previa de TomTom.</p></div>}
@@ -711,7 +699,7 @@ export function OperationsRoutePlannerDemo() {
       </section>
       <section className="ops-route-demo__map-section" aria-label="Mapa y ruta">
         <div className="ops-route-demo__map-topline"><div><span className="ops-route-demo__eyebrow">{activeView === "planning" ? "MAPA DE PLANIFICACIÓN" : "NAVEGACIÓN DEL CONDUCTOR"}</span><strong>{selectedContract?.contract_name ?? "Calama, Región de Antofagasta"}</strong></div><div className="ops-route-demo__map-legend"><span><i className="is-start" />Inicio</span><span><i className="is-stop" />Parada</span><span><i className="is-end" />Destino</span></div></div>
-        <div className={`ops-route-demo__map-frame${mapPickingStopId ? " is-picking" : ""}`}><div className="ops-route-demo__map-canvas" ref={mapContainerRef} />{activeView === "driver" && <ferrostar-map ref={(node) => { ferrostarMapRef.current = node; }} className="ops-route-demo__ferrostar" show-navigation-ui show-user-marker system="metric" />} {!hasEnteredDirection && !planningRoute && !proposal && !route && routeState !== "loading" && !mapPickingStopId && <div className="ops-route-demo__map-empty"><span>＋</span><strong>Tu ruta aparecerá aquí</strong><small>Agrega direcciones o carga el ejemplo de Calama.</small></div>}{mapPickingStopId && <><div className="ops-route-demo__map-center-pin" aria-hidden="true"><svg viewBox="0 0 28 36"><path d="M14 1C6.82 1 1 6.82 1 14c0 9.1 6.82 21 13 21s13-11.9 13-21C27 6.82 21.18 1 14 1Z" /><circle cx="14" cy="14" r="4.5" /></svg></div><div className="ops-route-demo__map-pick-hint" role="status">Mueve el mapa hasta ubicar el punto bajo el marcador</div><div className="ops-route-demo__map-pick-actions"><button type="button" className="ops-route-demo__primary" onClick={confirmMapPick}>Usar este punto</button><button type="button" className="ops-route-demo__secondary" onClick={() => setMapPickingStopId(null)}>Cancelar</button></div></>}{routeState === "loading" && <div className="ops-route-demo__map-loading">Calculando ruta…</div>}</div>
+        <div className={`ops-route-demo__map-frame${mapPickingStopId ? " is-picking" : ""}`}><div className="ops-route-demo__map-canvas" ref={mapContainerRef} />{activeView === "driver" && <ferrostar-map ref={(node) => { ferrostarMapRef.current = node; }} className="ops-route-demo__ferrostar" show-navigation-ui show-user-marker system="metric" />} {!hasEnteredDirection && !planningRoute && !proposal && !route && routeState !== "loading" && !mapPickingStopId && <div className="ops-route-demo__map-empty"><span>＋</span><strong>Tu ruta aparecerá aquí</strong><small>Agrega direcciones para comenzar.</small></div>}{mapPickingStopId && <><div className="ops-route-demo__map-center-pin" aria-hidden="true"><svg viewBox="0 0 28 36"><path d="M14 1C6.82 1 1 6.82 1 14c0 9.1 6.82 21 13 21s13-11.9 13-21C27 6.82 21.18 1 14 1Z" /><circle cx="14" cy="14" r="4.5" /></svg></div><div className="ops-route-demo__map-pick-hint" role="status">Mueve el mapa hasta ubicar el punto bajo el marcador</div><div className="ops-route-demo__map-pick-actions"><button type="button" className="ops-route-demo__primary" onClick={confirmMapPick}>Usar este punto</button><button type="button" className="ops-route-demo__secondary" onClick={() => setMapPickingStopId(null)}>Cancelar</button></div></>}{routeState === "loading" && <div className="ops-route-demo__map-loading">Calculando ruta…</div>}</div>
         <div className="ops-route-demo__map-foot"><span><i /> Búsqueda TomTom · planificación Valhalla · conductor Ferrostar + Valhalla</span><span>Mapa © OpenStreetMap contributors</span></div>
       </section>
     </div>

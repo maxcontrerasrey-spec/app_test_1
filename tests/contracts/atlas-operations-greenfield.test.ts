@@ -12,6 +12,7 @@ const superAdminMigration = readFileSync(
   "utf8"
 );
 const page = readFileSync(new URL("../../src/modules/operaciones/pages/OperationsControlTowerPage.tsx", import.meta.url), "utf8");
+const routePlannerPage = readFileSync(new URL("../../src/modules/operaciones/pages/OperationsRoutePlannerDemo.tsx", import.meta.url), "utf8");
 const router = readFileSync(new URL("../../src/app/router/AppRouter.tsx", import.meta.url), "utf8");
 const guards = readFileSync(new URL("../../src/modules/auth/components/RouteGuards.tsx", import.meta.url), "utf8");
 const navigation = readFileSync(new URL("../../src/shared/config/navigation.ts", import.meta.url), "utf8");
@@ -44,6 +45,13 @@ describe("Atlas Operations greenfield replacement", () => {
     expect(derivedDispatchMigration).toMatch(/start_at, end_at, nullif\(trim\(origin_key\)/i);
     expect(derivedDispatchMigration).toMatch(/revoke all on function public\.atlas_ops_create_dispatch\(jsonb\) from public, anon/i);
     expect(derivedDispatchMigration).toMatch(/grant execute on function public\.atlas_ops_create_dispatch\(jsonb\) to authenticated/i);
+  });
+
+  it("keeps the operational planner free of demo data and reports actionable driver simulation errors", () => {
+    expect(routePlannerPage).not.toContain("Cargar ejemplo Calama");
+    expect(routePlannerPage).toContain("response.ok");
+    expect(routePlannerPage).toContain("formatDriverSimulationError(reason)");
+    expect(routePlannerPage).toContain("Falló al ${phase}");
   });
 
   it("limits the route, navigation and database policies to active profile superadmins", () => {
