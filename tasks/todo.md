@@ -18,13 +18,15 @@ Revisión final productiva (2026-10-07): PR #68 fusionado en `main` como `34f4f5
 
 - [x] Registrar plan: inventariar `main`, cambios locales, worktrees y ramas; no borrar ni sobrescribir código de otras tareas.
 - [x] Comparar las 613 versiones de migración locales con el registro de Supabase producción; distinguir migraciones sin aplicar de diferencias de versionamiento.
-- [ ] Conciliar nombres de archivo y referencias únicamente para migraciones cuyo nombre lógico ya está aplicado en producción; no cambiar SQL, RLS, grants ni roles.
-- [ ] Ejecutar auditoría de migraciones, Guardian, pruebas pertinentes y `git diff --check`; verificar cero versiones locales faltantes en producción y cero versiones productivas sin archivo.
-- [ ] Archivar cambios locales ajenos en un stash nombrado y verificable antes de dejar el checkout principal limpio y en `main`; conservar sus commits/rama para recuperación.
-- [ ] Prune solo entradas de worktree cuyo directorio ya no existe; conservar worktrees presentes o sucios.
-- [ ] Registrar el resultado final, base SHA, migración, verificación y worktrees preservados.
+- [x] Conciliar nombres de archivo y referencias únicamente para migraciones cuyo nombre lógico ya está aplicado en producción; no cambiar SQL, RLS, grants ni roles.
+- [x] Ejecutar auditoría de migraciones, Guardian, pruebas pertinentes y `git diff --check`; verificar cero versiones locales faltantes en producción y cero versiones productivas sin archivo.
+- [x] Archivar cambios locales ajenos en un stash nombrado y verificable antes de dejar el checkout principal limpio y en `main`; conservar sus commits/rama para recuperación.
+- [x] Prune solo entradas de worktree cuyo directorio ya no existe; conservar worktrees presentes o sucios.
+- [x] Registrar el resultado final, base SHA, migración, verificación y worktrees preservados.
 
 Revisión del plan: alcance limitado a metadatos/versiones de migración comprobables y limpieza Git reversible. No se ejecutarán `db push`, SQL DDL ni escrituras sobre producción; el registro productivo se consulta en modo lectura. La diferencia está acotada a diez entradas con nombre lógico coincidente; no hay versiones locales sin su equivalente productivo ni versiones productivas sin SQL local. La corrección cambia solamente nombres de archivo y referencias, no el contenido histórico.
+
+Resultado final: PR #70 fusionado a `main` como `1e2c48bcb0d9b3040715e3793c8d9713a7460e9f`. Se verificaron 613 archivos locales únicos frente a 613 versiones de `supabase_migrations.schema_migrations` en producción: cero diferencias en ambas direcciones; última versión `20261007153510`. `npm run audit:migrations`, Guardian, cuatro suites enfocadas (21/21) y los checks de CI/Cloudflare de PR #70 pasaron. Los diez cambios fueron renombres de archivo con contenido SQL idéntico; no se desplegó lógica funcional ni se ejecutó SQL de escritura, DDL, carga o cambios de permisos. El checkout principal está en `main`, limpio y alineado con `origin/main`. El WIP previo se preservó en `stash@{0}` (`preserved-wip-before-main-cleanup-2026-10-07`, 43 archivos); también permanece la rama `codex/atlas-route-destination-presets` con su commit local sin fusionar. Se eliminó solo la referencia a `/private/tmp/app_test_1-buk-sync-fix-20261002`, cuyo directorio ya no existía. Se conservaron sin modificación los otros ocho worktrees que aún tienen cambios locales (Calama QA, route-destination QA, Atlas Fase 0/P1, Valhalla, BUK document recovery, Communications Portal, Psych comment y Psych R2). Por tanto, el checkout principal quedó limpio; no se afirma que los worktrees de tareas paralelas estén limpios.
 
 # ATLAS Performance — reanudación del loop maestro (2026-10-07)
 
