@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const migration = readFileSync(
-  "supabase/migrations/20261007232627_use_latest_available_rent_indicator.sql",
+  "supabase/migrations/20261007233537_use_latest_available_rent_indicator.sql",
   "utf8"
 );
 const page = readFileSync("src/modules/rent_structures/pages/RentStructuresPage.tsx", "utf8");
