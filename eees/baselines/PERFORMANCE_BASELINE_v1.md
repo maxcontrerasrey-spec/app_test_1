@@ -188,7 +188,7 @@ Revision 2026-10-06 mosaico vacío de Agenda: build local en 7.460.390 bytes tot
 {
   "distTotalBytes": 7469887,
   "jsFileCount": 74,
-  "jsTotalBytes": 5339210,
+  "jsTotalBytes": 5340422,
   "cssFileCount": 15,
   "cssTotalBytes": 540940,
   "budgetPolicy": {
@@ -383,3 +383,5 @@ Revision 2026-10-06 boletines del Portal: la medición local aumenta 563 bytes t
 Revision 2026-10-06 boletines del Portal, CI Ubuntu/Node 24: Guardian run 37464976692 mide 7.465.193 bytes totales, 5.336.470 bytes JS y 538.986 bytes CSS. Frente a macOS, dist y JS suman 2.120 bytes por variación de bundle/minificador; CSS coincide. Se registra la medición canónica del artefacto con tolerancia cero.
 
 Revision local 2026-10-07 ATLAS Jornadas Fase 1B: `npm run build:frontend-check` y `npm run audit:performance-baseline` miden el artefacto del worktree en 7,418,066 bytes `dist`, 5,304,179 bytes JS y 534,713 bytes CSS. Los assets vigilados miden fondo 65,132 B, ECharts 512,488 B, XLSX 331,827 B, Supabase 219,110 B y app-framework 296,608 B. El gate de baseline pasa; los límites machine-readable no se elevan. Estas cifras son una medición local del checkout, no comparativa controlada atribuible a esta funcionalidad ni un bundle desplegado. La mejora backend, bytes JSON y percentiles quedan `AFTER = NOT MEASURED` sin staging.
+
+Revision 2026-10-08 folios de contratación: Guardian CI Ubuntu/Node 24 midió 1.212 bytes JS adicionales (+0,02%) para subtipo de alojamiento, captura/visualización del bono de traslado y reglas de visibilidad de beneficios. El detalle se compactó y eliminó texto redundante; se registra únicamente el nuevo máximo JS medido, manteniendo `absoluteToleranceBytes`, `warningPercent` y `errorPercent` en cero para siguientes cambios. El artefacto permanece bajo los límites totales de `dist` y CSS.

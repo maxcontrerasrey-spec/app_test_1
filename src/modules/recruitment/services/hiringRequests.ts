@@ -14,6 +14,7 @@ type CreateHiringRequestInput = {
   startDate: string;
   endDate: string;
   campamento: boolean;
+  accommodationType: "pension" | "mining_camp" | null;
   pasajes: boolean;
   otherBenefits: string;
   salaryOffer: number;
@@ -34,7 +35,7 @@ export async function createHiringRequest(input: CreateHiringRequestInput, idemp
     };
   }
 
-  const { data, error } = await supabase.rpc("submit_hiring_request", {
+  const { data, error } = await supabase.rpc("submit_hiring_request_with_accommodation", {
     p_contract_id: input.contract.id,
     p_job_position_id: input.jobPosition.id,
     p_vacancies: input.vacancies,
@@ -47,7 +48,8 @@ export async function createHiringRequest(input: CreateHiringRequestInput, idemp
     p_salary_offer: input.salaryOffer,
     p_shift_id: input.shift.id,
     p_requester_signed: input.requesterSigned,
-    p_idempotency_key: idempotencyKey
+    p_idempotency_key: idempotencyKey,
+    p_accommodation_type: input.accommodationType
   });
 
   if (error) {

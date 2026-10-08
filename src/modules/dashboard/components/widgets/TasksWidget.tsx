@@ -271,10 +271,14 @@ export function TasksWidget({ title, dashboardData, onRefresh }: TasksWidgetProp
                                         : "No aplica"}
                                     </strong>
                                   </div>
-                                  <div className="expanded-detail-field-full">
-                                    <small>Otros beneficios</small>
-                                    <strong>{task.other_benefits ?? "—"}</strong>
-                                  </div>
+                                  {task.module_code === "solicitud_contrataciones" &&
+                                  task.status_code === "pending" &&
+                                  ["area_manager", "contracts_control"].includes(task.step_code ?? "") ? (
+                                    <div className="expanded-detail-field-full">
+                                      <small>Otros beneficios</small>
+                                      <strong>{task.other_benefits?.trim() || "—"}</strong>
+                                    </div>
+                                  ) : null}
                                 </div>
                               </div>
                             </div>

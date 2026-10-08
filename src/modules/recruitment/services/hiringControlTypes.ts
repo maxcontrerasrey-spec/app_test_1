@@ -71,8 +71,10 @@ export type HiringControlApproval = {
     shift_name: string | null;
     salary_offer: number | null;
     campamento: boolean | null;
+    accommodation_type?: "pension" | "mining_camp" | null;
     pasajes: boolean | null;
     travel_methodology?: string | null;
+    travel_allowance_amount?: number | null;
     other_benefits: string | null;
   } | null;
 };
@@ -112,8 +114,10 @@ export type RecruitmentCaseListRow = {
   salary_offer?: number | null;
   salary?: number | null;
   campamento?: boolean | null;
+  accommodation_type?: "pension" | "mining_camp" | null;
   pasajes?: boolean | null;
   travel_methodology?: string | null;
+  travel_allowance_amount?: number | null;
   other_benefits?: string | null;
   approval_summary?: {
     step_name: string | null;
@@ -436,8 +440,10 @@ export type RecruitmentCaseDetail = {
       shift_name: string | null;
       salary_offer: number | null;
       campamento: boolean | null;
+      accommodation_type?: "pension" | "mining_camp" | null;
       pasajes: boolean | null;
       travel_methodology?: string | null;
+      travel_allowance_amount?: number | null;
       other_benefits: string | null;
       approval_summary?: {
         step_name: string | null;

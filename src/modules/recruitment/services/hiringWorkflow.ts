@@ -20,6 +20,7 @@ export async function decideHiringApproval(params: {
   decision: HiringApprovalDecision;
   comment?: string | null;
   travelMethodology?: TravelMethodology | null;
+  travelAllowanceAmount?: number | null;
 }) {
   if (!supabase) {
     return {
@@ -31,7 +32,8 @@ export async function decideHiringApproval(params: {
     p_approval_id: params.approvalId,
     p_decision: params.decision,
     p_comment: params.comment?.trim() ? params.comment.trim() : null,
-    p_travel_methodology: params.travelMethodology ?? null
+    p_travel_methodology: params.travelMethodology ?? null,
+    p_travel_allowance_amount: params.travelAllowanceAmount ?? null
   });
 
   if (error) {
