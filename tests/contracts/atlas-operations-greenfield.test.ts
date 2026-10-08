@@ -18,7 +18,7 @@ const router = readFileSync(new URL("../../src/app/router/AppRouter.tsx", import
 const guards = readFileSync(new URL("../../src/modules/auth/components/RouteGuards.tsx", import.meta.url), "utf8");
 const navigation = readFileSync(new URL("../../src/shared/config/navigation.ts", import.meta.url), "utf8");
 const derivedDispatchMigration = readFileSync(new URL("../../supabase/migrations/20261007191119_atlas_dispatch_route_derived_fields.sql", import.meta.url), "utf8");
-const crossContractDriversMigration = readFileSync(new URL("../../supabase/migrations/20261007195521_allow_atlas_cross_contract_drivers.sql", import.meta.url), "utf8");
+const crossContractDriversMigration = readFileSync(new URL("../../supabase/migrations/20261007201116_allow_atlas_cross_contract_drivers.sql", import.meta.url), "utf8");
 const resourceReassignmentMigration = readFileSync(new URL("../../supabase/migrations/20261008001246_atlas_dispatch_resource_reassignment_and_roster_warning.sql", import.meta.url), "utf8");
 const atlasOperationsApi = readFileSync(new URL("../../src/modules/operaciones/services/atlasOperationsApi.ts", import.meta.url), "utf8");
 

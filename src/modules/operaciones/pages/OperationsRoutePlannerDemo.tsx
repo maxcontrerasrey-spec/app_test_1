@@ -10,7 +10,7 @@ import { auditAtlasRouteIntelligence, calculateAtlasValhallaRoute, getAtlasOpera
 import { appendRouteStop, moveRouteStop, normalizeRouteStops, setFixedDestination } from "../lib/routeStopOrder";
 import { matchRouteDestinationPresets, type RouteDestinationPreset } from "../lib/routeDestinationCatalog";
 import { formatDriverSimulationError, mergeFerrostarRouteSegments, splitRouteStops } from "../lib/routeSimulation";
-import { getAvailableVehicleTypes } from "../lib/vehicleType";
+import { atlasVehicleTypesMatch, getAvailableAtlasRouteVehicleCategories, resolveAtlasRouteVehicleCategory } from "../lib/vehicleRoutingCosting";
 import { ensurePlannedRouteLayers } from "../lib/plannedRouteMapLayers";
 import { AtlasRouteAuditPanel, type RouteAuditFeedbackType } from "../components/AtlasRouteAuditPanel";
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -467,13 +467,17 @@ export function OperationsRoutePlannerDemo() {
     setAuditFeedbackSaved(false);
     try {
       const fixedDestinationIndex = stops.findIndex((stop) => stop.fixedDestination);
-      const result = await optimizeAtlasOpenRoute(stops.map(({ lat, lng }) => ({ lat, lng })), fixedDestinationIndex < 0 ? undefined : fixedDestinationIndex);
+      const result = await optimizeAtlasOpenRoute(stops.map(({ lat, lng }) => ({ lat, lng })), plannedVehicleType, fixedDestinationIndex < 0 ? undefined : fixedDestinationIndex);
       const proposedStops = normalizeRouteStops(result.order.map((index) => stops[index]!));
       setProposal({ stops: proposedStops, route: result });
       setPlanningRoute(null);
       setRoute(null);
       setRouteState("ready");
-      setNotice("Propuesta lista. Revisa el inicio, el destino y el trazado; aplícala para guardarla o continuar al conductor.");
+      const routeNotices = [result.replannedForFeasibility
+        ? `Reordené automáticamente las direcciones para evitar maniobras inviables. Comparé ${result.feasibilityAlternativesEvaluated ?? 0} alternativas y elegí la ruta transitable más rápida de las revisadas.`
+        : "Calculé el orden más rápido de todas las direcciones; no asumí que venían ordenadas."];
+      routeNotices.push(`Perfil ${result.referenceModel ?? plannedVehicleType}; Valhalla recibió dimensiones de referencia. La calidad de las restricciones viales depende de OpenStreetMap y esto no certifica radios de giro ni dimensiones de cada unidad.`);
+      setNotice(routeNotices.join(" "));
       const auditRequest = ++auditSequence.current;
       setRouteAuditStatus("loading");
       void auditAtlasRouteIntelligence(result, Number(selectedServiceId) || null, auditVehicleId || null, plannedVehicleType)
@@ -527,10 +531,11 @@ export function OperationsRoutePlannerDemo() {
       const core = coreRef.current ?? runtime.createFerrostarCore((state) => {
         setTripState(state);
         followNavigationCamera(mapRef.current, state);
-      });
+      }, plannedVehicleType);
+      runtime.configureFerrostarCore(core, plannedVehicleType);
       coreRef.current = core;
       phase = "consultar Valhalla";
-      const routeCore = runtime.createFerrostarCore(() => {});
+      const routeCore = runtime.createFerrostarCore(() => {}, plannedVehicleType);
       const routeSegments: Route[] = [];
       for (const segmentStops of splitRouteStops(stops)) {
         let routes: Route[];
@@ -624,7 +629,8 @@ export function OperationsRoutePlannerDemo() {
     })));
     setStops(loaded);
     setRoutePrefix(selected.prefix);
-    setPlannedVehicleType(selected.planned_vehicle_type ?? "");
+    const routeVehicleCategory = resolveAtlasRouteVehicleCategory(selected.planned_vehicle_type);
+    setPlannedVehicleType(routeVehicleCategory ?? "");
     setPlanningRoute(null);
     setProposal(null);
     setRoute(null);
@@ -635,7 +641,8 @@ export function OperationsRoutePlannerDemo() {
     setError("");
     setNotice("");
     try {
-      const preview = await calculateAtlasValhallaRoute(loaded.map(({ lat, lng }) => ({ lat, lng })));
+      if (!routeVehicleCategory) throw new Error("Esta ruta histórica no tiene una categoría Bus, Taxibus o Minibus reconocible; vuelve a planificarla para seleccionar su perfil.");
+      const preview = await calculateAtlasValhallaRoute(loaded.map(({ lat, lng }) => ({ lat, lng })), routeVehicleCategory);
       if (loadId !== routeLoadSequence.current) return;
       setPlanningRoute(preview);
       setRouteState("ready");
@@ -651,8 +658,8 @@ export function OperationsRoutePlannerDemo() {
   const allStopsPresent = stops.length >= 2 && stops.every((stop) => stop.label && (search?.id !== stop.id || search.query.trim() === stop.label));
   const selectedTemplate = catalog?.templates.find((item) => String(item.id) === selectedServiceId);
   const selectedContract = catalog?.contracts.find((item) => item.id === selectedTemplate?.contract_id);
-  const availableVehicleTypes = getAvailableVehicleTypes(catalog?.vehicles ?? []);
-  const auditVehicles = catalog?.vehicles.filter((vehicle) => vehicle.vehicle_type?.trim().toLocaleLowerCase("es-CL") === plannedVehicleType.trim().toLocaleLowerCase("es-CL")) ?? [];
+  const availableVehicleTypes = getAvailableAtlasRouteVehicleCategories(catalog?.vehicles ?? []);
+  const auditVehicles = catalog?.vehicles.filter((vehicle) => atlasVehicleTypesMatch(plannedVehicleType, vehicle.vehicle_type)) ?? [];
   const routeCodePreview = `${selectedTemplate?.name ?? "SERVICIO"}_${routePrefix.trim() || "PREFIJO"}`.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9]+/g, "_").replace(/^_|_$/g, "").toUpperCase();
 
   return <main className="ops-route-demo">
@@ -680,9 +687,9 @@ export function OperationsRoutePlannerDemo() {
             setRouteState("idle");
             setError("");
           }} required>
-            <option value="">Selecciona un tipo de la flota</option>
+            <option value="">Selecciona el tipo de equipo</option>
             {availableVehicleTypes.map((type) => <option key={type} value={type}>{type}</option>)}
-          </select><small>La selección queda guardada en esta versión y se comparará con el equipo asignado al servicio.</small></label>
+          </select><small>Modelo de referencia: {plannedVehicleType === "Bus" ? "Mercedes-Benz O 500 RS" : plannedVehicleType === "Taxibus" ? "Mercedes-Benz LO 916" : plannedVehicleType === "Minibus" ? "Mercedes-Benz Sprinter 517" : "selecciona una categoría"}. Se guarda en la ruta y se compara por categoría con el equipo asignado.</small></label>
           <label>Equipo de referencia para la auditoría<select value={auditVehicleId} onChange={(event) => setAuditVehicleId(event.target.value)} disabled={!plannedVehicleType || auditVehicles.length === 0}>
             <option value="">Sin ficha técnica individual</option>
             {auditVehicles.map((vehicle) => <option key={vehicle.id} value={vehicle.id}>{vehicle.code} · {vehicle.plate ?? "Sin patente"} · {vehicle.routingProfile?.verified_at ? "ficha técnica verificada" : "dimensiones sin verificar"}</option>)}
@@ -737,7 +744,7 @@ export function OperationsRoutePlannerDemo() {
         </> : <div className="ops-route-demo__driver-panel"><div className="ops-route-demo__guidance"><span>PRÓXIMA INSTRUCCIÓN</span><strong>{nextInstruction}</strong><small>Ferrostar + Valhalla · simulación de referencia</small></div><div className="ops-route-demo__driver-stats"><div><span>Recorrido</span><strong>{route ? formatDistance(route.distance) : "—"}</strong></div><div><span>Tiempo base</span><strong>{route ? formatDuration(route.steps.reduce((total, step) => total + step.duration, 0)) : "—"}</strong></div></div><button type="button" className="ops-route-demo__secondary" onClick={() => void stopSimulation()}>Detener navegación</button><p>Se usan las coordenadas guardadas de las paradas; Valhalla puede elegir calles distintas a la vista previa de TomTom.</p></div>}
         {error && <div className="ops-route-demo__message ops-route-demo__message--error" role="alert">{error}</div>}
         {notice && <div className="ops-route-demo__message" role="status">{notice}</div>}
-        <div className="ops-route-demo__limitations"><strong>Cómo se conectan los motores</strong><p>TomTom busca direcciones; Valhalla (perfil auto) propone y traza. Ferrostar + Valhalla navegan la secuencia aplicada. Route Intelligence revisa maniobras de riesgo en sombra: nunca modifica ni certifica la ruta. Las dimensiones, tráfico, ancho vial y restricciones de faena solo se consideran cuando exista información verificada. El optimizador de orden sigue siendo determinista.</p></div>
+        <div className="ops-route-demo__limitations"><strong>Cómo se conectan los motores</strong><p>TomTom busca direcciones. Valhalla decide inicio y secuencia sin asumir orden de entrada; usa perfil Bus con las dimensiones del modelo de referencia seleccionado. Ferrostar navega con la misma secuencia y perfil. La evaluación depende de las restricciones presentes en OpenStreetMap y no certifica el radio de giro ni el carrozado de cada unidad. Route Intelligence audita maniobras; no reemplaza el cálculo vial.</p></div>
       </section>
       <section className="ops-route-demo__map-section" aria-label="Mapa y ruta">
         <div className="ops-route-demo__map-topline"><div><span className="ops-route-demo__eyebrow">{activeView === "planning" ? "MAPA DE PLANIFICACIÓN" : "NAVEGACIÓN DEL CONDUCTOR"}</span><strong>{selectedContract?.contract_name ?? "Calama, Región de Antofagasta"}</strong></div><div className="ops-route-demo__map-legend"><span><i className="is-start" />Inicio</span><span><i className="is-stop" />Parada</span><span><i className="is-end" />Destino</span></div></div>

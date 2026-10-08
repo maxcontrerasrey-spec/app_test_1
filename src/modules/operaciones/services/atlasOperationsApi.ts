@@ -103,8 +103,8 @@ export type AtlasRouteAuditResponse = {
   model?: string; latencyMs?: number; candidateManeuverCount?: number; auditedManeuverCount?: number; vehicleProfileVerified?: boolean;
   errorCategory?: string | null; status?: string;
 };
-export type AtlasPlannedRoute = { coordinates: [number, number][]; distanceMeters: number; durationSeconds: number; provider: "valhalla"; travelMode: "auto"; maneuvers?: AtlasRouteManeuver[]; maneuverRiskCandidates?: Array<{ maneuverId: string; score: number; reasons: string[]; requiresAiAudit: boolean }> };
-export type AtlasOptimizedRoute = AtlasPlannedRoute & { order: number[]; matrixDurationSeconds: number; inputOrderMatrixDurationSeconds: number | null; optimizationMethod: "valhalla_matrix_open_path_v1" };
+export type AtlasPlannedRoute = { coordinates: [number, number][]; distanceMeters: number; durationSeconds: number; provider: "valhalla"; travelMode: "bus"; plannedVehicleType?: string; referenceModel?: string; referenceDimensions?: { length: number; width: number; height: number; weight: number }; dimensionEvidence?: string; referenceDimensionsSent?: boolean; maneuvers?: AtlasRouteManeuver[]; maneuverRiskCandidates?: Array<{ maneuverId: string; score: number; reasons: string[]; requiresAiAudit: boolean }> };
+export type AtlasOptimizedRoute = AtlasPlannedRoute & { order: number[]; matrixDurationSeconds: number; inputOrderMatrixDurationSeconds: number | null; optimizationMethod: "valhalla_matrix_open_path_v1"; replannedForFeasibility?: boolean; feasibilityAlternativesEvaluated?: number };
 
 export async function getAtlasOperationsCatalogs() {
   const db = client();
@@ -288,12 +288,12 @@ export async function resolveAtlasTomTomSuggestion(suggestion: TomTomSuggestion,
   return payload.suggestion;
 }
 
-export async function calculateAtlasValhallaRoute(stops: Array<{ lat: number; lng: number }>, signal?: AbortSignal): Promise<AtlasPlannedRoute> {
-  return callAtlasValhalla({ action: "route", stops }, signal);
+export async function calculateAtlasValhallaRoute(stops: Array<{ lat: number; lng: number }>, plannedVehicleType: string, signal?: AbortSignal): Promise<AtlasPlannedRoute> {
+  return callAtlasValhalla({ action: "route", stops, plannedVehicleType }, signal);
 }
 
-export async function optimizeAtlasOpenRoute(stops: Array<{ lat: number; lng: number }>, fixedDestinationIndex?: number, signal?: AbortSignal): Promise<AtlasOptimizedRoute> {
-  return callAtlasValhalla({ action: "optimize", stops, ...(fixedDestinationIndex === undefined ? {} : { fixedDestinationIndex }) }, signal);
+export async function optimizeAtlasOpenRoute(stops: Array<{ lat: number; lng: number }>, plannedVehicleType: string, fixedDestinationIndex?: number, signal?: AbortSignal): Promise<AtlasOptimizedRoute> {
+  return callAtlasValhalla({ action: "optimize", stops, plannedVehicleType, ...(fixedDestinationIndex === undefined ? {} : { fixedDestinationIndex }) }, signal);
 }
 
 export async function auditAtlasRouteIntelligence(route: AtlasOptimizedRoute, serviceTemplateId: number | null, vehicleId: string | null, plannedVehicleType: string, signal?: AbortSignal): Promise<AtlasRouteAuditResponse> {
@@ -336,7 +336,8 @@ async function callAtlasValhalla<T extends AtlasPlannedRoute>(body: Record<strin
       valhalla_matrix_http_429: "El planificador de rutas está temporalmente ocupado. Espera unos segundos y vuelve a intentar.",
       valhalla_matrix_invalid_response: "Valhalla devolvió una matriz incompleta. Intenta nuevamente.",
       valhalla_route_not_returned: "Valhalla no encontró un recorrido transitable entre todas las direcciones. Revisa sus ubicaciones.",
-      valhalla_route_uturn_detected: "La propuesta contiene un giro en U o un retroceso en una parada. Ajusta el punto en el mapa o revisa manualmente la secuencia antes de guardar."
+      valhalla_route_uturn_detected: "La ruta vial contiene una maniobra de retorno que Valhalla no puede evitar con los puntos actuales.",
+      valhalla_route_no_feasible_order: "Probé automáticamente otros órdenes para evitar el giro en U, pero Valhalla no encontró un recorrido transitable. Revisa el punto de acceso de las direcciones; no necesitas cambiar su orden manualmente."
     };
     throw new Error(friendlyErrors[payload.error ?? ""] ?? `No fue posible calcular la ruta (${payload.error ?? response.status}).`);
   }

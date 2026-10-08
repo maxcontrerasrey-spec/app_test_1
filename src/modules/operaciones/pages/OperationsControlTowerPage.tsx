@@ -14,7 +14,7 @@ import { useDebouncedValue } from "../../../shared/hooks/useDebouncedValue";
 import { supabase } from "../../../shared/lib/supabase";
 import { purgeLegacyOperationsDrafts } from "../lib/legacyCleanup";
 import { estimateLocalRouteEnd, getRouteEndpoints } from "../lib/routeSchedule";
-import { vehicleTypeMismatch } from "../lib/vehicleType";
+import { atlasVehicleTypesMatch } from "../lib/vehicleRoutingCosting";
 import { OperationsLiveMap } from "../components/OperationsLiveMap";
 import {
   createAtlasDispatch,
@@ -190,7 +190,7 @@ function OperationsControlTowerApp() {
   const dispatchRoutesQuery = useQuery({ queryKey: queryKeys.operations.serviceRoutes(dispatchServiceTemplateId), queryFn: () => getAtlasServiceRoutes(Number(dispatchServiceTemplateId)), enabled: view === "planificacion" && Boolean(dispatchServiceTemplateId), staleTime: 30_000 });
   const selectedDispatchRoute = dispatchRoutesQuery.data?.find((route) => route.id === dispatchRouteId && route.is_active);
   const selectedDispatchVehicle = catalogsQuery.data?.vehicles.find((vehicle) => vehicle.id === dispatchVehicleId);
-  const assignmentTypeMismatch = vehicleTypeMismatch(selectedDispatchRoute?.planned_vehicle_type, selectedDispatchVehicle?.vehicle_type);
+  const assignmentTypeMismatch = Boolean(selectedDispatchRoute?.planned_vehicle_type && selectedDispatchVehicle?.vehicle_type && !atlasVehicleTypesMatch(selectedDispatchRoute.planned_vehicle_type, selectedDispatchVehicle.vehicle_type));
   const assignmentTypeUnverified = Boolean(selectedDispatchRoute?.planned_vehicle_type && dispatchVehicleId && !selectedDispatchVehicle?.vehicle_type?.trim());
   const dispatchRouteEndpoints = getRouteEndpoints(selectedDispatchRoute?.atlas_ops_service_route_stops);
   useEffect(() => {
@@ -594,7 +594,7 @@ function ResourceReassignmentDialog({ dispatch, vehicles, pending, onClose, onSu
   const [reason, setReason] = useState("");
   const isContingency = ["in_progress", "suspended"].includes(dispatch.execution_status);
   const replacementVehicle = vehicles.find((item) => item.id === vehicleId);
-  const replacementMismatch = vehicleTypeMismatch(dispatch.planned_vehicle_type, replacementVehicle?.vehicle_type);
+  const replacementMismatch = Boolean(dispatch.planned_vehicle_type && replacementVehicle?.vehicle_type && !atlasVehicleTypesMatch(dispatch.planned_vehicle_type, replacementVehicle.vehicle_type));
   const replacementUnverified = Boolean(dispatch.planned_vehicle_type && vehicleId && !replacementVehicle?.vehicle_type?.trim());
   return <div className="atlas-ops__modal-backdrop" role="presentation"><form className="atlas-ops__modal" aria-label="Cambiar recursos del servicio" onSubmit={(event) => {
     event.preventDefault();

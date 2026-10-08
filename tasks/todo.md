@@ -4983,3 +4983,21 @@ La selección de tipo en planificación será una propiedad de la versión guard
 Revisión del plan: el listado de jornadas sirve para consulta en Control, pero la asociación de jornadas modifica configuración. El cambio solo condiciona visibilidad al tab existente `configuracion` y al permiso existente `canConfigure`; no altera RPC, SQL, ACL, roles ni datos.
 
 Validación local: prueba focalizada 7/7; TypeScript y `npm run build:frontend-check` pasan; `git diff --check` pasa. Guardian pasa sus demás gates, pero falla `audit:performance-baseline` con +8.420 B JS / +4.381 B `supabase-vendor` / +600 B `app-framework`, discrepancia previamente registrada en el baseline y ajena al cambio de visibilidad. No se modificaron límites ni se añadió una supresión.
+
+# Atlas: buscar automáticamente una ruta aplicable — 2026-10-07
+
+- [x] Confirmar cómo el optimizador de matriz, el trazado Valhalla y el auditor de maniobras se conectan; tratar todas las direcciones como no ordenadas, dejar inicio/término libres salvo destino fijado y preservar visita única de todos los puntos.
+- [x] Limitar el selector a Bus, Taxibus y Minibus; normalizar las etiquetas históricas de flota en las tres categorías sin cambiar los datos fuente.
+- [x] Usar como referencias dimensionales Mercedes-Benz O 500 RS, LO 916 y Sprinter 517; enviar perfil bus y los parámetros de largo/ancho/alto/peso al trazado y la simulación.
+- [x] Comparar categoría planificada con categoría del vehículo asignado y guardar categorías canónicas en nuevas rutas, manteniendo compatibilidad de lectura con rutas históricas.
+- [x] Configurar el trazado para evitar giros en U en paradas intermedias y empalmes cuando el contrato de Valhalla lo permite.
+- [x] Explorar automáticamente alternativas de orden si aún hay maniobras inviables, priorizar factibilidad y devolver la mejor candidata sin pedir que el usuario reordene puntos.
+- [x] Solicitar intervención manual solo si no queda alternativa transitable o un punto no tiene acceso viable; indicar el punto y la causa concreta.
+- [x] Agregar pruebas para alternativa factible, destino fijado, límites de exploración, ningún candidato factible y visita única de cada dirección.
+- [x] Ejecutar pruebas focalizadas, Deno check, build frontend, Guardian, auditorías y `git diff --check`.
+- [ ] Integrar y desplegar tras CI; verificar artefactos productivos usando fixtures sintéticos, sin modificar despachos reales.
+- [ ] Integrar y desplegar tras CI; verificar artefactos productivos usando fixtures sintéticos, sin modificar despachos reales.
+
+Revisión del plan: ninguna dirección ingresada representa un inicio o una posición de recogida: el solver elige el inicio y la secuencia para minimizar el recorrido total; solo un destino fijado por la persona permanece al final. La categoría elegida determina perfil bus y valores de referencia por modelo. Los parámetros dimensionales enviados no certifican factibilidad: dependen de las restricciones que existan en OpenStreetMap y no codifican radio de giro. No convertir valores supuestos de carrocería en hechos de la flota; mostrar la limitación. El tiempo será criterio secundario a evitar giros en U/retrocesos. No se alteran ni eliminan direcciones ingresadas. La intervención manual se reserva para cuando no exista alternativa verificable.
+
+Validación local: 18 pruebas focalizadas aprobadas; Guardian pasó los 34 archivos de contrato (140 pruebas), las unidades y todos sus gates con 0 errores/advertencias; Deno check, auditoría de migraciones, guardia destructiva y build pasan. El build mantiene la advertencia del chunk del planificador (>520 kB); no se elevó el límite. Las dos migraciones históricas remotas diferían de nombre/timestamp, pero su contenido SQL coincide exactamente; sus archivos locales ahora usan las versiones productivas. `db push --dry-run --linked` muestra únicamente `20261008011000_atlas_route_vehicle_category_profiles.sql` como pendiente. La publicación y el smoke productivo quedan para después de CI.
