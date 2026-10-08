@@ -123,7 +123,7 @@ export type AtlasRoutePathOptimization = {
   addedDurationSeconds: number;
   searchComplete: boolean;
 };
-export type AtlasOptimizedRoute = AtlasPlannedRoute & { order: number[]; matrixDurationSeconds: number; inputOrderMatrixDurationSeconds: number | null; stopAccessAdjustments?: AtlasStopAccessAdjustment[]; routePathOptimization?: AtlasRoutePathOptimization | null; routeOrderSearch?: { candidatesEvaluated: number; failedCandidates: number; alternativeApplied: boolean; status: "COMPLETE" | "SEARCH_INCOMPLETE" | "SKIPPED_ROUTE_SIZE" }; optimizationMethod: "valhalla_matrix_open_path_v1" | "valhalla_matrix_open_path_v2" };
+export type AtlasOptimizedRoute = AtlasPlannedRoute & { order: number[]; matrixDurationSeconds: number; inputOrderMatrixDurationSeconds: number | null; stopAccessAdjustments?: AtlasStopAccessAdjustment[]; routePathOptimization?: AtlasRoutePathOptimization | null; routeOrderSearch?: { candidatesEvaluated: number; failedCandidates: number; alternativeApplied: boolean; status: "COMPLETE" | "SEARCH_INCOMPLETE" | "SKIPPED_ROUTE_SIZE"; searchScope?: "BOUNDED"; searchMethod?: "EXACT_OPEN_PATH_UP_TO_12" | "MULTISTART_2OPT_HEURISTIC"; alternativeBudget?: number }; optimizationMethod: "valhalla_matrix_open_path_v1" | "valhalla_matrix_open_path_v2" };
 
 export async function getAtlasOperationsCatalogs() {
   const db = client();
@@ -313,8 +313,8 @@ export async function calculateAtlasValhallaRoute(stops: Array<{ lat: number; ln
   return callAtlasValhalla({ action: "route", stops, plannedVehicleType }, signal);
 }
 
-export async function optimizeAtlasOpenRoute(stops: Array<{ lat: number; lng: number }>, plannedVehicleType: string, fixedDestinationIndex?: number, signal?: AbortSignal): Promise<AtlasOptimizedRoute> {
-  return callAtlasValhalla({ action: "optimize", stops, plannedVehicleType, ...(fixedDestinationIndex === undefined ? {} : { fixedDestinationIndex }) }, signal);
+export async function optimizeAtlasOpenRoute(stops: Array<{ lat: number; lng: number }>, plannedVehicleType: string, fixedDestinationIndex?: number, signal?: AbortSignal, excludedOrders?: number[][]): Promise<AtlasOptimizedRoute> {
+  return callAtlasValhalla({ action: "optimize", stops, plannedVehicleType, ...(fixedDestinationIndex === undefined ? {} : { fixedDestinationIndex }), ...(excludedOrders?.length ? { excludedOrders } : {}) }, signal);
 }
 
 export async function auditAtlasRouteIntelligence(route: AtlasPlannedRoute, stops: Array<{ lat: number; lng: number }>, serviceTemplateId: number | null, vehicleId: string | null, plannedVehicleType: string, options: { serviceRouteId?: string | null; routeKind?: "OPTIMIZED_PROPOSAL" | "SAVED_ROUTE_PREVIEW" } = {}, signal?: AbortSignal): Promise<AtlasRouteAuditResponse> {
@@ -339,6 +339,9 @@ export async function auditAtlasRouteIntelligence(route: AtlasPlannedRoute, stop
       failedCandidates: optimizedRoute.routeOrderSearch.failedCandidates,
       alternativeApplied: optimizedRoute.routeOrderSearch.alternativeApplied,
       status: optimizedRoute.routeOrderSearch.status,
+      searchScope: optimizedRoute.routeOrderSearch.searchScope ?? "BOUNDED",
+      searchMethod: optimizedRoute.routeOrderSearch.searchMethod ?? null,
+      alternativeBudget: optimizedRoute.routeOrderSearch.alternativeBudget ?? null,
       selectionAuthority: "VALHALLA_COMPLETE_ROUTE_DURATION"
     } : null,
     plannedVehicleType: route.plannedVehicleType ?? plannedVehicleType,
@@ -384,7 +387,8 @@ async function callAtlasValhalla<T extends AtlasPlannedRoute>(body: Record<strin
       valhalla_matrix_invalid_response: "Valhalla devolvió una matriz incompleta. Intenta nuevamente.",
       valhalla_route_not_returned: "Valhalla no encontró un recorrido transitable entre todas las direcciones. Revisa sus ubicaciones.",
       valhalla_route_uturn_detected: "La validación de giros solicitó una alternativa, pero el tipo U-turn por sí solo no confirma que se necesite marcha atrás.",
-      valhalla_route_no_feasible_order: "La búsqueda no encontró alternativa dentro de las secuencias revisadas; esto no demuestra que las direcciones sean intransitables y no necesitas reordenarlas manualmente."
+      valhalla_route_no_feasible_order: "La búsqueda no encontró alternativa dentro de las secuencias revisadas; esto no demuestra que las direcciones sean intransitables y no necesitas reordenarlas manualmente.",
+      route_alternative_exhausted: "No quedó otra secuencia distinta entre las alternativas que Valhalla pudo trazar. La ruta sigue bloqueada por la auditoría IA."
     };
     throw new Error(friendlyErrors[payload.error ?? ""] ?? `No fue posible calcular la ruta (${payload.error ?? response.status}).`);
   }

@@ -51,6 +51,9 @@ export function AtlasRouteAuditPanel({
   feedbackReason,
   feedbackSaving,
   feedbackSaved,
+  alternativeLoading,
+  alternativeAttempted,
+  onRequestAlternative,
   onFeedbackTypeChange,
   onFeedbackReasonChange,
   onSubmitFeedback,
@@ -62,6 +65,9 @@ export function AtlasRouteAuditPanel({
   feedbackReason: string;
   feedbackSaving: boolean;
   feedbackSaved: boolean;
+  alternativeLoading: boolean;
+  alternativeAttempted: boolean;
+  onRequestAlternative: () => void;
   onFeedbackTypeChange: (value: RouteAuditFeedbackType) => void;
   onFeedbackReasonChange: (value: string) => void;
   onSubmitFeedback: () => void;
@@ -73,7 +79,14 @@ export function AtlasRouteAuditPanel({
     {audit && <>
       <p><b>{auditDecisionLabel(audit.decision)}</b>{audit.riskScore === null ? " · sin puntaje" : ` · indicador ${audit.riskScore}/100`}{routeAuditNeedsHumanReview(audit) ? " · requiere revisión humana" : ""}</p>
       <p>{audit.summary}</p>
-      {routeAuditRequiresReplan(audit) && <p role="alert">La IA marcó una maniobra que requiere cambiar el recorrido. Genera una nueva propuesta; el feedback no habilita esta ruta.</p>}
+      {routeAuditRequiresReplan(audit) && <>
+        <p role="alert">La IA marcó una maniobra que requiere cambiar el recorrido. Puedes buscar otra secuencia automáticamente; se mantienen las mismas direcciones y destino. El feedback no habilita esta ruta.</p>
+        {!alternativeAttempted
+          ? <button type="button" className="ops-route-demo__secondary" onClick={onRequestAlternative} disabled={alternativeLoading}>
+            {alternativeLoading ? "Buscando otra secuencia…" : "Buscar alternativa automática"}
+          </button>
+          : <p role="status">Ya se evaluó una alternativa adicional en este intento. Si la IA sigue solicitando un cambio, la propuesta permanece bloqueada porque no se verificó una secuencia utilizable.</p>}
+      </>}
       {routeAuditNeedsHumanReview(audit) && !routeAuditRequiresReplan(audit) && !feedbackSaved && <p role="status">La evidencia no es suficiente para liberar la ruta automáticamente. Revisa el caso y registra una evaluación positiva para habilitar aplicar, guardar o probar la navegación.</p>}
       <small>
         {audit.decision === "ERROR" || audit.provider !== "openai"

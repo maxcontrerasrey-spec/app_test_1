@@ -5219,4 +5219,25 @@ PR #113 está integrado, migración `20261008185321` aplicada, Edge Functions ac
 
 Verificación de publicación: la evaluación OpenAI postdespliegue previa confirma SHADOW activo, pero se registró como `INSUFFICIENT_EVIDENCE`. El código/versión productivos ya incluyen el audit del preview guardado y association de `service_route_id`; el bundle público incluye `SAVED_ROUTE_PREVIEW` y la advertencia de auditoría para rutas históricas. `atlas_route_has_usable_ai_audit` no tiene EXECUTE para `authenticated`; en producción hay 1 ruta activa antigua sin vínculo y ninguna ruta activa con auditoría utilizable. El gate conserva la ruta para consulta y bloquea nuevos despachos con ella hasta guardarla auditada.
 
-Reconciliación de historial: Supabase MCP registró el SQL bajo `20261008194036_atlas_dispatch_requires_audited_route`; el archivo local se renombra a ese mismo timestamp. MD5 del statement remoto coincide con el archivo, por lo que el PR de reconciliación no vuelve a aplicar cambios de esquema. Falta confirmar `supabase db push --linked --dry-run` limpio después del merge.
+Reconciliación de historial: Supabase MCP registró el SQL bajo `20261008194036_atlas_dispatch_requires_audited_route`; el archivo local se renombra a ese mismo timestamp. MD5 del statement remoto coincide con el archivo, por lo que el PR #115 se integró como `648cc76fb0530f8b3e99ebf698cc0b8dd9bd903b` sin volver a aplicar cambios de esquema. CI/Guardian y Cloudflare Pages pasaron; `supabase db push --linked --dry-run` confirma que la base remota está al día. La verificación autenticada del preview/gate sigue pendiente: aunque el usuario indicó que inició sesión, las pestañas observables de Safari aún muestran `gestion.busesjm.cl/login`, así que no se simula una sesión ni se crean datos productivos.
+
+## Atlas: mejorar calidad de búsqueda y prueba de participación IA — continuación 2026-10-08
+
+### Plan verificable
+
+- [x] Revalidar el worktree sobre `origin/main` y revisar el contrato actual del optimizador, auditor IA, guardado y gate de despacho. La auditoría autenticada OpenAI en producción no se ejecutó aún: primero se debe publicar el código nuevo.
+- [x] Crear un corpus sintético geográfico pequeño y una referencia exacta de orden para 9 paradas; agregar pruebas de permutación de entrada, destino fijado y caso adverso que atrapa la búsqueda local actual.
+- [x] Ampliar la generación de órdenes para conservar soluciones diversas de múltiples inicios/locales y usar una cantidad acotada de trazados completos Valhalla, con presupuesto según tamaño, eligiendo por duración y distancia completas; reportar con precisión búsqueda parcial y no afirmar óptimo global.
+- [x] Conectar la revisión IA a la evidencia trazada efectivamente seleccionada; ante una recomendación de replanteo, permitir una secuencia nueva con las mismas paradas en el mismo flujo y volver a evaluarla antes de habilitar uso.
+- [x] Pruebas focalizadas: 25/25; Deno Edge check; `build:frontend-check`; `git diff --check`; migraciones y seguridad Supabase sin cambios de esquema. Guardian: tests y auditorías pasan, pero su subproceso de TypeScript excedió 300 s; el build ejecutado por separado finalizó correctamente. Advertencia pendiente: `OperationsRoutePlannerDemo` 1.092,69 kB minificado vs. 520 kB (gzip 298,32 kB); no se elevó el umbral.
+- [ ] Integrar y publicar tras CI; verificar versión/bundle, modo OpenAI y una ruta pública no sensible de extremo a extremo sin guardar ruta ni despacho. Comparador Google evaluado solo por documentación oficial; no se cuenta con una llamada empírica autorizada ni una clave Google.
+
+### Comparación de motores revisada el 2026-10-08
+
+- Google Routes optimiza el tiempo considerando también distancia y cantidad de giros, pero su optimización estándar no aporta dimensiones de vehículos grandes. Google LVR está disponible en 48 estados contiguos de EE. UU. y Japón, no Chile. Por tanto, no reemplaza por sí sola la geometría de Valhalla para flota pesada en Chile.
+- TomTom Calculate Route declara cobertura de cálculo y tráfico en Chile, permite `computeBestOrder` heurístico, dimensiones del vehículo y modo `bus` en beta. Es el candidato razonable para un benchmark sombra posterior, pero la cobertura y la documentación no prueban que supere a Valhalla en las rutas reales de Buses JM.
+- Decisión con evidencia actual: mantener Valhalla como autoridad; comparar por lotes idénticos y sin efectos de producción antes de cambiar proveedor. La búsqueda exacta solo cubre la matriz pequeña; las alternativas del motor vial son acotadas y no se presentan como óptimo global.
+
+### Revisión del plan
+
+El diseño mantiene Valhalla como autoridad de geometría, maniobras y duración de recorrido completo. La IA recibirá únicamente rutas candidatas trazadas y su recomendación, si se implementa, se validará contra IDs de candidatos emitidos por backend; nunca podrá producir coordenadas. La búsqueda exacta se usa solo como patrón de prueba en fixtures pequeños, no para afirmar óptimo global en producción. Una auditoría IA con `ERROR`, `REJECT` o evidencia insuficiente seguirá bloqueando el uso conforme a las reglas actuales.
