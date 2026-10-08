@@ -103,8 +103,8 @@ export type AtlasRouteAuditResponse = {
   model?: string; latencyMs?: number; candidateManeuverCount?: number; auditedManeuverCount?: number; vehicleProfileVerified?: boolean;
   errorCategory?: string | null; status?: string;
 };
-export type AtlasPlannedRoute = { coordinates: [number, number][]; distanceMeters: number; durationSeconds: number; provider: "valhalla"; travelMode: "bus"; plannedVehicleType?: string; referenceModel?: string; referenceDimensions?: { length: number; width: number; height: number; weight: number }; dimensionEvidence?: string; referenceDimensionsSent?: boolean; maneuvers?: AtlasRouteManeuver[]; maneuverRiskCandidates?: Array<{ maneuverId: string; score: number; reasons: string[]; requiresAiAudit: boolean }> };
-export type AtlasOptimizedRoute = AtlasPlannedRoute & { order: number[]; matrixDurationSeconds: number; inputOrderMatrixDurationSeconds: number | null; optimizationMethod: "valhalla_matrix_open_path_v1"; replannedForFeasibility?: boolean; feasibilityAlternativesEvaluated?: number };
+export type AtlasPlannedRoute = { coordinates: [number, number][]; distanceMeters: number; durationSeconds: number; provider: "valhalla"; travelMode: "bus"; plannedVehicleType?: string; referenceModel?: string; referenceDimensions?: { length: number; width: number; height: number; weight: number }; dimensionEvidence?: string; referenceDimensionsSent?: boolean; uturnCount?: number; maneuvers?: AtlasRouteManeuver[]; maneuverRiskCandidates?: Array<{ maneuverId: string; score: number; reasons: string[]; requiresAiAudit: boolean }> };
+export type AtlasOptimizedRoute = AtlasPlannedRoute & { order: number[]; matrixDurationSeconds: number; inputOrderMatrixDurationSeconds: number | null; optimizationMethod: "valhalla_matrix_open_path_v1" };
 
 export async function getAtlasOperationsCatalogs() {
   const db = client();
@@ -336,8 +336,8 @@ async function callAtlasValhalla<T extends AtlasPlannedRoute>(body: Record<strin
       valhalla_matrix_http_429: "El planificador de rutas está temporalmente ocupado. Espera unos segundos y vuelve a intentar.",
       valhalla_matrix_invalid_response: "Valhalla devolvió una matriz incompleta. Intenta nuevamente.",
       valhalla_route_not_returned: "Valhalla no encontró un recorrido transitable entre todas las direcciones. Revisa sus ubicaciones.",
-      valhalla_route_uturn_detected: "La ruta vial contiene una maniobra de retorno que Valhalla no puede evitar con los puntos actuales.",
-      valhalla_route_no_feasible_order: "Probé automáticamente otros órdenes para evitar el giro en U, pero Valhalla no encontró un recorrido transitable. Revisa el punto de acceso de las direcciones; no necesitas cambiar su orden manualmente."
+      valhalla_route_uturn_detected: "La validación de giros solicitó una alternativa, pero el tipo U-turn por sí solo no confirma que se necesite marcha atrás.",
+      valhalla_route_no_feasible_order: "La búsqueda no encontró alternativa dentro de las secuencias revisadas; esto no demuestra que las direcciones sean intransitables y no necesitas reordenarlas manualmente."
     };
     throw new Error(friendlyErrors[payload.error ?? ""] ?? `No fue posible calcular la ruta (${payload.error ?? response.status}).`);
   }

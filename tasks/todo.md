@@ -5001,3 +5001,22 @@ Validación local: prueba focalizada 7/7; TypeScript y `npm run build:frontend-c
 Revisión del plan: ninguna dirección ingresada representa un inicio o una posición de recogida: el solver elige el inicio y la secuencia para minimizar el recorrido total; solo un destino fijado por la persona permanece al final. La categoría elegida determina perfil bus y valores de referencia por modelo. Los parámetros dimensionales enviados no certifican factibilidad: dependen de las restricciones que existan en OpenStreetMap y no codifican radio de giro. No convertir valores supuestos de carrocería en hechos de la flota; mostrar la limitación. El tiempo será criterio secundario a evitar giros en U/retrocesos. No se alteran ni eliminan direcciones ingresadas. La intervención manual se reserva para cuando no exista alternativa verificable.
 
 Validación: 18 pruebas focalizadas aprobadas; Guardian remoto aprobó todos sus gates con 0 errores/advertencias; Deno check, auditorías de migraciones y build pasan. El build conserva la advertencia del chunk del planificador (1.086,53 kB minificado); no se elevó el umbral. `db push --dry-run --linked` mostró únicamente la migración nueva como pendiente antes de aplicarla. Las dos versiones productivas de migraciones anteriores tenían timestamps distintos al checkout, pero el SQL coincidía exactamente; se alinearon los nombres sin reparar ni reescribir el historial remoto. El navegador disponible no tenía sesión autenticada, por lo que aún falta el smoke del cálculo interactivo en producción.
+
+# Atlas: tratar giros en U sin confundirlos con marcha atrás — 2026-10-08
+
+## Plan verificable
+
+- [x] Confirmar cómo Valhalla clasifica una ubicación `break` (permite U-turn) frente a `break_through` (lo impide) y qué datos geométricos reales están disponibles; un código de U-turn no demuestra necesidad de marcha atrás.
+- [x] Permitir que Valhalla trace giros en U en paradas y empalmes; retirar filtros de rechazo que no conocen ancho vial, swept path ni maniobra en reversa.
+- [x] Mantener el mejor orden automático por tipo de equipo y destino fijado, sin exigir reordenamiento manual ni bloquear porque el giro esté clasificado como U-turn.
+- [x] Informar cuando exista un U-turn que el trazador encuentra conectividad, pero que el ancho/espacio y la maniobra física de la unidad no se certifican con los datos disponibles.
+- [x] Actualizar mensajes de error para que un error de búsqueda acotada no se presente como prueba de que las calles o direcciones son intransitables.
+- [x] Añadir regresiones para giros U-turn permitidos y contados sin rechazo; confirmar que las pruebas existentes del optimizador preservan cada punto y el destino fijado.
+- [x] Ejecutar pruebas focalizadas (11/11), Deno check, `npm run build:frontend-check`, Guardian (0 errores/advertencias), auditorías de migraciones/seguridad y `git diff --check`.
+- [ ] Integrar con CI y comprobar el flujo productivo sin modificar despachos reales.
+
+## Revisión del plan
+
+Valhalla documenta `break` como punto donde permite U-turns y `break_through` como punto donde los impide. Los datos de maniobra que recibe Atlas incluyen tipo, forma y bearings, pero no garantizan ancho libre de vía ni espacio de barrido de la unidad; un U-turn no prueba que se necesite reversa. Permitir el trazado, mantener la optimización automática y advertir honestamente cuando la maniobrabilidad física no puede verificarse. No bloquear ni asegurar espacio suficiente sin evidencia vial y perfil dimensional verificados.
+
+Validación local: pruebas focalizadas 11/11; Deno check, auditoría de migraciones y `git diff --check` pasan. `npm run build:frontend-check` y Guardian pasan; Guardian termina con 0 errores y 0 advertencias. La auditoría de seguridad estática muestra 88 advertencias históricas en migraciones anteriores, sin cambios SQL en esta corrección. El build conserva el warning existente del chunk `OperationsRoutePlannerDemo` (1.086,57 kB minificado); no se alteró el umbral. No se ejecutó un cálculo autenticado contra el proveedor productivo durante esta validación local.

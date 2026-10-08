@@ -4313,3 +4313,10 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - Optimizar por tipo de vehículo requiere una categoría canónica y perfiles específicos; mapear etiquetas de flota no debe perderse en la matriz, el trazado, la simulación, la persistencia ni la comparación del despacho.
 - Las dimensiones de ficha son referencias si no corresponden a la carrocería/unidad real. No presentar un trazador de mapas como certificación de radio de giro o gálibo cuando las restricciones del grafo no cubren esos límites.
 - Un rechazo por giro en U debe iniciar una búsqueda automática de órdenes alternativas y escoger la más rápida entre las candidatas validadas; admitir que una búsqueda acotada no demuestra un óptimo global ni factibilidad física.
+
+## 2026-10-08 - Un U-turn no equivale a marcha atrás ni prueba falta de espacio vial
+
+- No bloquear una ruta solo porque Valhalla devuelve un tipo de maniobra U-turn o porque dos bearings se invierten en un empalme segmentado. Esos datos no prueban que la unidad deba retroceder ni que el giro sea físicamente inviable.
+- Usar ubicaciones Valhalla `break` si la ruta debe permitir el cambio de sentido; `break_through` lo prohíbe explícitamente. El tipo de vía y la geometría del grafo no certifican el ancho libre ni el espacio de barrido de la unidad.
+- Permitir el recorrido que el motor puede trazar y exponer una advertencia de espacio/radio no verificados cuando falten mediciones de vía y perfil dimensional real. No afirmar que el giro cabe ni que requiere reversa sin evidencia.
+- Un mensaje de “sin recorrido factible” solo puede describir lo que el buscador realmente probó; no atribuir intransitabilidad cuando la causa fue un filtro heurístico del planificador.

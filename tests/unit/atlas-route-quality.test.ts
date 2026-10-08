@@ -1,22 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { hasUTurn, hasUTurnAtSegmentJoin, routeLocationType } from "../../supabase/functions/atlas-tomtom-planning/routeQuality";
+import { countUTurns, hasUTurn, routeLocationType } from "../../supabase/functions/atlas-tomtom-planning/routeQuality";
 
-describe("Atlas route feasibility guards", () => {
-  it("forbids U-turn-capable breaks at intermediate stops", () => {
-    expect([0, 1, 2, 3].map((index) => routeLocationType(index, 4))).toEqual(["break", "break_through", "break_through", "break"]);
+describe("Atlas route maneuver handling", () => {
+  it("allows Valhalla to choose a U-turn at any stop when the road graph supports it", () => {
+    expect([0, 1, 2, 3].map((index) => routeLocationType(index, 4))).toEqual(["break", "break", "break", "break"]);
   });
 
-  it("recognizes Valhalla's left and right U-turn maneuvers", () => {
+  it("classifies and counts U-turn maneuvers without treating them as a route failure", () => {
     expect(hasUTurn([{ type: 7 }, { type: 12 }])).toBe(true);
     expect(hasUTurn([{ type: 13 }])).toBe(true);
     expect(hasUTurn([{ type: 7 }, { type: 8 }])).toBe(false);
-  });
-
-  it("rejects a near-180 degree reversal at a split-route join", () => {
-    const previous = [[-68.931, -22.454], [-68.930, -22.454]] as [number, number][];
-    const reverse = [[-68.930, -22.454], [-68.931, -22.454]] as [number, number][];
-    const continueForward = [[-68.930, -22.454], [-68.929, -22.454]] as [number, number][];
-    expect(hasUTurnAtSegmentJoin(previous, reverse)).toBe(true);
-    expect(hasUTurnAtSegmentJoin(previous, continueForward)).toBe(false);
+    expect(countUTurns([{ type: 12 }, { type: 13 }, { type: 8 }])).toBe(2);
+    expect(countUTurns([{ type: 7 }, { type: 8 }])).toBe(0);
   });
 });
