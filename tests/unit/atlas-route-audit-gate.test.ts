@@ -14,7 +14,6 @@ describe("Atlas mandatory route audit gate", () => {
 
   it.each([
     ["loading", successfulAudit],
-    ["off", successfulAudit],
     ["error", successfulAudit],
     ["ready", null],
     ["ready", { ...successfulAudit, mode: "OFF" }],

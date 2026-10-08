@@ -5122,7 +5122,7 @@ Revisión inicial: PR #101 ya añadió un ajuste de acceso de hasta 20 m y camin
 - [x] Reconstruir contrato productivo del planificador, AI reviewer, persistencia, UI, permisos y fallos; contrastar checkout limpio con funciones activas.
 - [x] Definir criterio de ruta operativamente razonable: orden de paradas libre, tipo de vehículo, minimización de tiempo/distancia con penalización explicable de maniobras, acceso peatonal acotado y giros en U solo objetados cuando la evidencia indique retroceso/no transitabilidad.
 - [ ] Diseñar generación de candidatos de ruta solo con geometrías trazadas por Valhalla; hacer que IA evalúe/rankee evidencia/candidatos y que el backend valide la respuesta contra opciones reales (sin aceptar coordenadas inventadas).
-- [x] Garantizar llamada IA por propuesta, estado persistido inequívoco y reintento desde UI; bloquear aplicar, simular y guardar si no hay evaluación IA OpenAI persistida con maniobras auditadas.
+- [x] Garantizar llamada IA por propuesta, estado persistido inequívoco y reintento desde la UI volviendo a proponer el recorrido; bloquear aplicar, simular y guardar si no hay evaluación IA OpenAI persistida con maniobras auditadas.
 - [x] Agregar regresiones para la barrera de aprobación IA y reintento lógico con nueva clave de idempotencia; mantener las suites existentes de orden, perfil, desvío y giros.
 - [ ] Ejecutar suites focalizadas, typecheck, Deno checks, build, Guardian, auditorías Supabase aplicables y `git diff --check`; corregir cada hallazgo hasta cerrar.
 - [x] Comparar documentación oficial de Google y Valhalla; dejar la comparativa de ejecución real pendiente porque no hay configuración/credencial Google disponible y no declarar superioridad empírica.

@@ -124,7 +124,8 @@ export function OperationsRoutePlannerDemo() {
   const [selectedSavedRouteId, setSelectedSavedRouteId] = useState("");
   const [auditVehicleId, setAuditVehicleId] = useState("");
   const [routeAudit, setRouteAudit] = useState<AtlasRouteAuditResponse | null>(null);
-  const [routeAuditStatus, setRouteAuditStatus] = useState<"idle" | "loading" | "ready" | "off" | "error">("idle");
+  const [routeAuditStatus, setRouteAuditStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
+  const canUseAuditedRoute = isRouteAuditOperationallyComplete(routeAuditStatus, routeAudit);
   const [routeAuditError, setRouteAuditError] = useState("");
   const preserveAuditOnProposalApply = useRef(false);
   const [auditFeedbackType, setAuditFeedbackType] = useState<RouteAuditFeedbackType>("ACCEPT_AI");
@@ -511,19 +512,13 @@ export function OperationsRoutePlannerDemo() {
       if (auditSequence.current !== requestId) return;
       setRouteAudit(audit);
       const complete = isRouteAuditOperationallyComplete("ready", audit);
-      setRouteAuditStatus(audit.mode === "OFF" ? "off" : complete ? "ready" : "error");
-      if (!complete) setRouteAuditError(audit.mode === "OFF" ? "La auditoría IA está desactivada; no se puede aplicar ni guardar esta ruta." : audit.decision === "ERROR" ? audit.summary : "La auditoría no produjo una evaluación IA persistida y verificable.");
+      setRouteAuditStatus(complete ? "ready" : "error");
+      if (!complete) setRouteAuditError(audit.summary || "La auditoría IA está desactivada; vuelve a proponer el recorrido para intentarlo otra vez.");
     } catch (reason) {
       if (auditSequence.current !== requestId) return;
       setRouteAuditError(reason instanceof Error ? reason.message : "No fue posible completar la auditoría de ruta.");
       setRouteAuditStatus("error");
     }
-  }
-
-  async function retryRouteAudit() {
-    const candidate = proposal?.route ?? planningRoute;
-    if (!candidate || !isOptimizedRoute(candidate) || routeAuditStatus === "loading") return;
-    await evaluateRouteAudit(candidate);
   }
 
   async function submitRouteAuditFeedback() {
@@ -539,7 +534,7 @@ export function OperationsRoutePlannerDemo() {
   }
 
   function applyProposal() {
-    if (!proposal || !isRouteAuditOperationallyComplete(routeAuditStatus, routeAudit)) return;
+    if (!proposal || !canUseAuditedRoute) return;
     preserveAuditOnProposalApply.current = true;
     setStops(proposal.stops);
     setPlanningRoute(proposal.route);
@@ -759,7 +754,7 @@ export function OperationsRoutePlannerDemo() {
           <div className="ops-route-demo__panel-divider" />
           {(proposal || planningRoute) && routeState === "ready" && <div className="ops-route-demo__summary"><div><span>Distancia · Valhalla</span><strong>{formatDistance((proposal?.route ?? planningRoute!).distanceMeters)}</strong></div><div><span>Tiempo estimado</span><strong>{formatDuration((proposal?.route ?? planningRoute!).durationSeconds)}</strong></div></div>}
           <div className="ops-route-demo__actions"><button type="button" className="ops-route-demo__primary" disabled={!allStopsPresent || !plannedVehicleType || routeState === "loading"} onClick={() => void generateRoute()}>{routeState === "loading" ? "Buscando mejor orden…" : "Proponer recorrido optimizado"}</button></div>
-          {proposal && <div className="ops-route-demo__message" role="status"><strong>Propuesta de recorrido abierto</strong><p>Inicio: {proposal.stops[0]?.label}</p><p>Destino: {proposal.stops[proposal.stops.length - 1]?.label}</p><details><summary>Ver las {proposal.stops.length} direcciones en orden</summary><ol>{proposal.stops.map((stop) => <li key={stop.id}>{stop.label}{stop.accessAdjustment && <small className="ops-route-demo__access-note">+{stop.accessAdjustment.displacementMeters} m · original en gris</small>}</li>)}</ol></details>{proposal.route.inputOrderMatrixDurationSeconds !== null && <small>{proposal.route.inputOrderMatrixDurationSeconds > proposal.route.matrixDurationSeconds ? `Ahorro estimado: ${formatDuration(proposal.route.inputOrderMatrixDurationSeconds - proposal.route.matrixDurationSeconds)} frente al orden ingresado.` : "El orden ingresado ya es equivalente o más rápido según la matriz."}</small>}<div className="ops-route-demo__actions"><button type="button" className="ops-route-demo__primary" disabled={!isRouteAuditOperationallyComplete(routeAuditStatus, routeAudit)} onClick={applyProposal}>Aplicar este orden</button><button type="button" className="ops-route-demo__secondary" onClick={() => { setProposal(null); setRouteState("idle"); }}>Descartar propuesta</button></div></div>}
+          {proposal && <div className="ops-route-demo__message" role="status"><strong>Propuesta de recorrido abierto</strong><p>Inicio: {proposal.stops[0]?.label}</p><p>Destino: {proposal.stops[proposal.stops.length - 1]?.label}</p><details><summary>Ver las {proposal.stops.length} direcciones en orden</summary><ol>{proposal.stops.map((stop) => <li key={stop.id}>{stop.label}{stop.accessAdjustment && <small className="ops-route-demo__access-note">+{stop.accessAdjustment.displacementMeters} m · original en gris</small>}</li>)}</ol></details>{proposal.route.inputOrderMatrixDurationSeconds !== null && <small>{proposal.route.inputOrderMatrixDurationSeconds > proposal.route.matrixDurationSeconds ? `Ahorro estimado: ${formatDuration(proposal.route.inputOrderMatrixDurationSeconds - proposal.route.matrixDurationSeconds)} frente al orden ingresado.` : "El orden ingresado ya es equivalente o más rápido según la matriz."}</small>}<div className="ops-route-demo__actions"><button type="button" className="ops-route-demo__primary" disabled={!canUseAuditedRoute} onClick={applyProposal}>Aplicar este orden</button><button type="button" className="ops-route-demo__secondary" onClick={() => { setProposal(null); setRouteState("idle"); }}>Descartar propuesta</button></div></div>}
           {routeAuditStatus !== "idle" && <AtlasRouteAuditPanel
             status={routeAuditStatus}
             audit={routeAudit}
@@ -771,9 +766,8 @@ export function OperationsRoutePlannerDemo() {
             onFeedbackTypeChange={(value) => { setAuditFeedbackType(value); setAuditFeedbackSaved(false); }}
             onFeedbackReasonChange={(value) => { setAuditFeedbackReason(value); setAuditFeedbackSaved(false); }}
             onSubmitFeedback={() => void submitRouteAuditFeedback()}
-            onRetry={() => void retryRouteAudit()}
           />}
-          {planningRoute && !proposal && <><button type="button" className="ops-route-demo__driver-launch" disabled={simulationLoading || !isRouteAuditOperationallyComplete(routeAuditStatus, routeAudit)} onClick={() => void startSimulation()}><span><strong>{simulationLoading ? "Preparando navegación…" : "Probar navegación del conductor"}</strong><small>Ferrostar + Valhalla desde el orden aplicado</small></span><span>→</span></button><button type="button" className="ops-route-demo__primary ops-route-demo__save-route" disabled={!selectedServiceId || !routePrefix.trim() || saving || !isOptimizedRoute(planningRoute) || !isRouteAuditOperationallyComplete(routeAuditStatus, routeAudit)} onClick={() => void saveRoute()}>{saving ? "Guardando ruta…" : selectedSavedRouteId ? "Guardar nueva versión" : "Guardar ruta en servicio base"}</button>{!isOptimizedRoute(planningRoute) && <small>Para guardar una nueva versión, vuelve a proponer el recorrido.</small>}</>}
+          {planningRoute && !proposal && <><button type="button" className="ops-route-demo__driver-launch" disabled={simulationLoading || !canUseAuditedRoute} onClick={() => void startSimulation()}><span><strong>{simulationLoading ? "Preparando navegación…" : "Probar navegación del conductor"}</strong><small>Ferrostar + Valhalla desde el orden aplicado</small></span><span>→</span></button><button type="button" className="ops-route-demo__primary ops-route-demo__save-route" disabled={!selectedServiceId || !routePrefix.trim() || saving || !isOptimizedRoute(planningRoute) || !canUseAuditedRoute} onClick={() => void saveRoute()}>{saving ? "Guardando ruta…" : selectedSavedRouteId ? "Guardar nueva versión" : "Guardar ruta en servicio base"}</button>{!isOptimizedRoute(planningRoute) && <small>Para guardar una nueva versión, vuelve a proponer el recorrido.</small>}</>}
         </> : <div className="ops-route-demo__driver-panel"><div className="ops-route-demo__guidance"><span>PRÓXIMA INSTRUCCIÓN</span><strong>{nextInstruction}</strong><small>Ferrostar + Valhalla · simulación de referencia</small></div><div className="ops-route-demo__driver-stats"><div><span>Recorrido</span><strong>{route ? formatDistance(route.distance) : "—"}</strong></div><div><span>Tiempo base</span><strong>{route ? formatDuration(route.steps.reduce((total, step) => total + step.duration, 0)) : "—"}</strong></div></div><button type="button" className="ops-route-demo__secondary" onClick={() => void stopSimulation()}>Detener navegación</button><p>Se usan las coordenadas guardadas de las paradas; Valhalla puede elegir calles distintas a la vista previa de TomTom.</p></div>}
         {error && <div className="ops-route-demo__message ops-route-demo__message--error" role="alert">{error}</div>}
         {notice && <div className="ops-route-demo__message" role="status">{notice}</div>}
