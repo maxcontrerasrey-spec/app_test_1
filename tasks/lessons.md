@@ -4345,3 +4345,9 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - Un punto de acceso vial ajustado debe mantener dirección, identidad de parada y destino fijado; guardar coordenada original, coordenada vial propuesta y desplazamiento como procedencia explícita.
 - Limitar el snapping por radio y confirmar que exista una ruta peatonal mapeada corta; esto aporta evidencia de conexión en el grafo, pero no certifica cruces seguros ni el espacio físico de maniobra.
 - Aplicar un cambio solo tras comparar el recorrido completo con el mismo perfil de vehículo y demostrar una mejora declarada; si el proveedor falla o no mejora la métrica, conservar la ruta base sin impedir su cálculo.
+
+## 2026-10-08 - Buscar trazados alternativos sin delegar geometría a la IA
+
+- Para corregir un tramo incómodo sin pedir que la persona reordene puntos, consultar alternativas de dos extremos al motor vial solo en piernas que realmente contienen U-turns; conservar la secuencia de paradas.
+- Volver a comparar la ruta completa (maniobras, tiempo y distancia) con el perfil y dimensiones originales; limitar llamadas, concurrencia, desvío y timeout. Si no hay mejora validada o falla el proveedor, mantener el trazado base.
+- Separar “sin alternativa mejor dentro del margen” de “búsqueda incompleta”; no anunciar una mejora de IA como sustituto de una geometría transitable generada por el motor.
