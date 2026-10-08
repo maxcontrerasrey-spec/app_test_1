@@ -24,8 +24,10 @@ export function optimizeOpenRoute(
   let bestCost = cost(best);
   if (!Number.isFinite(bestCost)) bestCost = Number.POSITIVE_INFINITY;
 
-  const startStep = Math.max(1, Math.ceil(size / 32));
-  for (let start = 0; start < size; start += startStep) {
+  const greedySeeds: Array<{ order: number[]; durationSeconds: number }> = [];
+  // The addresses have no semantic order. Evaluate every address as a possible first stop,
+  // then spend the bounded 2-opt budget on the best matrix-ranked seeds.
+  for (let start = 0; start < size; start += 1) {
     if (start === fixedDestinationIndex) continue;
     const order = [start];
     const remaining = new Set(Array.from({ length: size }, (_, index) => index)
@@ -47,7 +49,16 @@ export function optimizeOpenRoute(
     }
     if (remaining.size) continue;
     if (fixedDestinationIndex !== undefined) order.push(fixedDestinationIndex);
+    greedySeeds.push({ order, durationSeconds: cost(order) });
+  }
 
+  const refinementSeedLimit = Math.min(32, greedySeeds.length);
+  const refinementSeeds = greedySeeds
+    .sort((left, right) => left.durationSeconds - right.durationSeconds || left.order.join(",").localeCompare(right.order.join(",")))
+    .slice(0, refinementSeedLimit);
+
+  for (const seed of refinementSeeds) {
+    const order = [...seed.order];
     let passes = 0;
     let improved = true;
     while (improved && passes < 24) {

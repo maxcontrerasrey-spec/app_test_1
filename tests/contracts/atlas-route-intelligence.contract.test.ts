@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-const migration = readFileSync(new URL("../../supabase/migrations/20261008004341_atlas_route_intelligence_shadow.sql", import.meta.url), "utf8");
+const migration = readFileSync(new URL("../../supabase/migrations/20261008004912_atlas_route_intelligence_shadow.sql", import.meta.url), "utf8");
 const edge = readFileSync(new URL("../../supabase/functions/atlas-route-intelligence/index.ts", import.meta.url), "utf8");
 const config = readFileSync(new URL("../../supabase/config.toml", import.meta.url), "utf8");
 
