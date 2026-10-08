@@ -473,10 +473,11 @@ export function OperationsRoutePlannerDemo() {
       setPlanningRoute(null);
       setRoute(null);
       setRouteState("ready");
-      const routeNotices = [result.replannedForFeasibility
-        ? `Reordené automáticamente las direcciones para evitar maniobras inviables. Comparé ${result.feasibilityAlternativesEvaluated ?? 0} alternativas y elegí la ruta transitable más rápida de las revisadas.`
-        : "Calculé el orden más rápido de todas las direcciones; no asumí que venían ordenadas."];
-      routeNotices.push(`Perfil ${result.referenceModel ?? plannedVehicleType}; Valhalla recibió dimensiones de referencia. La calidad de las restricciones viales depende de OpenStreetMap y esto no certifica radios de giro ni dimensiones de cada unidad.`);
+      const routeNotices = ["Calculé automáticamente el recorrido más rápido; no asumí que las direcciones venían ordenadas."];
+      routeNotices.push(`Perfil ${result.referenceModel ?? plannedVehicleType}; Valhalla recibió dimensiones de referencia. La red vial no certifica el espacio físico ni el radio de giro de cada unidad.`);
+      if ((result.uturnCount ?? 0) > 0) {
+        routeNotices.push(`La ruta incluye ${result.uturnCount} giro(s) en U que la red vial permite trazar. Los datos disponibles no permiten confirmar si el espacio alcanza para ejecutarlos hacia delante con esta unidad; no se asumió que requieran marcha atrás ni se descartó la ruta por ese código.`);
+      }
       setNotice(routeNotices.join(" "));
       const auditRequest = ++auditSequence.current;
       setRouteAuditStatus("loading");

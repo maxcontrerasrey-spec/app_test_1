@@ -2,9 +2,8 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { optimizeOpenRoute } from "./openRouteOptimizer.ts";
 import { buildMatrixBlocks } from "./matrixBlocks.ts";
 import { buildRouteSegments } from "./routeSegments.ts";
-import { hasUTurn, hasUTurnAtSegmentJoin, routeLocationType, type RouteManeuver } from "./routeQuality.ts";
+import { countUTurns, routeLocationType, type RouteManeuver } from "./routeQuality.ts";
 import { analyzeValhallaManeuvers, preFilterRouteManeuvers } from "./routeIntelligence.ts";
-import { buildRouteOrderAlternatives, selectFastestFeasibleAlternative } from "./routeOrderAlternatives.ts";
 import { resolveAtlasVehicleRoutingModel } from "../../../src/modules/operaciones/lib/vehicleRoutingCosting.ts";
 
 const ALLOWED_ORIGINS = new Set([
@@ -145,7 +144,6 @@ async function valhallaRouteSegment(sites: Point[], model: ReturnType<typeof res
     const location = shapeIndex >= 0 ? legCoordinates[legIndex]?.[shapeIndex] : undefined;
     return location ? { ...maneuver, longitude: location[0], latitude: location[1] } : maneuver;
   }));
-  if (hasUTurn(maneuvers)) throw new Error("valhalla_route_uturn_detected");
   return { coordinates: deduplicated, distanceMeters: Math.round(summary.length * 1000), durationSeconds: Math.round(summary.time), maneuvers, provider: "valhalla" as const, travelMode: model.costing };
 }
 
@@ -158,17 +156,16 @@ async function valhallaRoute(sites: Point[], model: ReturnType<typeof resolveAtl
     }));
   }
   const complete = results.filter((result): result is Awaited<ReturnType<typeof valhallaRouteSegment>> => Boolean(result));
-  if (complete.some((result, index) => index > 0 && hasUTurnAtSegmentJoin(complete[index - 1]!.coordinates, result.coordinates))) {
-    throw new Error("valhalla_route_uturn_detected");
-  }
   const coordinates = complete.flatMap((result, index) => index === 0 ? result.coordinates : result.coordinates.slice(1));
   const maneuvers = complete.flatMap((result) => result.maneuvers);
   const maneuverFeatures = analyzeValhallaManeuvers(maneuvers);
+  const uturnCount = countUTurns(maneuvers);
   return {
     coordinates,
     distanceMeters: complete.reduce((total, result) => total + result.distanceMeters, 0),
     durationSeconds: complete.reduce((total, result) => total + result.durationSeconds, 0),
     maneuvers: maneuverFeatures,
+    uturnCount,
     maneuverRiskCandidates: preFilterRouteManeuvers(maneuverFeatures),
     provider: "valhalla" as const,
     travelMode: model.costing
@@ -350,36 +347,9 @@ Deno.serve(async (request) => {
       const vehicleRoutingModel = resolveAtlasVehicleRoutingModel(plannedVehicleType);
       const matrix = await valhallaMatrix(stops, vehicleRoutingModel);
       const optimized = optimizeOpenRoute(matrix, undefined, fixedDestinationIndex as number | undefined);
-      let selectedOrder = optimized.order;
-      let selectedMatrixDurationSeconds = optimized.durationSeconds;
-      let route: Awaited<ReturnType<typeof valhallaRoute>>;
-      let replannedForFeasibility = false;
-      let feasibilityAlternativesEvaluated = 0;
-      try {
-        route = await valhallaRoute(selectedOrder.map((index) => stops[index]!), vehicleRoutingModel);
-      } catch (error) {
-        if (!(error instanceof Error) || error.message !== "valhalla_route_uturn_detected") throw error;
-
-        // The matrix objective cannot see maneuvers. Rank bounded nearby orders by matrix time,
-        // then let Valhalla validate each route and choose the fastest feasible geometry.
-        const candidateLimit = stops.length <= 10 ? 5 : stops.length <= 30 ? 3 : 2;
-        const alternatives = buildRouteOrderAlternatives(matrix, selectedOrder, fixedDestinationIndex as number | undefined, candidateLimit);
-        const best = await selectFastestFeasibleAlternative(alternatives, async (order) => {
-          feasibilityAlternativesEvaluated += 1;
-          try {
-            return await valhallaRoute(order.map((index) => stops[index]!), vehicleRoutingModel);
-          } catch (alternativeError) {
-            if (alternativeError instanceof Error && alternativeError.message === "valhalla_route_uturn_detected") return null;
-            throw alternativeError;
-          }
-        });
-        if (!best) throw new Error("valhalla_route_no_feasible_order");
-        route = best.route;
-        selectedOrder = best.order;
-        selectedMatrixDurationSeconds = best.matrixDurationSeconds;
-        replannedForFeasibility = true;
-      }
-      return response({ ...route, order: selectedOrder, matrixDurationSeconds: selectedMatrixDurationSeconds, inputOrderMatrixDurationSeconds: optimized.inputOrderDurationSeconds, optimizationMethod: "valhalla_matrix_open_path_v1", plannedVehicleType: vehicleRoutingModel.category, referenceModel: vehicleRoutingModel.model, referenceDimensions: vehicleRoutingModel.dimensions, dimensionEvidence: vehicleRoutingModel.dimensionEvidence, referenceDimensionsSent: true, replannedForFeasibility, feasibilityAlternativesEvaluated }, 200, origin);
+      const selectedOrder = optimized.order;
+      const route = await valhallaRoute(selectedOrder.map((index) => stops[index]!), vehicleRoutingModel);
+      return response({ ...route, order: selectedOrder, matrixDurationSeconds: optimized.durationSeconds, inputOrderMatrixDurationSeconds: optimized.inputOrderDurationSeconds, optimizationMethod: "valhalla_matrix_open_path_v1", plannedVehicleType: vehicleRoutingModel.category, referenceModel: vehicleRoutingModel.model, referenceDimensions: vehicleRoutingModel.dimensions, dimensionEvidence: vehicleRoutingModel.dimensionEvidence, referenceDimensionsSent: true }, 200, origin);
     }
     if (action === "route") {
       if (!Array.isArray(payload.stops) || payload.stops.length < 2 || payload.stops.length > MAX_STOPS) {
