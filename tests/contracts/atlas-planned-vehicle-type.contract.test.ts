@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 const baseMigration = readFileSync(new URL("../../supabase/migrations/20261008010246_atlas_planned_vehicle_type_mismatch_warning.sql", import.meta.url), "utf8");
 const migration = readFileSync(new URL("../../supabase/migrations/20261008011000_atlas_route_vehicle_category_profiles.sql", import.meta.url), "utf8");
-const auditBindingMigration = readFileSync(new URL("../../supabase/migrations/20261008172634_atlas_route_audit_bound_to_saved_route.sql", import.meta.url), "utf8");
+const auditBindingMigration = readFileSync(new URL("../../supabase/migrations/20261008175339_atlas_route_audit_bound_to_saved_route.sql", import.meta.url), "utf8");
 const planner = readFileSync(new URL("../../src/modules/operaciones/pages/OperationsRoutePlannerDemo.tsx", import.meta.url), "utf8");
 const controlTower = readFileSync(new URL("../../src/modules/operaciones/pages/OperationsControlTowerPage.tsx", import.meta.url), "utf8");
 

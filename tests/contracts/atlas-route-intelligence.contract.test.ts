@@ -31,7 +31,7 @@ describe("Atlas Route Intelligence security contract", () => {
   });
 
   it("binds saved route stops and metrics to a persisted OpenAI audit", () => {
-    const binding = readFileSync(new URL("../../supabase/migrations/20261008172634_atlas_route_audit_bound_to_saved_route.sql", import.meta.url), "utf8");
+    const binding = readFileSync(new URL("../../supabase/migrations/20261008175339_atlas_route_audit_bound_to_saved_route.sql", import.meta.url), "utf8");
     expect(binding).toContain("p_route_intelligence_run_id uuid");
     expect(binding).toContain("audit_row.actor_user_id <> actor");
     expect(binding).toContain("audit_row.provider <> 'openai'");
