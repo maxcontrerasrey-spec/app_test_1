@@ -19,7 +19,7 @@ PASS
 
 - Errores: 0
 - Warnings: 1
-- Info: 24
+- Info: 30
 
 ## Errores
 
@@ -55,3 +55,9 @@ PASS
 - build:frontend-check: PASS
 - audit:performance-baseline: PASS
 - git diff --check: PASS
+- test:coverage: PASS
+- smoke:frontend-routes: PASS
+- check:edge:sync-buk-candidates: PASS
+- check:edge:verify-competency-certificate: PASS
+- check:edge:verify-hiring-document: PASS
+- check:edge:sync-buk-job-positions: PASS

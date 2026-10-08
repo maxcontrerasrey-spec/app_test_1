@@ -331,6 +331,13 @@ export async function auditAtlasRouteIntelligence(route: AtlasOptimizedRoute, st
     durationSeconds: Math.round(route.durationSeconds),
     matrixDurationSeconds: Math.round(route.matrixDurationSeconds),
     inputOrderMatrixDurationSeconds: route.inputOrderMatrixDurationSeconds === null ? null : Math.round(route.inputOrderMatrixDurationSeconds),
+    reportedRouteOrderSearch: route.routeOrderSearch ? {
+      candidatesEvaluated: route.routeOrderSearch.candidatesEvaluated,
+      failedCandidates: route.routeOrderSearch.failedCandidates,
+      alternativeApplied: route.routeOrderSearch.alternativeApplied,
+      status: route.routeOrderSearch.status,
+      selectionAuthority: "VALHALLA_COMPLETE_ROUTE_DURATION"
+    } : null,
     plannedVehicleType: route.plannedVehicleType ?? plannedVehicleType,
     referenceModel: route.referenceModel ?? null,
     referenceDimensions: route.referenceDimensions ? {

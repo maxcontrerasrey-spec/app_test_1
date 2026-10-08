@@ -284,6 +284,23 @@ export type RouteAuditOutput = {
   requiresHumanReview: boolean;
 };
 
+/** Treat incomplete or action-bearing model findings conservatively even if its summary flags disagree. */
+export function enforceFailClosedRouteAudit(output: RouteAuditOutput): RouteAuditOutput {
+  const hasRejectedManeuver = output.analyzedManeuvers.some((item) => item.decision === "REJECT");
+  const hasInsufficientEvidence = output.decision === "INSUFFICIENT_EVIDENCE"
+    || output.analyzedManeuvers.some((item) => item.decision === "INSUFFICIENT_EVIDENCE");
+  const requiresReplan = output.requiresReplan || hasRejectedManeuver
+    || output.analyzedManeuvers.some((item) => item.recommendedAction === "BLOCK_MANEUVER" || item.recommendedAction === "REQUEST_ALTERNATIVE");
+  const requiresHumanReview = output.requiresHumanReview || hasInsufficientEvidence || requiresReplan
+    || output.analyzedManeuvers.some((item) => item.recommendedAction === "HUMAN_REVIEW" || item.recommendedAction === "PENALIZE_SEGMENT");
+  const decision = hasRejectedManeuver
+    ? "REJECT"
+    : hasInsufficientEvidence && output.decision === "APPROVE"
+    ? "INSUFFICIENT_EVIDENCE"
+    : output.decision;
+  return { ...output, decision, requiresReplan, requiresHumanReview };
+}
+
 const routeDecisions = new Set<RouteAuditDecision>(["APPROVE", "WARNING", "REJECT", "INSUFFICIENT_EVIDENCE"]);
 const maneuverDecisions = new Set<ManeuverAuditDecision>(["OK", "CAUTION", "REJECT", "INSUFFICIENT_EVIDENCE"]);
 const actions = new Set<RouteAuditOutput["analyzedManeuvers"][number]["recommendedAction"]>(["NONE", "WARN", "BLOCK_MANEUVER", "PENALIZE_SEGMENT", "REQUEST_ALTERNATIVE", "HUMAN_REVIEW"]);
@@ -307,6 +324,7 @@ export function parseRouteAuditOutput(value: unknown, allowedManeuverIds: Set<st
     const reasons = boundedStringArray(entry.reasons, 8);
     const evidence = boundedStringArray(entry.evidence, 8);
     if (typeof entry.maneuverId !== "string" || !allowedManeuverIds.has(entry.maneuverId) || !maneuverDecisions.has(entry.decision as ManeuverAuditDecision) || score === null || score < 0 || score > 100 || !reasons || !evidence || !actions.has(entry.recommendedAction as RouteAuditOutput["analyzedManeuvers"][number]["recommendedAction"])) return null;
+    if (entry.decision === "REJECT" && evidence.length === 0) return null;
     analyzedManeuvers.push({ maneuverId: entry.maneuverId, decision: entry.decision as RouteAuditOutput["analyzedManeuvers"][number]["decision"], riskScore: score, reasons, evidence, recommendedAction: entry.recommendedAction as RouteAuditOutput["analyzedManeuvers"][number]["recommendedAction"] });
   }
   if (row.decision === "REJECT" && !analyzedManeuvers.some((item) => item.decision === "REJECT" && item.evidence.length > 0)) return null;

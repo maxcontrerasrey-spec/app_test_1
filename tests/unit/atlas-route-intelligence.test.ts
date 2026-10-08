@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { analyzeValhallaManeuvers, attachValidatedRestrictions, hasValidManeuverLegContext, normalizeClientManeuverFeature, parseRouteAuditOutput, preFilterRouteManeuvers, selectManeuversForAiAudit } from "../../supabase/functions/atlas-tomtom-planning/routeIntelligence.ts";
+import { analyzeValhallaManeuvers, attachValidatedRestrictions, enforceFailClosedRouteAudit, hasValidManeuverLegContext, normalizeClientManeuverFeature, parseRouteAuditOutput, preFilterRouteManeuvers, selectManeuversForAiAudit } from "../../supabase/functions/atlas-tomtom-planning/routeIntelligence.ts";
 
 describe("Atlas Route Intelligence maneuver analyzer", () => {
   it("normaliza los giros cerrados de Valhalla sin fabricar datos viales", () => {
@@ -84,5 +84,19 @@ describe("Atlas Route Intelligence maneuver analyzer", () => {
     expect(parseRouteAuditOutput(valid, new Set(["m-001"]))?.decision).toBe("WARNING");
     expect(parseRouteAuditOutput({ ...valid, decision: "REJECT", analyzedManeuvers: [{ ...valid.analyzedManeuvers[0], decision: "REJECT", evidence: [] }] }, new Set(["m-001"]))).toBeNull();
     expect(parseRouteAuditOutput({ ...valid, analyzedManeuvers: [{ ...valid.analyzedManeuvers[0], maneuverId: "m-999" }] }, new Set(["m-001"]))).toBeNull();
+  });
+
+  it("deriva revisión humana y replan desde evidencia y acciones aunque las banderas del modelo contradigan el detalle", () => {
+    const base = { decision: "APPROVE" as const, riskScore: 10, summary: "Evaluada", analyzedManeuvers: [], requiresReplan: false, requiresHumanReview: false };
+    const insufficientRoute = enforceFailClosedRouteAudit({ ...base, decision: "INSUFFICIENT_EVIDENCE" });
+    expect(insufficientRoute.requiresHumanReview).toBe(true);
+
+    const insufficientManeuver = enforceFailClosedRouteAudit({ ...base, analyzedManeuvers: [{ maneuverId: "m-001", decision: "INSUFFICIENT_EVIDENCE", riskScore: 10, reasons: [], evidence: [], recommendedAction: "NONE" }] });
+    expect(insufficientManeuver.requiresHumanReview).toBe(true);
+    expect(insufficientManeuver.decision).toBe("INSUFFICIENT_EVIDENCE");
+
+    const requestedAlternative = enforceFailClosedRouteAudit({ ...base, analyzedManeuvers: [{ maneuverId: "m-001", decision: "CAUTION", riskScore: 75, reasons: [], evidence: ["giro"], recommendedAction: "REQUEST_ALTERNATIVE" }] });
+    expect(requestedAlternative.requiresReplan).toBe(true);
+    expect(requestedAlternative.requiresHumanReview).toBe(true);
   });
 });

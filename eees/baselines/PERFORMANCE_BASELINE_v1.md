@@ -194,7 +194,7 @@ Revision 2026-10-08 Atlas contexto de tramos y confirmación de revisión humana
 {
   "distTotalBytes": 7470218,
   "jsFileCount": 74,
-  "jsTotalBytes": 5342939,
+  "jsTotalBytes": 5343897,
   "cssFileCount": 15,
   "cssTotalBytes": 540940,
   "budgetPolicy": {
@@ -226,6 +226,8 @@ Revision 2026-10-08 Atlas contexto de tramos y confirmación de revisión humana
   ]
 }
 ```
+
+Revision 2026-10-08 Route Intelligence: Guardian CI run `37829258953` midió 958 bytes adicionales de JavaScript (+0,02%) para pasar al analista el resultado de la búsqueda real de órdenes y cerrar la liberación de rutas con evidencia insuficiente. Se actualiza solo el total JS medido por CI; la tolerancia permanece en cero y no se amplían límites de chunks.
 
 Revision 2026-10-06 Estructuras de Renta: Guardian CI run `37496635129` midió 246 bytes adicionales en `dist` y JS para evitar que la selección de otro cargo rehidrate el borrador activo y para ocultar el editor mientras carga el detalle correcto. CSS, vendors y assets trackeados no cambian. Se actualizan solo los totales canónicos de CI a 7,467,769 bytes y 5,339,046 bytes; la tolerancia permanece en cero.
 

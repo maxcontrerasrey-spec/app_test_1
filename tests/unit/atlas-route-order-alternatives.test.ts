@@ -64,4 +64,25 @@ describe("Atlas automatic route-feasibility alternatives", () => {
     expect(result.alternativeApplied).toBe(false);
     expect(result.order).toEqual(seed.order);
   });
+
+  it("checks the full bounded candidate set with concurrency and reports all failures", async () => {
+    const seed = { order: [0, 1, 2, 3], matrixDurationSeconds: 20 };
+    const candidates = buildRouteOrderAlternatives([
+      [0, 1, 2, 3], [3, 0, 1, 2], [2, 3, 0, 1], [1, 2, 3, 0]
+    ], seed.order, undefined, 6);
+    let active = 0;
+    let maxActive = 0;
+    const result = await selectFastestRoutedOrder(seed, { durationSeconds: 900, distanceMeters: 9000 }, candidates, async () => {
+      active += 1;
+      maxActive = Math.max(maxActive, active);
+      await Promise.resolve();
+      active -= 1;
+      throw new Error("no transit route");
+    }, 2);
+
+    expect(maxActive).toBe(2);
+    expect(result.alternativesEvaluated).toBe(candidates.length);
+    expect(result.alternativesFailed).toBe(candidates.length);
+    expect(result.alternativeApplied).toBe(false);
+  });
 });

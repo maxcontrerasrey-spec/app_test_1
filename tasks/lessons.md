@@ -4363,3 +4363,10 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - En una ruta multiparada, el mensaje de Valhalla "llegue al destino" puede ser el cierre normal de una etapa intermedia; incluir el índice del tramo y destino final en cada maniobra antes de pedir evaluación IA.
 - No aceptar auditorías ni registrar alertas de llegada anticipada si falta contexto consistente con el snapshot exacto de paradas.
 - Cuando la IA solicita revisión humana, exigir feedback positivo antes de aplicar, guardar o simular. Repetir la guarda dentro de la RPC de persistencia; la UI por sí sola no protege el flujo.
+
+# 2026-10-08 - Los gates de IA se derivan de la evidencia, no solo de sus banderas
+
+- Una respuesta puede marcar `INSUFFICIENT_EVIDENCE` en la decisión o en una maniobra y, contradictoriamente, decir `requiresHumanReview=false`; la UI y la RPC deben recalcular la consecuencia desde decisión y acción.
+- `BLOCK_MANEUVER` y `REQUEST_ALTERNATIVE` deben exigir replan aunque `requiresReplan` sea false; no aceptar la ruta por una bandera resumen inconsistente.
+- Pasar al auditor el resultado real de la búsqueda vial; sin conteos/estado de órdenes candidatos puede reportar erróneamente que no hubo comparación. Mantener el origen de selección explícito y no llamar óptimo global a una búsqueda acotada.
+- Probar la misma regla en normalizador, UI y RPC persistente; una regresión que cubre solo una capa deja un camino de guardado abierto.

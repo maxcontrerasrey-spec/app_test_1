@@ -18,7 +18,7 @@ const MAX_BODY_BYTES = 64 * 1024;
 const MAX_STOPS = 151;
 const MATRIX_BLOCK_SIZE = 10;
 const ROUTE_MAX_LOCATIONS = 10;
-const MAX_ROUTED_ORDER_ALTERNATIVES = 4;
+const MAX_ROUTED_ORDER_ALTERNATIVES = 8;
 const VALHALLA = "https://valhalla1.openstreetmap.de";
 const CALAMA = { longitude: -68.9294, latitude: -22.4544 };
 
