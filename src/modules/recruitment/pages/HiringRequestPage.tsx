@@ -42,6 +42,7 @@ type GeneratedHiringRequest = {
   fechaInicio: string;
   fechaTermino: string;
   campamento: string;
+  tipoAlojamiento: string;
   pasajes: string;
   otrosBeneficios: string;
   rentaLiquidaOfrecida: string;
@@ -75,6 +76,7 @@ export function HiringRequestPage() {
   const [nombreContrato, setNombreContrato] = useState("");
   const [fechaInicio, setFechaInicio] = useState("");
   const [campamento, setCampamento] = useState("");
+  const [tipoAlojamiento, setTipoAlojamiento] = useState<"pension" | "mining_camp" | "">("");
   const [pasajes, setPasajes] = useState("");
   const [otrosBeneficios, setOtrosBeneficios] = useState("");
   const [rentaLiquidaOfrecida, setRentaLiquidaOfrecida] = useState("");
@@ -142,6 +144,7 @@ export function HiringRequestPage() {
     Boolean(fechaInicio) &&
     Boolean(fechaTermino) &&
     Boolean(campamento) &&
+    (campamento !== "Si" || Boolean(tipoAlojamiento)) &&
     Boolean(pasajes) &&
     Boolean(rentaLiquidaOfrecida) &&
     Boolean(turno) &&
@@ -180,6 +183,9 @@ export function HiringRequestPage() {
             { label: "Fecha inicio", value: generatedRequest.fechaInicio },
             { label: "Fecha termino", value: generatedRequest.fechaTermino },
             { label: "Campamento", value: generatedRequest.campamento },
+            ...(generatedRequest.tipoAlojamiento
+              ? [{ label: "Tipo de alojamiento", value: generatedRequest.tipoAlojamiento }]
+              : []),
             { label: "Pasajes", value: generatedRequest.pasajes },
             { label: "Turno", value: generatedRequest.turno },
             {
@@ -222,6 +228,8 @@ export function HiringRequestPage() {
       startDate: fechaInicio,
       endDate: fechaTermino,
       campamento: campamento === "Si",
+      accommodationType:
+        campamento === "Si" && tipoAlojamiento ? tipoAlojamiento : null,
       pasajes: pasajes === "Si",
       otherBenefits: otrosBeneficios,
       salaryOffer: Number(rentaLiquidaOfrecida),
@@ -257,6 +265,10 @@ export function HiringRequestPage() {
       fechaInicio: formatDateForDisplay(fechaInicio),
       fechaTermino: formatDateForDisplay(fechaTermino),
       campamento,
+      tipoAlojamiento:
+        campamento === "Si"
+          ? tipoAlojamiento === "pension" ? "Pensión" : "Campamento Minero"
+          : "No aplica",
       pasajes,
       otrosBeneficios,
       rentaLiquidaOfrecida,
@@ -275,6 +287,7 @@ export function HiringRequestPage() {
     setNombreContrato("");
     setFechaInicio("");
     setCampamento("");
+    setTipoAlojamiento("");
     setPasajes("");
     setOtrosBeneficios("");
     setRentaLiquidaOfrecida("");
@@ -399,13 +412,30 @@ export function HiringRequestPage() {
 
             <div className="support-grid">
               <SelectField
-                id="campamento"
-                label="Campamento"
+                id="alojamiento"
+                label="Alojamiento"
                 value={campamento}
-                onChange={(e) => setCampamento(e.target.value)}
+                onChange={(e) => {
+                  setCampamento(e.target.value);
+                  if (e.target.value !== "Si") setTipoAlojamiento("");
+                }}
                 options={yesNoOptions.map((opt) => ({ value: opt, label: opt }))}
                 placeholder="Seleccione"
               />
+
+              {campamento === "Si" ? (
+                <SelectField
+                  id="tipo-alojamiento"
+                  label="Tipo de alojamiento"
+                  value={tipoAlojamiento}
+                  onChange={(e) => setTipoAlojamiento(e.target.value as "pension" | "mining_camp" | "")}
+                  options={[
+                    { value: "pension", label: "Pensión" },
+                    { value: "mining_camp", label: "Campamento Minero" }
+                  ]}
+                  placeholder="Selecciona el tipo de alojamiento"
+                />
+              ) : null}
 
               <SelectField
                 id="pasajes"

@@ -4697,6 +4697,48 @@ details.mobility-detail-card[open] .mobility-detail-summary {
   border-bottom: 1px solid var(--border-subtle);
 }
 
+/* Dense hiring-folio detail: keep the shared expansion style untouched elsewhere. */
+.hiring-processes-table .expanded-case-detail-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.hiring-processes-table .expanded-detail-section {
+  padding: 0.8rem 1rem;
+}
+
+.hiring-processes-table .expanded-detail-section h4 {
+  margin-bottom: 0.45rem;
+}
+
+.hiring-processes-table .expanded-detail-fields {
+  gap: 0.45rem 0.65rem;
+}
+
+.hiring-processes-table .expanded-detail-fields small {
+  font-size: 0.64rem;
+}
+
+.hiring-processes-table .expanded-detail-fields strong {
+  font-size: 0.78rem;
+  line-height: 1.25;
+}
+
+@media (max-width: 900px) {
+  .hiring-processes-table .expanded-case-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hiring-processes-table .expanded-detail-section {
+    padding: 0.75rem 0.9rem;
+    border-right: none;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .hiring-processes-table .expanded-detail-section:last-child {
+    border-bottom: none;
+  }
+}
+
 .expanded-detail-section {
   padding: 1.25rem 1.5rem;
   border-right: 1px solid var(--border-subtle);

@@ -16,6 +16,7 @@ export type ApprovalModalData = {
   created_at: string | null;
   hiring_requests: {
     folio?: string | null;
+    status?: string | null;
     requester_name?: string | null;
     job_position_name?: string | null;
     contract_name?: string | null;
@@ -26,8 +27,10 @@ export type ApprovalModalData = {
     shift_name?: string | null;
     other_benefits?: string | null;
     campamento?: boolean | null;
+    accommodation_type?: "pension" | "mining_camp" | null;
     pasajes?: boolean | null;
     travel_methodology?: string | null;
+    travel_allowance_amount?: number | null;
   } | null;
 };
 
@@ -52,12 +55,14 @@ export function ApprovalModal({
   const [errorMessage, setErrorMessage] = useState("");
   const [decisionMessage, setDecisionMessage] = useState("");
   const [travelMethodology, setTravelMethodology] = useState<TravelMethodology | "">("");
+  const [travelAllowanceAmount, setTravelAllowanceAmount] = useState("");
 
   useEffect(() => {
     if (!approvalData) {
       setErrorMessage("");
       setDecisionMessage("");
       setTravelMethodology("");
+      setTravelAllowanceAmount("");
       return;
     }
 
@@ -68,6 +73,11 @@ export function ApprovalModal({
       approvalData.hiring_requests?.travel_methodology === "company_purchase"
         ? approvalData.hiring_requests.travel_methodology
         : ""
+    );
+    setTravelAllowanceAmount(
+      approvalData.hiring_requests?.travel_allowance_amount == null
+        ? ""
+        : String(approvalData.hiring_requests.travel_allowance_amount)
     );
   }, [approvalData]);
 
@@ -103,6 +113,15 @@ export function ApprovalModal({
       return;
     }
 
+    if (
+      decision === "approved" &&
+      requiresTravelAllowanceAmount &&
+      (!/^\d+$/.test(travelAllowanceAmount) || Number(travelAllowanceAmount) <= 0)
+    ) {
+      setErrorMessage("Ingresa un monto de bono de traslado mayor a cero.");
+      return;
+    }
+
     setIsDecisionLoading(true);
     setErrorMessage("");
     setDecisionMessage("");
@@ -114,6 +133,10 @@ export function ApprovalModal({
       travelMethodology:
         decision === "approved" && approvalData.step_code === "contracts_control"
           ? travelMethodology || null
+          : null,
+      travelAllowanceAmount:
+        decision === "approved" && requiresTravelAllowanceAmount
+          ? Number(travelAllowanceAmount)
           : null
     });
 
@@ -132,6 +155,12 @@ export function ApprovalModal({
   const hr = approvalData.hiring_requests;
   const requiresTravelMethodology =
     approvalData.step_code === "contracts_control" && hr?.pasajes === true;
+  const requiresTravelAllowanceAmount =
+    requiresTravelMethodology && travelMethodology === "travel_allowance";
+  const canViewOtherBenefits =
+    ["area_manager", "contracts_control"].includes(approvalData.step_code ?? "") &&
+    ["pending_area_manager", "pending_contracts_control"].includes(hr?.status ?? "") &&
+    (approvalData.approver_user_id === currentUserId || isAdmin);
 
   return (
     <div className="approval-modal-backdrop" role="presentation" onClick={onClose}>
@@ -183,26 +212,30 @@ export function ApprovalModal({
             <small>Turno</small>
             <strong>{hr?.shift_name ?? "No disponible"}</strong>
           </div>
+          {hr?.campamento ? (
+            <div className="approval-detail-item approval-detail-item-compact">
+              <small>Tipo de alojamiento</small>
+              <strong>
+                {hr.accommodation_type === "pension"
+                  ? "Pensión"
+                  : hr.accommodation_type === "mining_camp"
+                    ? "Campamento Minero"
+                    : "No especificado"}
+              </strong>
+            </div>
+          ) : null}
           <div className="approval-detail-item approval-detail-item-compact">
             <small>Creado</small>
             <strong>{formatDateTimeValue(approvalData.created_at)}</strong>
           </div>
         </div>
 
-        <div className="approval-detail-note">
-          <small>Beneficios</small>
-          <strong>
-            {hr?.other_benefits?.trim() || hr?.campamento || hr?.pasajes
-              ? [
-                  hr?.campamento ? "Campamento" : null,
-                  hr?.pasajes ? "Pasajes" : null,
-                  hr?.other_benefits?.trim() || null,
-                ]
-                  .filter(Boolean)
-                  .join(" · ")
-              : "Sin beneficios adicionales registrados"}
-          </strong>
-        </div>
+        {canViewOtherBenefits ? (
+          <div className="approval-detail-note">
+            <small>Otros beneficios</small>
+            <strong>{hr?.other_benefits?.trim() || "Sin beneficios adicionales registrados"}</strong>
+          </div>
+        ) : null}
 
         <div className="approval-detail-note">
           <small>Metodología de pasajes</small>
@@ -225,6 +258,25 @@ export function ApprovalModal({
             placeholder="Selecciona una metodología"
             disabled={isDecisionLoading}
           />
+        ) : null}
+
+        {requiresTravelAllowanceAmount ? (
+          <div className="field-group">
+            <label className="field-label" htmlFor="approval-travel-allowance-amount">
+              Monto del bono de traslado (CLP)
+            </label>
+            <input
+              id="approval-travel-allowance-amount"
+              className="text-field"
+              type="number"
+              inputMode="numeric"
+              min="1"
+              step="1"
+              value={travelAllowanceAmount}
+              onChange={(event) => setTravelAllowanceAmount(event.target.value)}
+              disabled={isDecisionLoading}
+            />
+          </div>
         ) : null}
 
         {errorMessage ? <p className="form-status form-status-error">{errorMessage}</p> : null}

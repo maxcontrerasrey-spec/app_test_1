@@ -141,10 +141,6 @@ export function ApprovalTrackingWidget({ title, dashboardData }: ApprovalTrackin
                                         : "No aplica"}
                                     </strong>
                                   </div>
-                                  <div className="expanded-detail-field-full">
-                                    <small>Otros beneficios</small>
-                                    <strong>{approval.other_benefits ?? "—"}</strong>
-                                  </div>
                                 </div>
                               </div>
 

@@ -1,11 +1,11 @@
 import { Fragment, useEffect, useRef, useState } from "react";
 import { MultiSelectField, TextField } from "../../../shared/ui";
 import { getRecruitmentCaseHeadcountBreakdown, resolveRecruitmentProcessSearchFilter, toRecruitmentCaseStatusLabel, type RecruitmentCaseListRow } from "../services/hiringControl";
-import { toTravelMethodologyLabel } from "../services/hiringWorkflow";
 import { useRecruitmentCaseDetail, useRecruitmentPendingApprovalsPage, useRecruitmentProcessesPage } from "../hooks/useRecruitmentQueries";
 import { caseFilterOptions, formatDateValue, formatDateTimeValue } from "./hiringControlViewUtils";
 import { formatContractDisplayName } from "../lib/contractPresentation";
 import { ApprovalModal } from "./ApprovalModal";
+import { HiringCompensationSummary } from "./HiringCompensationSummary";
 import { TrackingPagination } from "./TrackingPagination";
 import { formatOpenDuration } from "../lib/openDuration";
 
@@ -428,9 +428,10 @@ export function HiringProcessesView({
                   const summaryShiftName = hr?.shift_name ?? caseRow.shift_name;
                   const summarySalaryOffer = hr?.salary_offer ?? caseRow.salary_offer;
                   const summaryCampamento = hr?.campamento ?? caseRow.campamento;
+                  const summaryAccommodationType = hr?.accommodation_type ?? caseRow.accommodation_type;
                   const summaryPasajes = hr?.pasajes ?? caseRow.pasajes;
                   const summaryTravelMethodology = hr?.travel_methodology ?? caseRow.travel_methodology;
-                  const summaryBenefits = hr?.other_benefits ?? caseRow.other_benefits;
+                  const summaryTravelAllowanceAmount = hr?.travel_allowance_amount ?? caseRow.travel_allowance_amount;
                   const headcount = getRecruitmentCaseHeadcountBreakdown(caseRow);
 
                   return (
@@ -536,32 +537,14 @@ export function HiringProcessesView({
                                 </div>
                                 <div className="expanded-detail-section">
                                   <h4>Compensación y beneficios</h4>
-                                  <div className="expanded-detail-fields">
-                                    <div>
-                                      <small>Renta líquida ofrecida</small>
-                                      <strong>{summarySalaryOffer ? `$${summarySalaryOffer.toLocaleString("es-CL")}` : "—"}</strong>
-                                    </div>
-                                    <div>
-                                      <small>Campamento</small>
-                                      <strong>{summaryCampamento ? "Sí" : "No"}</strong>
-                                    </div>
-                                    <div>
-                                      <small>Pasajes</small>
-                                      <strong>{summaryPasajes ? "Sí" : "No"}</strong>
-                                    </div>
-                                    <div>
-                                      <small>Modalidad de pasajes</small>
-                                      <strong>
-                                        {summaryPasajes
-                                          ? toTravelMethodologyLabel(summaryTravelMethodology)
-                                          : "No aplica"}
-                                      </strong>
-                                    </div>
-                                    <div className="expanded-detail-field-full">
-                                      <small>Otros beneficios</small>
-                                      <strong>{summaryBenefits?.trim() || "—"}</strong>
-                                    </div>
-                                  </div>
+                                  <HiringCompensationSummary
+                                    salaryOffer={summarySalaryOffer}
+                                    accommodationRequired={summaryCampamento}
+                                    accommodationType={summaryAccommodationType}
+                                    travelRequired={summaryPasajes}
+                                    travelMethodology={summaryTravelMethodology}
+                                    travelAllowanceAmount={summaryTravelAllowanceAmount}
+                                  />
                                 </div>
                                 <div className="expanded-detail-section expanded-detail-section-full">
                                   <h4>Decisión de aprobación</h4>
@@ -645,32 +628,14 @@ export function HiringProcessesView({
                                 </div>
                                 <div className="expanded-detail-section">
                                   <h4>Compensación y beneficios</h4>
-                                  <div className="expanded-detail-fields">
-                                    <div>
-                                      <small>Renta líquida ofrecida</small>
-                                      <strong>{summarySalaryOffer ? `$${summarySalaryOffer.toLocaleString("es-CL")}` : "—"}</strong>
-                                    </div>
-                                    <div>
-                                      <small>Campamento</small>
-                                      <strong>{summaryCampamento ? "Sí" : "No"}</strong>
-                                    </div>
-                                    <div>
-                                      <small>Pasajes</small>
-                                      <strong>{summaryPasajes ? "Sí" : "No"}</strong>
-                                    </div>
-                                    <div>
-                                      <small>Modalidad de pasajes</small>
-                                      <strong>
-                                        {summaryPasajes
-                                          ? toTravelMethodologyLabel(summaryTravelMethodology)
-                                          : "No aplica"}
-                                      </strong>
-                                    </div>
-                                    <div className="expanded-detail-field-full">
-                                      <small>Otros beneficios</small>
-                                      <strong>{summaryBenefits?.trim() || "—"}</strong>
-                                    </div>
-                                  </div>
+                                  <HiringCompensationSummary
+                                    salaryOffer={summarySalaryOffer}
+                                    accommodationRequired={summaryCampamento}
+                                    accommodationType={summaryAccommodationType}
+                                    travelRequired={summaryPasajes}
+                                    travelMethodology={summaryTravelMethodology}
+                                    travelAllowanceAmount={summaryTravelAllowanceAmount}
+                                  />
                                 </div>
                                 <div className="expanded-detail-section expanded-detail-section-full">
                                   <h4>Decisión de aprobación</h4>

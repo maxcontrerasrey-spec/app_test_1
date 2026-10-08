@@ -25,8 +25,10 @@ export interface DashboardTaskItem {
   shift_code?: string | null;
   salary_liquid?: number | null;
   camp_required?: boolean | null;
+  accommodation_type?: "pension" | "mining_camp" | null;
   flight_tickets_required?: boolean | null;
   travel_methodology?: string | null;
+  travel_allowance_amount?: number | null;
   other_benefits?: string | null;
   approval_comment?: string | null;
   requested_by_name?: string | null;
@@ -70,8 +72,10 @@ export interface DashboardApprovalTrackingItem {
   shift_code?: string | null;
   salary_liquid?: number | null;
   camp_required?: boolean | null;
+  accommodation_type?: "pension" | "mining_camp" | null;
   flight_tickets_required?: boolean | null;
   travel_methodology?: string | null;
+  travel_allowance_amount?: number | null;
   other_benefits?: string | null;
   approval_comment?: string | null;
   requested_by_name?: string | null;

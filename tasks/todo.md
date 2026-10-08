@@ -1,3 +1,16 @@
+## Compactar resumen de solicitudes y estructurar beneficios — 2026-10-08
+
+- [x] Trazar UI, RPC, snapshots, aprobaciones y permisos reales para solicitud y resumen de folio; excluir Ciudad.
+- [x] Compactar el detalle expandido de folios con estilos acotados al listado de contrataciones.
+- [x] Solicitar subtipo Pensión/Campamento Minero únicamente si alojamiento = Sí; preservar históricas sin inferir valores.
+- [x] Capturar el monto entero del bono de traslado en la aprobación de Control de Contratos y exponerlo en el resumen expandido de reclutamiento.
+- [x] Limitar “Otros beneficios” a aprobación pendiente asignada de Gerencia de Área/Control de Contratos (o administrador de sistema), y redaccionarlo en vistas de reclutamiento/solicitante una vez fuera de esa etapa.
+- [x] Agregar prueba de contrato; ejecutar Guardian, TypeScript/build, contratos, auditoría de migraciones y `git diff --check`.
+- [ ] **BLOCKED_VALIDATION**: validar/aplicar migración con PostgreSQL/staging disponible y prueba de regresión/equivalencia en BD. No hay `psql`, Docker ni rama Supabase de staging.
+- [ ] **BLOCKED_VALIDATION**: desplegar frontend y migración a producción, verificar respaldo recuperable antes de cambios y comprobar con cuentas representativas que permisos y visibilidad coinciden con los roles. El estado Supabase no informa respaldos/PITR y no hay herramienta conectada para demostrar recuperabilidad.
+
+Resultado local: Guardian 0 errores/0 advertencias; TypeScript y Vite build PASS (solo avisos preexistentes de chunks grandes); contrato nuevo 4/4 y suite contracts 159/159; auditoría de 623 migraciones y `git diff --check` PASS. No se escribió en producción. Pendiente externo: staging PostgreSQL para compilar/ejecutar/ensayar rollback de la migración, y evidencia de respaldo recuperable antes de aplicar el DDL productivo.
+
 ## Unificar y acelerar búsquedas de personal BUK — 2026-10-07
 
 - [x] Inventariar campos BUK, hooks/query keys, RPCs, proyecciones e índices; detectar consultas por tecla, vigencias de caché dispares y falta de cancelación.
@@ -5071,3 +5084,21 @@ Validación local: 209 pruebas unitarias pasan; Deno check pasa; frontend TypeSc
 - [x] Registrar límites físicos y de alternativas por tramo; actualizar lecciones a partir del comportamiento verificado.
 
 Revisión inicial: PR #101 ya añadió un ajuste de acceso de hasta 20 m y caminata mapeada de hasta 30 m, solo para una parada muy cercana a un U-turn. Esto no implementa todavía la preferencia explícita por seguir 1–2 cuadras para evitar maniobras. Se mantiene la ruta base si la red vial no prueba una alternativa mejor; ningún U-turn queda prohibido. La IA no generará coordenadas: las alternativas deben surgir de Valhalla y de reglas determinísticas, y la auditoría IA debe seguir siendo auxiliar/fail-open.
+## Compactar resumen de folios y completar beneficios de solicitud/aprobación — 2026-10-08
+
+### Plan verificable
+
+- [ ] Confirmar el flujo real de `submit_hiring_request`, aprobación de `area_manager`/`contracts_control`, detalle expandido de reclutamiento y sus contratos SQL/UI vigentes.
+- [ ] Agregar tipo de alojamiento condicionado a `Campamento/Alojamiento = Sí`; no incorporar ciudad. Validar, persistir y exponerlo sin romper solicitudes históricas ni filtros existentes.
+- [ ] Agregar monto estructurado del bono de traslado en aprobación de Control de Contratos, obligatorio solo cuando la modalidad sea `Bono de traslado`; persistir atómicamente con la decisión y exponer el valor en el resumen de reclutamiento.
+- [ ] Restringir “Otros beneficios” a superficies de aprobación de gerente de área/Control de Contratos y ocultarlo en folios una vez aprobado; no mostrarlo en resúmenes generales.
+- [ ] Compactar verticalmente el detalle expandido solo para Reclutamiento, preservando responsive y otras vistas que comparten estilos globales.
+- [ ] Añadir regresiones de frontend/contratos/migración; validar SQL, seguridad/ACL, migraciones, build, Guardian y diff.
+- [ ] Integrar y desplegar según gates; comprobar bundle/flujo productivo y registrar límites de verificación.
+
+### Decisiones de alcance
+
+- Ciudad queda expresamente fuera.
+- Reutilizar `travel_methodology` y el paso `contracts_control`; el nuevo monto se guarda como dato de primera clase y la RPC es su única frontera transaccional junto con la decisión.
+- Preservar compatibilidad de requests históricos: alojamiento sin subtipo se lee como no especificado; no inventar retroactivamente `Pensión` o `Campamento Minero`.
+- `other_benefits` se mantiene para la aprobación en curso de Gerente de Área o Control de Contratos; fuera de esas aprobaciones no se renderiza y, una vez `hiring_requests.status = 'approved'`, se oculta en vistas de reclutamiento.
