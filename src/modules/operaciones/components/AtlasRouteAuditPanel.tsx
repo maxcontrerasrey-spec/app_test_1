@@ -2,6 +2,20 @@ import type { AtlasRouteAuditResponse } from "../services/atlasOperationsApi";
 
 export type RouteAuditFeedbackType = "ACCEPT_AI" | "OVERRIDE_FEASIBLE" | "OVERRIDE_NOT_FEASIBLE" | "INSUFFICIENT_INFORMATION";
 
+export function routeAuditNeedsHumanReview(audit: AtlasRouteAuditResponse | null) {
+  return Boolean(audit && (
+    audit.requiresHumanReview
+    || audit.decision === "INSUFFICIENT_EVIDENCE"
+    || audit.analyzedManeuvers.some((item) => item.decision === "INSUFFICIENT_EVIDENCE" || item.decision === "REJECT"
+      || ["HUMAN_REVIEW", "PENALIZE_SEGMENT", "BLOCK_MANEUVER", "REQUEST_ALTERNATIVE"].includes(String(item.recommendedAction)))
+  ));
+}
+
+export function routeAuditRequiresReplan(audit: AtlasRouteAuditResponse | null) {
+  return Boolean(audit && (audit.requiresReplan || audit.decision === "REJECT"
+    || audit.analyzedManeuvers.some((item) => item.decision === "REJECT" || ["BLOCK_MANEUVER", "REQUEST_ALTERNATIVE"].includes(String(item.recommendedAction)))));
+}
+
 export function isRouteAuditEvaluationComplete(status: "idle" | "loading" | "ready" | "error", audit: AtlasRouteAuditResponse | null) {
   return status === "ready"
     && audit !== null
@@ -10,13 +24,13 @@ export function isRouteAuditEvaluationComplete(status: "idle" | "loading" | "rea
     && Boolean(audit.runId)
     && audit.decision !== "ERROR"
     && audit.decision !== "REJECT"
-    && !audit.requiresReplan
+    && !routeAuditRequiresReplan(audit)
     && (audit.auditedManeuverCount ?? 0) > 0;
 }
 
 export function isRouteAuditOperationallyComplete(status: "idle" | "loading" | "ready" | "error", audit: AtlasRouteAuditResponse | null, humanReviewAccepted = false) {
   return isRouteAuditEvaluationComplete(status, audit)
-    && (!audit?.requiresHumanReview || humanReviewAccepted);
+    && (!routeAuditNeedsHumanReview(audit) || humanReviewAccepted);
 }
 
 export function auditDecisionLabel(decision: AtlasRouteAuditResponse["decision"]) {
@@ -57,9 +71,10 @@ export function AtlasRouteAuditPanel({
     {status === "loading" && <p>La IA está evaluando esta ruta. No se puede aplicar ni guardar hasta completar la revisión.</p>}
     {status === "error" && <p role="alert">{error}</p>}
     {audit && <>
-      <p><b>{auditDecisionLabel(audit.decision)}</b>{audit.riskScore === null ? " · sin puntaje" : ` · indicador ${audit.riskScore}/100`}{audit.requiresHumanReview ? " · requiere revisión humana" : ""}</p>
+      <p><b>{auditDecisionLabel(audit.decision)}</b>{audit.riskScore === null ? " · sin puntaje" : ` · indicador ${audit.riskScore}/100`}{routeAuditNeedsHumanReview(audit) ? " · requiere revisión humana" : ""}</p>
       <p>{audit.summary}</p>
-      {audit.requiresHumanReview && !feedbackSaved && <p role="status">La IA pidió revisión humana. Registra una evaluación positiva para habilitar aplicar, guardar o probar la navegación.</p>}
+      {routeAuditRequiresReplan(audit) && <p role="alert">La IA marcó una maniobra que requiere cambiar el recorrido. Genera una nueva propuesta; el feedback no habilita esta ruta.</p>}
+      {routeAuditNeedsHumanReview(audit) && !routeAuditRequiresReplan(audit) && !feedbackSaved && <p role="status">La evidencia no es suficiente para liberar la ruta automáticamente. Revisa el caso y registra una evaluación positiva para habilitar aplicar, guardar o probar la navegación.</p>}
       <small>
         {audit.decision === "ERROR" || audit.provider !== "openai"
           ? "No se completó la evaluación de IA."
@@ -73,7 +88,7 @@ export function AtlasRouteAuditPanel({
       {audit.runId && <div className="ops-route-demo__audit-feedback">
         <label>Tu evaluación
           <select value={feedbackType} onChange={(event) => onFeedbackTypeChange(event.target.value as RouteAuditFeedbackType)} disabled={feedbackSaving || feedbackSaved}>
-            <option value="ACCEPT_AI">{audit.requiresHumanReview ? "Confirmo revisión y continuar" : "Acepto la evaluación"}</option>
+            <option value="ACCEPT_AI">{routeAuditNeedsHumanReview(audit) ? "Confirmo revisión y continuar" : "Acepto la evaluación"}</option>
             <option value="OVERRIDE_FEASIBLE">Override: ruta viable</option>
             <option value="OVERRIDE_NOT_FEASIBLE">Override: ruta no viable</option>
             <option value="INSUFFICIENT_INFORMATION">Falta información</option>

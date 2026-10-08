@@ -19,6 +19,23 @@ describe("Atlas mandatory route audit gate", () => {
     expect(isRouteAuditOperationallyComplete("ready", { ...successfulAudit, requiresHumanReview: false })).toBe(true);
   });
 
+  it("derives a human-review gate from insufficient evidence even when the summary flag is false", () => {
+    const contradictory = { ...successfulAudit, requiresHumanReview: false, decision: "INSUFFICIENT_EVIDENCE" as const };
+    expect(isRouteAuditEvaluationComplete("ready", contradictory)).toBe(true);
+    expect(isRouteAuditOperationallyComplete("ready", contradictory)).toBe(false);
+    expect(isRouteAuditOperationallyComplete("ready", contradictory, true)).toBe(true);
+  });
+
+  it("derives review and replan gates from maneuver decisions and recommended actions", () => {
+    const insufficient = { ...successfulAudit, requiresHumanReview: false, analyzedManeuvers: [{ maneuverId: "m-1", decision: "INSUFFICIENT_EVIDENCE", riskScore: 10, reasons: [], evidence: [], recommendedAction: "NONE" }] };
+    expect(isRouteAuditOperationallyComplete("ready", insufficient)).toBe(false);
+    expect(isRouteAuditOperationallyComplete("ready", insufficient, true)).toBe(true);
+
+    const alternative = { ...successfulAudit, requiresHumanReview: false, requiresReplan: false, analyzedManeuvers: [{ maneuverId: "m-1", decision: "CAUTION", riskScore: 75, reasons: [], evidence: ["giro"], recommendedAction: "REQUEST_ALTERNATIVE" }] };
+    expect(isRouteAuditEvaluationComplete("ready", alternative)).toBe(false);
+    expect(isRouteAuditOperationallyComplete("ready", alternative, true)).toBe(false);
+  });
+
   it.each([
     ["loading", successfulAudit],
     ["error", successfulAudit],

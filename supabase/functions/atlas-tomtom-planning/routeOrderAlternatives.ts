@@ -89,17 +89,24 @@ export async function selectFastestRoutedOrder<T extends { durationSeconds: numb
   seed: Candidate,
   seedRoute: T,
   candidates: Candidate[],
-  evaluate: (order: number[]) => Promise<T | null>
+  evaluate: (order: number[]) => Promise<T | null>,
+  concurrency = 2
 ): Promise<RoutedOrder<T>> {
+  if (!Number.isInteger(concurrency) || concurrency < 1 || concurrency > 8) throw new Error("La concurrencia de rutas candidatas no es válida.");
   let best: RoutedOrder<T> = { ...seed, route: seedRoute, alternativeApplied: false, alternativesEvaluated: 0, alternativesFailed: 0 };
-  for (const candidate of candidates) {
-    const route = await evaluate(candidate.order);
-    best.alternativesEvaluated += 1;
-    if (!route) { best.alternativesFailed += 1; continue; }
-    if (route.durationSeconds < best.route.durationSeconds
-      || route.durationSeconds === best.route.durationSeconds && route.distanceMeters < best.route.distanceMeters) {
-      best = { ...candidate, route, alternativeApplied: true, alternativesEvaluated: best.alternativesEvaluated, alternativesFailed: best.alternativesFailed };
+  let alternativesFailed = 0;
+  for (let offset = 0; offset < candidates.length; offset += concurrency) {
+    const batch = candidates.slice(offset, offset + concurrency);
+    const results = await Promise.all(batch.map(async (candidate) => ({ candidate, route: await evaluate(candidate.order).catch(() => null) })));
+    best.alternativesEvaluated += batch.length;
+    alternativesFailed += results.filter(({ route }) => route === null).length;
+    for (const { candidate, route } of results) {
+      if (!route) continue;
+      if (route.durationSeconds < best.route.durationSeconds
+        || route.durationSeconds === best.route.durationSeconds && route.distanceMeters < best.route.distanceMeters) {
+        best = { ...candidate, route, alternativeApplied: true, alternativesEvaluated: best.alternativesEvaluated, alternativesFailed };
+      }
     }
   }
-  return best;
+  return { ...best, alternativesEvaluated: candidates.length, alternativesFailed };
 }

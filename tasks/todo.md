@@ -5162,4 +5162,25 @@ Despliegue 2026-10-08: PR #108 integrado en `c2cee6a9`; migración `202610081753
 - [x] Elevar de dos a cuatro el presupuesto de órdenes alternativas y hacer visible cuántas rutas completas se trazaron; conservar la opción más rápida entre las candidatas realmente trazadas.
 - [x] Si OpenAI marca `requiresHumanReview`, exigir feedback humano positivo antes de aplicar/navegar/guardar en la UI y en la RPC; feedback de ruta no viable o falta de información mantiene bloqueado el uso.
 - [x] Corregir documentación contradictoria, ejecutar suites enfocadas, Deno, typecheck/build, Guardian, auditorías SQL/seguridad y `git diff --check`.
-- [ ] Desplegar mediante CI+migración+Edge Function; repetir comparación productiva Bus/Taxibus/Minibus y confirmar auditoría IA, puerta de revisión y latencia. No crear versión operacional durante smoke.
+- [x] Desplegar mediante CI+migración+Edge Function; repetir comparación productiva Bus/Taxibus/Minibus y confirmar auditoría IA, puerta de revisión y latencia. No crear versión operacional durante smoke.
+
+Verificación final en producción tras PR #112 (2026-10-08): con sesión autenticada se calcularon propuestas para el mismo recorrido de 12 paradas con Bus, Minibus y Taxibus. En los tres casos Valhalla trazó 5 órdenes completos; el orden ingresado fue equivalente o más rápido según la matriz, y la ruta resultó 10,7 km / 36 min. Route Intelligence evaluó 20 de 62 maniobras y terminó en los tres perfiles: Bus 11,097 ms (evidencia insuficiente, 0,35/100), Minibus 7,212 ms (revisión operacional recomendada, 0,38/100) y Taxibus 8,776 ms (revisión operacional recomendada, 35/100). Los tres resultados exigieron revisión humana por falta de dimensiones de unidad verificadas y/o evidencia comparativa; «Aplicar este orden» permaneció deshabilitado. No se registró feedback ni se guardó versión operativa. El benchmark con Google sigue siendo sombra/no ejecutado con fixture idéntico; por tanto esta verificación valida el flujo productivo de Valhalla + Route Intelligence, no la superioridad frente a Google ni un óptimo global.
+
+## Continuación del objetivo maestro: calidad de ruta y participación efectiva de IA — 2026-10-08
+
+### Plan verificable
+
+- [x] Reconciliar el código fusionado, funciones productivas, bundle y flujo UI/RPC actuales; seguir intacto el borrador/ruta del usuario y no guardar ni reasignar servicios durante pruebas.
+- [x] Auditar con fuentes oficiales Google Routes/Route Optimization y Valhalla: disponibilidad Chile, optimización de paradas, vehículo grande/dimensiones, lado de calzada, U-turn, límites, costo y etapa del producto.
+- [x] Corregir la métrica y el reporte del optimizador para distinguir búsqueda acotada de óptimo global; seleccionar mejor candidato real dentro de un presupuesto explícito y mantener explícito el escenario de 21+ paradas.
+- [x] Cerrar el flujo para que la IA participe como validación obligatoria, fresca y ligada a la geometría/vehículo exactos antes de presentar la ruta como utilizable; ante error, timeout o salida inválida no habilitar aplicar/guardar/simular.
+- [x] Mejorar la búsqueda dentro del presupuesto: trazar hasta 8 alternativas de orden (9 órdenes incl. base) con concurrencia 2, seleccionar por tiempo/distancia de la ruta completa, preservar el punto base si fallan o no mejoran; enviar a la IA evidencia reportada de la búsqueda y corregir su resumen para que no niegue comparaciones realizadas. Los cambios de acceso siguen sujetos a caminata corta y mejora medida; no inventar puntos ni asegurar cruces seguros.
+- [x] Agregar pruebas de búsqueda, límites, accesos, fallos IA, identidad de snapshots y gates; ejecutar pruebas (41 focalizadas y suites Guardian), typecheck, Deno check, build, Guardian y auditorías SQL/seguridad antes de publicar.
+- [ ] Desplegar únicamente con CI verde; verificar los tres perfiles y el gate en producción sin crear versión operacional. Registrar Google como no comparado en vivo si no hay credencial/cobertura Chile.
+
+### Evidencia de auditoría y verificación
+
+- Producción autenticada (antes de este cambio): 12 paradas; 5 órdenes (orden inicial + 4 alternativas) trazadas; 10,7 km / 36 min. IA OpenAI evaluó 20/62 maniobras en 8,6 s, identificó evidencia insuficiente por falta de medidas de unidad/vía y mantuvo bloqueada la propuesta. No se guardó versión ni se registró feedback.
+- Google Routes API optimiza orden de puntos intermedios por tiempo y considera distancia/giro; la API Route Optimization expone `avoidUTurns` experimental a nivel de visita. Large Vehicle Routing con dimensiones no está disponible en Chile (GA solo en 48 estados contiguos de EE. UU.; Japón experimental), por lo que no reemplaza Valhalla para este caso.
+- Verificación local: 41 pruebas focalizadas; TypeScript/build; Deno check de ambas Edge Functions; Guardian 0 errores / 1 advertencia preexistente (archivo del planificador 836 líneas); migraciones, seguridad, baseline de rendimiento y `git diff --check` PASS. `supabase db push --linked --dry-run` identificó únicamente la migración nueva `20261008185321`.
+- Cambio de entorno revertido: después de Deno check se restableció `node_modules` con `npm ci` para usar las versiones fijadas en `package-lock.json`; el baseline vuelve a pasar. No se modificó el baseline machine-readable.

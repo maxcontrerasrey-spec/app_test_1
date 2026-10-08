@@ -6,6 +6,7 @@ const humanReviewMigration = readFileSync(new URL("../../supabase/migrations/202
 const edge = readFileSync(new URL("../../supabase/functions/atlas-route-intelligence/index.ts", import.meta.url), "utf8");
 const config = readFileSync(new URL("../../supabase/config.toml", import.meta.url), "utf8");
 const planner = readFileSync(new URL("../../supabase/functions/atlas-tomtom-planning/index.ts", import.meta.url), "utf8");
+const operationsApi = readFileSync(new URL("../../src/modules/operaciones/services/atlasOperationsApi.ts", import.meta.url), "utf8");
 
 describe("Atlas Route Intelligence security contract", () => {
   it("requires JWT and server-verified superadmin before reading or persisting route evidence", () => {
@@ -54,6 +55,17 @@ describe("Atlas Route Intelligence security contract", () => {
     expect(humanReviewMigration).toContain("to authenticated");
   });
 
+  it("fails closed in the database when route or maneuver evidence implies review or replan", () => {
+    const strictGate = readFileSync(new URL("../../supabase/migrations/20261008185321_atlas_route_insufficient_evidence_requires_review.sql", import.meta.url), "utf8");
+    expect(strictGate).toContain("audit_row.decision = 'INSUFFICIENT_EVIDENCE'");
+    expect(strictGate).toContain("maneuver->>'decision' = 'INSUFFICIENT_EVIDENCE'");
+    expect(strictGate).toContain("maneuver->>'recommendedAction' in ('HUMAN_REVIEW','PENALIZE_SEGMENT')");
+    expect(strictGate).toContain("maneuver->>'recommendedAction' in ('BLOCK_MANEUVER','REQUEST_ALTERNATIVE')");
+    expect(strictGate).toContain("f.feedback_type in ('ACCEPT_AI','OVERRIDE_FEASIBLE')");
+    expect(strictGate).toContain("from public, anon");
+    expect(strictGate).toContain("to authenticated");
+  });
+
   it("defaults to OFF, calls the model for every valid route, keeps risk triage bounded, and leaves failed routes as blocked drafts", () => {
     expect(edge).toContain('|| "OFF"');
     expect(edge).toContain('mode !== "SHADOW"');
@@ -62,6 +74,14 @@ describe("Atlas Route Intelligence security contract", () => {
     expect(edge).toContain("La ruta se conserva como borrador; no se puede aplicar ni guardar");
     expect(edge).toContain("invalid_evaluation_id");
     expect(edge).toContain("{ evaluationId, candidateHash, vehicleId, model");
+  });
+
+  it("passes bounded Valhalla route-order search evidence to AI instead of letting it claim no comparison occurred", () => {
+    expect(operationsApi).toContain("reportedRouteOrderSearch: route.routeOrderSearch");
+    expect(edge).toContain("reportedRouteOrderSearch");
+    expect(edge).toContain("no afirmar que no hubo comparación de órdenes");
+    expect(edge).toContain("no llames exhaustiva ni global a una búsqueda acotada");
+    expect(edge).toContain("route-intelligence-prompt:1.4.0");
   });
 
   it("accepts only the producer's empty restriction placeholder and reloads validated restrictions server-side", () => {
@@ -74,6 +94,6 @@ describe("Atlas Route Intelligence security contract", () => {
     expect(edge).toContain("invalid_maneuver_leg_context");
     expect(edge).toContain("routeLegIndex");
     expect(edge).toContain("legDestinationIsFinal");
-    expect(planner).toContain("const MAX_ROUTED_ORDER_ALTERNATIVES = 4");
+    expect(planner).toContain("const MAX_ROUTED_ORDER_ALTERNATIVES = 8");
   });
 });
