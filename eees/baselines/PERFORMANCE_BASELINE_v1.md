@@ -191,12 +191,14 @@ Revision 2026-10-08 Atlas contexto de tramos y confirmación de revisión humana
 
 Revision 2026-10-08 despacho solo con auditoría IA: Guardian CI run 37832767235 midió +620 bytes JS por la auditoría fresca de previews guardadas y la barrera SQL de despacho. Se registra el total exacto de 5.344.517 bytes observado en CI; las tolerancias siguen en cero y no se cambia el límite por chunk.
 
+Revision 2026-10-08 búsqueda de rutas y replanteo IA Atlas: Guardian CI run 37852518394 midió 5.346.673 bytes de JS (+2.156) por la búsqueda de alternativas y la acción de replanteo automático revisada por IA. Se registra el artefacto exacto de CI; las tolerancias siguen en cero, no se cambia el límite por chunk de 520 KB y el warning del módulo Atlas continúa visible.
+
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
   "distTotalBytes": 7470218,
   "jsFileCount": 74,
-  "jsTotalBytes": 5344517,
+  "jsTotalBytes": 5346673,
   "cssFileCount": 15,
   "cssTotalBytes": 540940,
   "budgetPolicy": {
