@@ -5115,3 +5115,22 @@ Revisión inicial: PR #101 ya añadió un ajuste de acceso de hasta 20 m y camin
 - Reutilizar `travel_methodology` y el paso `contracts_control`; el nuevo monto se guarda como dato de primera clase y la RPC es su única frontera transaccional junto con la decisión.
 - Preservar compatibilidad de requests históricos: alojamiento sin subtipo se lee como no especificado; no inventar retroactivamente `Pensión` o `Campamento Minero`.
 - `other_benefits` se mantiene para la aprobación en curso de Gerente de Área o Control de Contratos; fuera de esas aprobaciones no se renderiza y, una vez `hiring_requests.status = 'approved'`, se oculta en vistas de reclutamiento.
+## Atlas: optimización operativa con revisión IA obligatoria — 2026-10-08
+
+### Plan verificable
+
+- [x] Reconstruir contrato productivo del planificador, AI reviewer, persistencia, UI, permisos y fallos; contrastar checkout limpio con funciones activas.
+- [x] Definir criterio de ruta operativamente razonable: orden de paradas libre, tipo de vehículo, minimización de tiempo/distancia con penalización explicable de maniobras, acceso peatonal acotado y giros en U solo objetados cuando la evidencia indique retroceso/no transitabilidad.
+- [ ] Diseñar generación de candidatos de ruta solo con geometrías trazadas por Valhalla; hacer que IA evalúe/rankee evidencia/candidatos y que el backend valide la respuesta contra opciones reales (sin aceptar coordenadas inventadas).
+- [x] Garantizar llamada IA por propuesta, estado persistido inequívoco y reintento desde la UI volviendo a proponer el recorrido; bloquear aplicar, simular y guardar si no hay evaluación IA OpenAI persistida con maniobras auditadas.
+- [x] Agregar regresiones para la barrera de aprobación IA y reintento lógico con nueva clave de idempotencia; mantener las suites existentes de orden, perfil, desvío y giros.
+- [ ] Ejecutar suites focalizadas, typecheck, Deno checks, build, Guardian, auditorías Supabase aplicables y `git diff --check`; corregir cada hallazgo hasta cerrar.
+- [x] Comparar documentación oficial de Google y Valhalla; dejar la comparativa de ejecución real pendiente porque no hay configuración/credencial Google disponible y no declarar superioridad empírica.
+- [x] Corregir el primer fallo CI de presupuesto JS reduciendo lógica duplicada. Guardian CI midió el incremento funcional final de +331 B JS (+0,01%); el baseline se actualizó solo con esa medición, manteniendo tolerancias cero, CSS/vendor sin cambios y el límite del chunk en 520 KB.
+- [ ] Preparar release seguro, integrar/deploy solo tras CI y contratos de producción; comprobar en la web productiva que cada propuesta obtiene evaluación IA real, estados/fallos visibles y geometría/orden utilizables.
+
+Verificación local de esta iteración: unitarias 230/230, contratos 159/159, TypeScript/build frontend, Deno de ambas Edge Functions y Guardian pasan localmente; Guardian conserva un warning de tamaño de archivo del planificador (806 líneas). Se actualizaron el control y la evidencia del baseline usando la medición CI exacta (+331 B); el nuevo CI debe confirmar el baseline recalibrado antes del release. No se ha corrido una comparación de rutas con Google en Chile porque no hay credencial; se compararon capacidades oficiales y restricciones geográficas.
+
+### Revisión inicial
+
+La Edge Function productiva `atlas-tomtom-planning` está ACTIVE v19 y coincide con `origin/main`; el checkout original está 10 commits detrás y tiene cambios ajenos, por lo que se trabaja en un worktree limpio basado en `origin/main`. El planner ya usa perfiles Valhalla bus por categoría, acceso cercano y búsqueda de alternativas; sin embargo el path optimizer prioriza eliminar cualquier giro U aunque no prueba que obligue a reversar. Route Intelligence opera después, en SHADOW, y falla con `OPENAI_TIMEOUT` a 10 s. La IA debe decidir entre candidatos viales válidos y validar evidencia; no debe inventar geometría, dimensiones, cruces seguros ni alterar puntos sin una solución trazada. Google solo podrá ser comparado empíricamente con credencial real y los mismos casos; documentación actual no basta para elegir proveedor.

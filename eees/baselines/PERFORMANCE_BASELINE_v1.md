@@ -183,12 +183,14 @@ Revision 2026-10-06 CI Ubuntu/Node 24: Guardian run 37455199312 midio 2.120 byte
 
 Revision 2026-10-06 mosaico vacío de Agenda: build local en 7.460.390 bytes totales, 5.333.141 JS y 537.512 CSS (+533 CSS); fija la tarjeta vacía a la celda de dos/tres columnas seleccionada, evitando que un solo estado vacío se expanda a toda la fila. Guardian CI conserva la diferencia medida de plataforma de 2.120 bytes en `dist`/JS; baseline canónico 7.462.510/5.335.261/537.512 bytes, tolerancia cero.
 
+Revision 2026-10-08 Atlas revisión IA obligatoria: Guardian CI run 37813152087 midió +331 bytes de JavaScript (0,01%) para exigir una evaluación OpenAI persistida antes de aplicar, simular o guardar una ruta, con reintento desde el planificador. Se actualiza el baseline canónico exacto a 7.470.218 bytes `dist` y 5.340.753 JS; CSS, vendors, presupuesto 520 KB del chunk y tolerancias cero permanecen sin cambios.
+
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 7469887,
+  "distTotalBytes": 7470218,
   "jsFileCount": 74,
-  "jsTotalBytes": 5340422,
+  "jsTotalBytes": 5340753,
   "cssFileCount": 15,
   "cssTotalBytes": 540940,
   "budgetPolicy": {

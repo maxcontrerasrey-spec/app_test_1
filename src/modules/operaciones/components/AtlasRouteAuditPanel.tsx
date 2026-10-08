@@ -2,6 +2,16 @@ import type { AtlasRouteAuditResponse } from "../services/atlasOperationsApi";
 
 export type RouteAuditFeedbackType = "ACCEPT_AI" | "OVERRIDE_FEASIBLE" | "OVERRIDE_NOT_FEASIBLE" | "INSUFFICIENT_INFORMATION";
 
+export function isRouteAuditOperationallyComplete(status: "idle" | "loading" | "ready" | "error", audit: AtlasRouteAuditResponse | null) {
+  return status === "ready"
+    && audit !== null
+    && audit.mode === "SHADOW"
+    && audit.provider === "openai"
+    && Boolean(audit.runId)
+    && audit.decision !== "ERROR"
+    && (audit.auditedManeuverCount ?? 0) > 0;
+}
+
 export function auditDecisionLabel(decision: AtlasRouteAuditResponse["decision"]) {
   return ({
     APPROVE: "Sin alertas en las maniobras revisadas",
@@ -24,7 +34,7 @@ export function AtlasRouteAuditPanel({
   onFeedbackReasonChange,
   onSubmitFeedback,
 }: {
-  status: "loading" | "ready" | "off" | "error";
+  status: "loading" | "ready" | "error";
   audit: AtlasRouteAuditResponse | null;
   error: string;
   feedbackType: RouteAuditFeedbackType;
@@ -37,10 +47,9 @@ export function AtlasRouteAuditPanel({
 }) {
   return <section className="ops-route-demo__message ops-route-demo__route-audit" aria-live="polite">
     <strong>Route Intelligence · revisión con IA</strong>
-    {status === "loading" && <p>La IA está evaluando esta ruta; el cálculo vial permanece disponible mientras termina.</p>}
-    {status === "off" && <p>Auditoría desactivada por configuración.</p>}
+    {status === "loading" && <p>La IA está evaluando esta ruta. No se puede aplicar ni guardar hasta completar la revisión.</p>}
     {status === "error" && <p role="alert">{error}</p>}
-    {audit && status === "ready" && <>
+    {audit && <>
       <p><b>{auditDecisionLabel(audit.decision)}</b>{audit.riskScore === null ? " · sin puntaje" : ` · indicador ${audit.riskScore}/100`}</p>
       <p>{audit.summary}</p>
       <small>

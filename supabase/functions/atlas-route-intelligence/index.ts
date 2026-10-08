@@ -196,6 +196,8 @@ Deno.serve(async (request) => {
     const raw = await request.text();
     if (new TextEncoder().encode(raw).byteLength > MAX_BODY_BYTES) return json({ error: "request_too_large" }, 413, origin);
     const body = JSON.parse(raw) as Record<string, unknown>;
+    const evaluationId = typeof body.evaluationId === "string" ? body.evaluationId.trim() : "";
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(evaluationId)) return json({ error: "invalid_evaluation_id" }, 400, origin);
     const mode = Deno.env.get("ATLAS_ROUTE_INTELLIGENCE_MODE")?.trim().toUpperCase() || "OFF";
     if (mode === "OFF") return json({ mode: "OFF", status: "disabled" }, 200, origin);
     if (mode !== "SHADOW") return json({ error: "invalid_mode" }, 503, origin);
@@ -235,11 +237,11 @@ Deno.serve(async (request) => {
       usage = result.usage;
     } catch (error) {
       if (!profileLookupFailed && !restrictionLookupFailed) errorCategory = normalizeError(error);
-      output = { decision: "ERROR", riskScore: null, summary: "No fue posible completar la evaluación de inteligencia artificial. La ruta calculada sigue disponible sin cambios; el intento queda registrado.", analyzedManeuvers: [], requiresReplan: false, requiresHumanReview: true };
+      output = { decision: "ERROR", riskScore: null, summary: "No fue posible completar la evaluación IA. La ruta se conserva como borrador; no se puede aplicar ni guardar hasta completar una revisión.", analyzedManeuvers: [], requiresReplan: false, requiresHumanReview: true };
     }
     const latencyMs = Math.min(120000, Math.round(performance.now() - started));
     const candidateHash = await sha256(JSON.stringify({ analyzer: ANALYZER_VERSION, maneuvers: normalizedManeuvers }));
-    const idempotencyKey = await sha256(JSON.stringify({ candidateHash, vehicleId, model, prompt: PROMPT_VERSION, riskRules: "1.0.0", timeBucket: Math.floor(Date.now() / 900_000) }));
+    const idempotencyKey = await sha256(JSON.stringify({ evaluationId, candidateHash, vehicleId, model, prompt: PROMPT_VERSION, riskRules: "1.0.0" }));
     let runId: string;
     try {
       runId = await recordRun(token, apiKey, {
