@@ -4961,8 +4961,14 @@ Resultado local (2026-10-08): TypeScript y ambos `deno check` pasan; unit 193/19
 - [x] Agregar tipo de vehículo derivado del padrón activo, persistirlo junto a la versión de ruta y exponerlo al crear/consultar despachos.
 - [x] Comparar el tipo seleccionado al planificar con el tipo del equipo asignado y mostrar advertencia no bloqueante si difieren.
 - [x] Rediseñar el detalle operacional: datos de conductor en una sola fila; equipo en bloques compactos con tipo, marca y modelo; adaptar pantallas estrechas.
-- [ ] Añadir regresiones de persistencia, comparación, datos nulos y layout; ejecutar pruebas focalizadas, build frontend, Guardian y `git diff --check`.
+- [x] Añadir regresiones de persistencia, comparación, datos nulos y layout; ejecutar pruebas focalizadas, build frontend, Guardian y `git diff --check`.
 - [ ] Integrar y publicar con migración antes del frontend; verificar datos/advertencia y bundle en producción sin modificar servicios reales.
+
+## Evidencia parcial de producción
+
+El navegador Supabase autenticado apuntó al proyecto `pzblmbahnoyntrhistea`, mismo ref usado por `https://gestion.busesjm.cl`. El esquema previo coincidía con la versión de `origin/main`: 23 columnas en `atlas_ops_control_tower` y la RPC de guardado de 7 argumentos. Se ejecutó la migración `20261008010246` en una transacción; Supabase SQL Editor reportó `Success. No rows returned`. La versión se registró en `supabase_migrations.schema_migrations`. La inspección posterior confirmó columna de tipo planificado, columna de discrepancia, ejecución concedida a `authenticated`, sin ejecución para `anon`, y lectura autenticada del view. No se crearon ni modificaron servicios.
+
+CI de PR #95: Cloudflare Pages preview y `audit-enterprise-guardrails` aprobados. La publicación de producción queda pendiente del merge y del despliegue final de Cloudflare.
 
 ## Revisión del plan
 
