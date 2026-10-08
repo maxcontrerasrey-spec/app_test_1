@@ -23,6 +23,14 @@ export type AtlasDispatch = {
   vehicle_code: string | null;
   vehicle_id: string | null;
   plate: string | null;
+  vehicle_type: string | null;
+  brand: string | null;
+  model: string | null;
+  year: string | null;
+  driver_buk_employee_id: string | null;
+  driver_is_working_day: boolean | null;
+  driver_is_rest_day: boolean | null;
+  driver_roster_status: string | null;
   planning_status: string;
   execution_status: string;
   risk_status: "green" | "attention" | "at_risk" | "critical";
@@ -47,9 +55,9 @@ export type AtlasTemplate = {
   schedule_label: string | null;
 };
 
-export type AtlasVehicle = { id: string; code: string; plate: string | null; vehicle_type: string | null };
+export type AtlasVehicle = { id: string; code: string; plate: string | null; vehicle_type: string | null; brand: string | null; model: string | null; year: string | null };
 export type AtlasContract = { id: number; code: string; contract_name: string };
-export type AtlasDriver = { buk_employee_id: string; full_name: string; document_number: string | null; display_label: string; contract_code: string | null; is_working_day: boolean; is_rest_day: boolean };
+export type AtlasDriver = { buk_employee_id: string; full_name: string; document_number: string | null; display_label: string; contract_code: string | null; roster_effective_status: string; is_working_day: boolean; is_rest_day: boolean };
 export type AtlasServiceRoute = {
   id: string;
   service_template_id: number;
@@ -79,7 +87,7 @@ export async function getAtlasOperationsCatalogs() {
   const db = client();
   const [templates, vehicles, contracts, editors] = await Promise.all([
     db.from("atlas_ops_service_templates").select("id, contract_id, name, service_type, contractual_name, schedule_label").eq("is_active", true).order("name"),
-    db.from("atlas_ops_vehicles").select("id, code, plate, vehicle_type").eq("is_active", true).order("code"),
+    db.from("atlas_ops_vehicles").select("id, code, plate, vehicle_type, brand, model, year").eq("is_active", true).order("code"),
     db.from("contracts").select("id, code, contract_name").eq("is_active", true).order("contract_name"),
     db.from("atlas_ops_contract_editors").select("contract_id").eq("is_active", true)
   ]);
@@ -148,6 +156,15 @@ export async function createAtlasDispatch(payload: Record<string, unknown>) {
 
 export async function transitionAtlasDispatch(id: string, transition: string) {
   await unwrap<null>(client().rpc("atlas_ops_transition_dispatch", { p_dispatch_id: id, p_transition: transition }), "No fue posible actualizar el servicio.");
+}
+
+export async function reassignAtlasDispatchResources(id: string, driverBukEmployeeId: string | null, vehicleId: string | null, reason: string) {
+  await unwrap<null>(client().rpc("atlas_ops_reassign_dispatch", {
+    p_dispatch_id: id,
+    p_driver_buk_employee_id: driverBukEmployeeId,
+    p_vehicle_id: vehicleId,
+    p_reason: reason
+  }), "No fue posible cambiar los recursos del servicio.");
 }
 
 export async function getAtlasDispatchEvents(dispatchId: string) {
@@ -271,7 +288,8 @@ async function callAtlasValhalla<T extends AtlasPlannedRoute>(body: Record<strin
     const friendlyErrors: Record<string, string> = {
       valhalla_matrix_http_429: "El planificador de rutas está temporalmente ocupado. Espera unos segundos y vuelve a intentar.",
       valhalla_matrix_invalid_response: "Valhalla devolvió una matriz incompleta. Intenta nuevamente.",
-      valhalla_route_not_returned: "Valhalla no encontró un recorrido transitable entre todas las direcciones. Revisa sus ubicaciones."
+      valhalla_route_not_returned: "Valhalla no encontró un recorrido transitable entre todas las direcciones. Revisa sus ubicaciones.",
+      valhalla_route_uturn_detected: "La propuesta contiene un giro en U o un retroceso en una parada. Ajusta el punto en el mapa o revisa manualmente la secuencia antes de guardar."
     };
     throw new Error(friendlyErrors[payload.error ?? ""] ?? `No fue posible calcular la ruta (${payload.error ?? response.status}).`);
   }

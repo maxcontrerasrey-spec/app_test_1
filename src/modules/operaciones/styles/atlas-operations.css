@@ -272,6 +272,15 @@
 .atlas-ops__timeline li div { display: grid; align-content: start; gap: 0.3rem; }
 .atlas-ops__timeline strong { font-size: 0.76rem; text-transform: capitalize; }
 .atlas-ops__timeline small { color: var(--ops-muted); font-size: 0.68rem; }
+.atlas-ops__timeline-change { display: grid; gap: 0.25rem; margin-top: 0.3rem; color: var(--ops-ink); font-size: 0.7rem; line-height: 1.4; overflow-wrap: anywhere; }
+.atlas-ops__contingency-label { width: fit-content; border-radius: 999px; padding: 0.18rem 0.45rem; background: #fff1d6; color: #8a4b08; font-weight: 650; }
+.atlas-ops__vehicle-description { display: grid; gap: 0.12rem; min-width: 8rem; }
+.atlas-ops__vehicle-description strong { font-size: 0.73rem; }
+.atlas-ops__vehicle-description small { display: block; color: var(--ops-muted); font-size: 0.65rem; line-height: 1.35; }
+.atlas-ops__roster-badge { display: block; width: fit-content; margin-top: 0.3rem; border: 1px solid transparent; border-radius: 999px; padding: 0.16rem 0.42rem; font-size: 0.62rem; font-weight: 650; line-height: 1.35; }
+.atlas-ops__roster-badge--working { border-color: #b7e4c7; background: #eaf8ef; color: #176b3a; }
+.atlas-ops__roster-badge--rest { border-color: #f1d2a7; background: #fff5e8; color: #8a4b08; }
+.atlas-ops__roster-badge--unknown { border-color: var(--ops-border-soft); background: #f5f6f8; color: var(--ops-muted); }
 .atlas-ops__driver-list { display: grid; gap: 0.75rem; }
 .atlas-ops__driver-card { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--ops-space-3); padding: 0.9rem; border: 1px solid var(--ops-border-soft); border-radius: var(--ops-radius); background: var(--ops-surface); }
 .atlas-ops__driver-card h2 { margin: 0.35rem 0; font-size: 0.95rem; }
