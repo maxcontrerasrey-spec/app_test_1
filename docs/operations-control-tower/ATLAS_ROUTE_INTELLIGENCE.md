@@ -2,7 +2,7 @@
 
 ## Estado y objetivo
 
-La primera entrega funciona en modo `SHADOW`. La ruta existente sigue siendo la fuente de planificación: TomTom resuelve direcciones, el optimizador determinista ordena paradas, Valhalla calcula el recorrido y Ferrostar conserva la navegación del conductor. Route Intelligence revisa maniobras y registra observaciones sin modificar la propuesta, bloquearla ni certificar que sea segura.
+La primera entrega funciona en modo `SHADOW`. TomTom resuelve direcciones, el optimizador determinista ordena paradas, Valhalla calcula el recorrido y Ferrostar conserva la navegación del conductor. Route Intelligence intenta revisar con OpenAI cada propuesta válida y registra la evaluación sin modificar el trazado, bloquearlo ni certificar que sea seguro. El 100% se refiere a cobertura de evaluación de las propuestas que llegan al endpoint con modo habilitado; no garantiza una mejora positiva en una ruta que ya sea la mejor opción verificable.
 
 El límite es deliberado: `LEGAL`, `ROUTABLE`, `PHYSICALLY_POSSIBLE` y `OPERATIONALLY_REASONABLE` son propiedades distintas. Una respuesta del auditor nunca demuestra por sí sola las cuatro.
 
@@ -14,8 +14,9 @@ flowchart LR
   B --> C[Valhalla: ruta y maniobras]
   C --> D[Analizador determinista]
   D --> E[Pre-filtro de riesgo]
-  E -->|Sin candidato| F[Insuficiente evidencia determinista]
-  E -->|Candidato| G[GPT-6 Luna · auditor]
+  E -->|Candidato de riesgo| G[GPT-6 Luna · revisión priorizada]
+  E -->|Sin candidato| F[Muestra distribuida del recorrido]
+  F --> G
   H[Perfil técnico verificado] --> G
   I[Restricciones Atlas validadas] --> E
   G --> J[Structured output validado]
@@ -30,12 +31,12 @@ flowchart LR
 
 - El analizador normaliza tipo de maniobra, bearings, ángulo, nombre vial y coordenadas que entrega Valhalla.
 - Carriles, ancho, sentido, tráfico y restricciones permanecen desconocidos salvo que Atlas tenga evidencia validada. No se infieren dimensiones.
-- El pre-filtro centraliza umbrales; llama al modelo solo si existe un candidato. Un U-turn, giro de al menos 135 grados, giro cerrado de Valhalla o restricción operacional validada puede elevar una maniobra para revisión.
+- El pre-filtro centraliza umbrales. Si encuentra riesgos, el modelo recibe hasta 20 maniobras priorizadas; si no encuentra, igualmente se llama al modelo con una muestra distribuida de hasta 20 maniobras de todo el recorrido. La respuesta informa cuántas maniobras revisó y el alcance usado.
 - La API recibe el perfil de equipo opcional. Solo se considera verificado si un administrador entrega tipo y dimensiones críticas desde una fuente confirmada. Sin perfil verificado, `APPROVE` se transforma en `INSUFFICIENT_EVIDENCE`.
 - Las restricciones operacionales se guardan como `PROPOSED`; una segunda acción explícita de un superadministrador puede validarlas. Solo filas `VALIDATED`, vigentes, compatibles por contrato/tipo y cercanas a la maniobra se incluyen en la auditoría.
 - Datos de texto de mapas se consideran no confiables. El modelo no recibe herramientas que escriban reglas, cambien rutas o creen despachos.
-- Si OpenAI, el perfil o la base de restricciones falla, el planificador histórico continúa; el evento queda en error/incompleto cuando se puede persistir.
-- Una propuesta sin alertas visibles no equivale a aprobación operacional. Sin candidatos, la respuesta es `INSUFFICIENT_EVIDENCE`, nunca `APPROVE`.
+- Si OpenAI, el perfil o la base de restricciones falla, el planificador vial continúa; el intento queda identificado como error/incompleto cuando se puede persistir. No se contabiliza como evaluación IA exitosa.
+- Una propuesta sin alertas visibles no equivale a aprobación operacional. Sin candidatos de riesgo, se envía la muestra distribuida al modelo; un `APPROVE` solo describe la evidencia entregada y nunca certifica la ruta.
 
 ## Seguridad y persistencia
 
@@ -52,11 +53,11 @@ Desactivar inmediatamente configurando `ATLAS_ROUTE_INTELLIGENCE_MODE=OFF`. Las 
 ## Restricciones conocidas y siguiente etapa
 
 - El flujo actual de Valhalla rechaza U-turns antes de devolver una ruta candidata. Por eso esos fallos históricos no se convierten automáticamente en una ejecución de auditoría; se mantiene la protección existente.
-- La API actual calcula una sola ruta y no expone alternativas ni una abstracción verificada de penalización de segmento. V1 registra `requiresReplan`, pero no reintenta, penaliza calles ni inventa restricciones. La propuesta no se modifica.
+- La API actual calcula una sola ruta y no expone alternativas ni una abstracción verificada de penalización de segmento. V1 registra `requiresReplan`, pero no reintenta, penaliza calles ni inventa restricciones. La propuesta no se modifica. La tasa de rutas con mejora comprobada es una métrica distinta de la cobertura IA y no puede garantizarse en 100%; si no existe una alternativa mejor y validada por Valhalla, se conserva la ruta base.
 - Las restricciones tienen RPC segura y audit trail. La gestión inicial se realiza por RPC con rol superadministrador; aún falta una pantalla administrativa dedicada.
 - El perfil dimensional no se llena desde patentes o tipo de flota. Debe cargarse desde una fuente técnica confiable.
 - Tráfico, señalización y restricciones de faena no están conectados salvo las restricciones Atlas validadas.
-- No se midieron tiempos productivos ni se generó corpus real de operación. El modo SHADOW debe reunir feedback antes de habilitar recomendaciones asistidas o replanning.
+- No se midieron tiempos productivos ni se generó corpus real de operación. Para permitir mejoras automáticas se requiere una siguiente etapa que genere rutas alternativas reales, las calcule con Valhalla para cada tipo de equipo, defina una regla de comparación operacional revisable y aplique solo una alternativa demostrablemente superior. El LLM no debe inventar geometría ni decidir una ponderación opaca entre minutos y maniobras.
 
 ## Validación y fixture
 

@@ -5015,6 +5015,25 @@ Validación: 18 pruebas focalizadas aprobadas; Guardian remoto aprobó todos sus
 - [x] Ejecutar pruebas focalizadas (11/11), Deno check, `npm run build:frontend-check`, Guardian (0 errores/advertencias), auditorías de migraciones/seguridad y `git diff --check`.
 - [ ] Integrar con CI y comprobar el flujo productivo sin modificar despachos reales.
 
+# Atlas: reconciliar ficha técnica de flota y activar evaluación útil de Route Intelligence — 2026-10-08
+
+## Plan verificable
+
+- [x] Reconciliar en modo lectura los 756 vehículos de `Flota (34).xlsx` con producción por código (J) y patente (T); informar coincidencias exactas, diferencias y duplicados antes de cualquier escritura.
+- [x] Completar exclusivamente marca, modelo y año en registros existentes con código y patente inequívocos; conservar UUID, estado, contrato, despachos, bindings y telemetría. No insertar ni borrar equipos.
+- [x] Corregir el contrato de maniobras: aceptar `validatedRestrictions: []` del productor Valhalla, rechazar cualquier restricción no vacía aportada por el cliente y seguir cargando restricciones únicamente desde el servidor.
+- [x] Asegurar que toda ruta propuesta se evalúe con Route Intelligence, incluso cuando el pre-filtro determinista no encuentre maniobras candidatas; limitar y versionar explícitamente evidencia, costo, timeout y estado de fallo.
+- [ ] Implementar replanificación asistida a partir de alternativas calculadas por el optimizador y trazadas por Valhalla; aplicar una alternativa únicamente si conserva todos los puntos, es transitable y una métrica reproducible demuestra mejora. Mantener la ruta base cuando no la haya; la cobertura IA no equivale a mejora positiva garantizada.
+- [x] Ajustar panel, documentación y ADR para separar cobertura IA (100% de rutas evaluadas), alternativas evaluadas y tasa de mejora comprobada; mantener fall-open de planificación si OpenAI no responde, marcando la evaluación como fallida y sin afirmar cobertura exitosa.
+- [x] Ejecutar regresiones del payload productor-consumidor, muestra distribuida sin candidatos de riesgo, priorización y límite de maniobras; correr Deno checks, TypeScript/build, Guardian, auditorías Supabase aplicables y `git diff --check`.
+- [ ] Integrar y publicar primero los cambios compatibles de función/backend y luego la UI; actualizar/usar únicamente la credencial OpenAI productiva ya existente. Verificar versiones activas, acceso funcional de superadministrador, identidad de vehículos, metadatos y bundle/pantalla productiva.
+
+## Revisión del plan
+
+El límite de “100%” se implementa como evaluación IA intentada y contabilizada en todas las rutas válidas, no como garantía ficticia de que siempre exista una ruta estrictamente mejor. Toda mejora que se aplique debe ser candidata del sistema, recomputada por Valhalla y superar la métrica declarada. Una indisponibilidad externa debe dejar la ruta vial calculada disponible y quedar identificada como evaluación incompleta. Los datos del XLSX no crearán ni reemplazarán equipos: solo enriquecerán filas actuales con identidad compuesta exacta.
+
+Resultado productivo del backfill: 756/756 códigos y patentes conciliados exactamente; se actualizaron solo `brand`, `model`, `year` de filas que estaban vacías. Confirmación posterior: 756 filas conservan identidad, 748 tienen marca, 749 modelo y 749 año confiable; no se cargó `0` como año. Siete filas sin especificaciones en el XLSX continúan vacías (2 categorías `VEHICULOS BUSES LEASING`, 5 `EQUIPOS EXTERNOS`); una fila adicional carece solo de marca. No se insertaron/eliminaron unidades ni se alteró historia/estado.
+
 ## Revisión del plan
 
 Valhalla documenta `break` como punto donde permite U-turns y `break_through` como punto donde los impide. Los datos de maniobra que recibe Atlas incluyen tipo, forma y bearings, pero no garantizan ancho libre de vía ni espacio de barrido de la unidad; un U-turn no prueba que se necesite reversa. Permitir el trazado, mantener la optimización automática y advertir honestamente cuando la maniobrabilidad física no puede verificarse. No bloquear ni asegurar espacio suficiente sin evidencia vial y perfil dimensional verificados.

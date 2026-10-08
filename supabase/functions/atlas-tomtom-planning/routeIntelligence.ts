@@ -119,6 +119,54 @@ export function analyzeValhallaManeuvers(maneuvers: RawValhallaManeuver[]): Rout
   });
 }
 
+function boundedNumber(value: unknown, minimum: number, maximum: number): number | null {
+  return typeof value === "number" && Number.isFinite(value) && value >= minimum && value <= maximum ? value : null;
+}
+
+/** Validates the client copy of a Valhalla feature. Restriction records are always reloaded server-side. */
+export function normalizeClientManeuverFeature(value: unknown, index: number): RouteManeuverFeature | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const row = value as Record<string, unknown>;
+  const types = new Set<ManeuverType>(["LEFT", "RIGHT", "UTURN", "STRAIGHT", "ROUNDABOUT", "MERGE", "EXIT", "OTHER"]);
+  const evidenceAllowlist = new Set(["VALHALLA_MANEUVER_TYPE", "VALHALLA_BEARING_BEFORE_AFTER", "VALHALLA_ROUTE_SHAPE_INDEX", "VALHALLA_STREET_NAMES", "VALHALLA_SHARP_MANEUVER"]);
+  const restrictions = row.validatedRestrictions;
+  if (row.maneuverId !== `m-${String(index + 1).padStart(3, "0")}` || !types.has(row.maneuverType as ManeuverType) || typeof row.instruction !== "string" || row.instruction.length > 180) return null;
+  if (!Array.isArray(row.roadNames) || row.roadNames.length > 4 || row.roadNames.some((item) => typeof item !== "string" || item.length > 100)) return null;
+  if (!Array.isArray(row.sourceEvidence) || row.sourceEvidence.length > 5 || row.sourceEvidence.some((item) => typeof item !== "string" || !evidenceAllowlist.has(item))) return null;
+  // The producer currently includes an empty placeholder array. Accept it, but never trust client-supplied restrictions.
+  if (restrictions !== undefined && (!Array.isArray(restrictions) || restrictions.length > 0)) return null;
+  if (row.trafficLevel !== "UNKNOWN" || row.knownRestrictionCount !== null || row.roadClassFrom !== null || row.roadClassTo !== null || row.lanesFrom !== null || row.lanesTo !== null || row.oneWay !== null || row.estimatedRoadWidthM !== null) return null;
+  const latitude = row.latitude === null ? null : boundedNumber(row.latitude, -90, 90);
+  const longitude = row.longitude === null ? null : boundedNumber(row.longitude, -180, 180);
+  const angle = row.turnAngleDeg === null ? null : boundedNumber(row.turnAngleDeg, -180, 180);
+  const inbound = row.inboundHeading === null ? null : boundedNumber(row.inboundHeading, 0, 360);
+  const outbound = row.outboundHeading === null ? null : boundedNumber(row.outboundHeading, 0, 360);
+  const confidence = boundedNumber(row.geometryConfidence, 0, 1);
+  if ((row.latitude !== null && latitude === null) || (row.longitude !== null && longitude === null) || (row.turnAngleDeg !== null && angle === null) || (row.inboundHeading !== null && inbound === null) || (row.outboundHeading !== null && outbound === null) || confidence === null) return null;
+  return {
+    maneuverId: row.maneuverId as string, latitude, longitude, maneuverType: row.maneuverType as ManeuverType,
+    instruction: row.instruction, roadNames: row.roadNames as string[], turnAngleDeg: angle, inboundHeading: inbound, outboundHeading: outbound,
+    roadClassFrom: null, roadClassTo: null, lanesFrom: null, lanesTo: null, oneWay: null, estimatedRoadWidthM: null,
+    trafficLevel: "UNKNOWN", knownRestrictionCount: null, validatedRestrictions: [], geometryConfidence: confidence, sourceEvidence: row.sourceEvidence as string[]
+  };
+}
+
+/** Uses high-risk maneuvers when present; otherwise samples the full route so every route still reaches AI review. */
+export function selectManeuversForAiAudit(maneuvers: RouteManeuverFeature[], riskCandidates: ManeuverRiskCandidate[], limit: number): RouteManeuverFeature[] {
+  const boundedLimit = Math.max(1, Math.min(100, Math.floor(limit)));
+  const byId = new Map(maneuvers.map((maneuver) => [maneuver.maneuverId, maneuver]));
+  const prioritized = [...riskCandidates]
+    .sort((left, right) => right.score - left.score || left.maneuverId.localeCompare(right.maneuverId))
+    .slice(0, boundedLimit)
+    .map((candidate) => byId.get(candidate.maneuverId))
+    .filter((maneuver): maneuver is RouteManeuverFeature => Boolean(maneuver));
+  if (prioritized.length) return prioritized;
+  if (maneuvers.length <= boundedLimit) return [...maneuvers];
+  if (boundedLimit === 1) return [maneuvers[Math.floor((maneuvers.length - 1) / 2)]!];
+  const lastIndex = maneuvers.length - 1;
+  return Array.from({ length: boundedLimit }, (_, index) => maneuvers[Math.round(index * lastIndex / (boundedLimit - 1))]!);
+}
+
 /** Deterministic triage only. A candidate is a prompt for review, never proof of physical infeasibility. */
 function distanceMeters(latitudeA: number, longitudeA: number, latitudeB: number, longitudeB: number) {
   const toRadians = Math.PI / 180;
