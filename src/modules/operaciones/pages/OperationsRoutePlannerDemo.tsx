@@ -12,6 +12,7 @@ import { applyRouteAccessAdjustments } from "../lib/applyRouteAccessAdjustments"
 import { matchRouteDestinationPresets, type RouteDestinationPreset } from "../lib/routeDestinationCatalog";
 import { formatDriverSimulationError, mergeFerrostarRouteSegments, splitRouteStops, toAtlasPlannedRoute } from "../lib/routeSimulation";
 import { searchAuditedRoute } from "../lib/auditedRouteSearch";
+import { findFasterTargetedRouteAlternative, routeGeometrySignature } from "../lib/routeAuditAlternatives";
 import { useAtlasRouteAudit } from "../hooks/useAtlasRouteAudit";
 import { atlasVehicleTypesMatch, getAvailableAtlasRouteVehicleCategories, resolveAtlasRouteVehicleCategory } from "../lib/vehicleRoutingCosting";
 import { ensurePlannedRouteLayers } from "../lib/plannedRouteMapLayers";
@@ -522,10 +523,14 @@ export function OperationsRoutePlannerDemo() {
         audit: (candidate) => evaluateRouteAudit(candidate.route, candidate.stops),
         requiresReplan: routeAuditRequiresReplan,
         hasPersistedEvaluation: (audit) => Boolean(audit.runId && audit.mode === "SHADOW" && audit.provider === "openai" && audit.decision !== "ERROR" && (audit.auditedManeuverCount ?? 0) > 0),
-        findAlternative: async (excludedOrders) => {
+        findAlternative: async (excludedOrders, currentCandidate, currentAudit) => {
+          const targetedAlternative = await findFasterTargetedRouteAlternative(currentCandidate, currentAudit, plannedVehicleType);
+          if (targetedAlternative) return targetedAlternative;
           const alternative = await optimizeAtlasOpenRoute(coordinates, plannedVehicleType, fixedDestinationIndex < 0 ? undefined : fixedDestinationIndex, undefined, excludedOrders);
           return { value: { stops: normalizeRouteStops(applyRouteAccessAdjustments(inputStops, alternative.order, alternative.stopAccessAdjustments)), route: alternative }, order: alternative.order };
         },
+        isDuplicateCandidate: (left, right) => left.order.join(",") === right.order.join(",")
+          && routeGeometrySignature(left.value.route) === routeGeometrySignature(right.value.route),
         onCandidate: (candidate, auditAttempt) => {
           setProposal(candidate);
           setRouteState("ready");
@@ -542,7 +547,9 @@ export function OperationsRoutePlannerDemo() {
       setAlternativeAttempts(search.alternativeAttempts);
       setPlanningAudit(search.status === "accepted" ? search.audit : null);
       setAlternativeSearchComplete(search.alternativeAttempts > 0 && search.status !== "accepted");
-      if (search.status === "accepted" && replanReason) {
+      if (search.status === "accepted" && search.candidate.route.targetedAvoidance?.status === "APPLIED") {
+        setNotice(`La IA objetó una maniobra y Valhalla encontró un trazado completo distinto, más rápido o de igual tiempo y menor distancia. La geometría final volvió a pasar la auditoría IA.`);
+      } else if (search.status === "accepted" && replanReason) {
         setNotice(`${replanReason} Se generó una nueva secuencia y cada alternativa se volvió a validar con IA.`);
       } else if (search.status === "accepted" && search.alternativeAttempts > 0) {
         setNotice(`La IA pidió revisar la ruta inicial; se evaluaron automáticamente ${search.auditAttempts} propuestas y se encontró una secuencia alternativa con auditoría IA persistida.`);

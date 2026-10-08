@@ -103,6 +103,7 @@ export type AtlasRouteManeuver = {
   trafficLevel: "UNKNOWN"; knownRestrictionCount: null; geometryConfidence: number; sourceEvidence: string[];
   routeLegIndex: number | null; legDestinationStopIndex: number | null; legDestinationIsFinal: boolean | null;
 };
+export type AtlasManeuverAvoidanceTarget = { routeLegIndex: number; latitude: number; longitude: number };
 export type AtlasRouteAuditDecision = "APPROVE" | "WARNING" | "REJECT" | "INSUFFICIENT_EVIDENCE" | "ERROR";
 export type AtlasRouteAuditResponse = {
   decision: AtlasRouteAuditDecision; riskScore: number | null; summary: string; analyzedManeuvers: Array<Record<string, unknown>>;
@@ -111,7 +112,7 @@ export type AtlasRouteAuditResponse = {
   evaluationScope?: "RISK_PRIORITIZED_SAMPLE" | "DISTRIBUTED_ROUTE_SAMPLE"; vehicleProfileVerified?: boolean;
   errorCategory?: string | null; status?: string;
 };
-export type AtlasPlannedRoute = { coordinates: [number, number][]; distanceMeters: number; durationSeconds: number; provider: "valhalla"; travelMode: "bus"; plannedVehicleType?: string; referenceModel?: string; referenceDimensions?: { length: number; width: number; height: number; weight: number }; dimensionEvidence?: string; referenceDimensionsSent?: boolean; uturnCount?: number; turnCount?: number; maneuvers?: AtlasRouteManeuver[]; maneuverRiskCandidates?: Array<{ maneuverId: string; score: number; reasons: string[]; requiresAiAudit: boolean }> };
+export type AtlasPlannedRoute = { coordinates: [number, number][]; distanceMeters: number; durationSeconds: number; provider: "valhalla"; travelMode: "bus"; plannedVehicleType?: string; referenceModel?: string; referenceDimensions?: { length: number; width: number; height: number; weight: number }; dimensionEvidence?: string; referenceDimensionsSent?: boolean; uturnCount?: number; turnCount?: number; maneuvers?: AtlasRouteManeuver[]; maneuverRiskCandidates?: Array<{ maneuverId: string; score: number; reasons: string[]; requiresAiAudit: boolean }>; targetedAvoidance?: { status: "NOT_REQUESTED" | "NO_MATCHING_MANEUVER" | "NO_IMPROVEMENT" | "APPLIED"; maneuverCount: number } };
 export type AtlasStopAccessAdjustment = { stopIndex: number; original: { lat: number; lng: number }; adjusted: { lat: number; lng: number }; displacementMeters: number; pedestrianAccessMeters?: number };
 export type AtlasRoutePathOptimization = {
   status: "APPLIED" | "NO_IMPROVEMENT" | "SEARCH_INCOMPLETE";
@@ -309,8 +310,8 @@ export async function resolveAtlasTomTomSuggestion(suggestion: TomTomSuggestion,
   return payload.suggestion;
 }
 
-export async function calculateAtlasValhallaRoute(stops: Array<{ lat: number; lng: number }>, plannedVehicleType: string, signal?: AbortSignal): Promise<AtlasPlannedRoute> {
-  return callAtlasValhalla({ action: "route", stops, plannedVehicleType }, signal);
+export async function calculateAtlasValhallaRoute(stops: Array<{ lat: number; lng: number }>, plannedVehicleType: string, signal?: AbortSignal, avoidManeuvers?: AtlasManeuverAvoidanceTarget[]): Promise<AtlasPlannedRoute> {
+  return callAtlasValhalla({ action: "route", stops, plannedVehicleType, ...(avoidManeuvers?.length ? { avoidManeuvers } : {}) }, signal);
 }
 
 export async function optimizeAtlasOpenRoute(stops: Array<{ lat: number; lng: number }>, plannedVehicleType: string, fixedDestinationIndex?: number, signal?: AbortSignal, excludedOrders?: number[][]): Promise<AtlasOptimizedRoute> {

@@ -98,5 +98,9 @@ describe("Atlas Route Intelligence maneuver analyzer", () => {
     const requestedAlternative = enforceFailClosedRouteAudit({ ...base, analyzedManeuvers: [{ maneuverId: "m-001", decision: "CAUTION", riskScore: 75, reasons: [], evidence: ["giro"], recommendedAction: "REQUEST_ALTERNATIVE" }] });
     expect(requestedAlternative.requiresReplan).toBe(true);
     expect(requestedAlternative.requiresHumanReview).toBe(true);
+
+    const penalizedSegment = enforceFailClosedRouteAudit({ ...base, analyzedManeuvers: [{ maneuverId: "m-001", decision: "CAUTION", riskScore: 75, reasons: ["Tramo mejorable"], evidence: ["maniobra de Valhalla"], recommendedAction: "PENALIZE_SEGMENT" }] });
+    expect(penalizedSegment.requiresReplan).toBe(true);
+    expect(penalizedSegment.requiresHumanReview).toBe(true);
   });
 });
