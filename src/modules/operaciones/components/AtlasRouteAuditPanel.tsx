@@ -9,6 +9,8 @@ export function isRouteAuditOperationallyComplete(status: "idle" | "loading" | "
     && audit.provider === "openai"
     && Boolean(audit.runId)
     && audit.decision !== "ERROR"
+    && audit.decision !== "REJECT"
+    && !audit.requiresReplan
     && (audit.auditedManeuverCount ?? 0) > 0;
 }
 
@@ -50,7 +52,7 @@ export function AtlasRouteAuditPanel({
     {status === "loading" && <p>La IA está evaluando esta ruta. No se puede aplicar ni guardar hasta completar la revisión.</p>}
     {status === "error" && <p role="alert">{error}</p>}
     {audit && <>
-      <p><b>{auditDecisionLabel(audit.decision)}</b>{audit.riskScore === null ? " · sin puntaje" : ` · indicador ${audit.riskScore}/100`}</p>
+      <p><b>{auditDecisionLabel(audit.decision)}</b>{audit.riskScore === null ? " · sin puntaje" : ` · indicador ${audit.riskScore}/100`}{audit.requiresHumanReview ? " · requiere revisión humana" : ""}</p>
       <p>{audit.summary}</p>
       <small>
         {audit.decision === "ERROR" || audit.provider !== "openai"

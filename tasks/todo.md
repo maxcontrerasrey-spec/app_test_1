@@ -5134,3 +5134,18 @@ Verificación local de esta iteración: unitarias 230/230, contratos 159/159, Ty
 ### Revisión inicial
 
 La Edge Function productiva `atlas-tomtom-planning` está ACTIVE v19 y coincide con `origin/main`; el checkout original está 10 commits detrás y tiene cambios ajenos, por lo que se trabaja en un worktree limpio basado en `origin/main`. El planner ya usa perfiles Valhalla bus por categoría, acceso cercano y búsqueda de alternativas; sin embargo el path optimizer prioriza eliminar cualquier giro U aunque no prueba que obligue a reversar. Route Intelligence opera después, en SHADOW, y falla con `OPENAI_TIMEOUT` a 10 s. La IA debe decidir entre candidatos viales válidos y validar evidencia; no debe inventar geometría, dimensiones, cruces seguros ni alterar puntos sin una solución trazada. Google solo podrá ser comparado empíricamente con credencial real y los mismos casos; documentación actual no basta para elegir proveedor.
+
+## Atlas: cerrar brechas de calidad de ruta y gate IA — continuación 2026-10-08
+
+- [x] Revalidar branch/worktree, código de producción y contratos SQL/Edge activos; no tocar el checkout principal con cambios previos.
+- [x] Integrar una búsqueda acotada de órdenes alternativas realmente trazadas por Valhalla; conservar todos los puntos, destino fijado y perfil, y elegir por tiempo/distancia real.
+- [x] Vincular una evaluación IA OpenAI persistida al snapshot exacto de ruta, vehículo y métricas; exigirla en RPC de guardado además de UI, bloquear REJECT y requiresReplan.
+- [x] Mejorar tolerancia a fallos/transitorios de OpenAI con límites y telemetría no sensible; conservar estados de fallo y reintento explícitos.
+- [x] Añadir regresiones a selección de orden, gate UI/RPC y persistencia; ejecutar suites focalizadas, Deno, typecheck/build, Guardian, auditorías SQL/seguridad y diff check.
+- [ ] Publicar en orden migration → Edge Functions → frontend tras gates; verificar producción con una sesión autorizada y registrar evidencia y límites.
+
+### Criterios de selección
+
+Valhalla sigue siendo autoridad de geometría y tiempos de conducción. La IA solo puede revisar evidencia de trazados ya calculados y nunca inventar coordenadas. Un U-turn no se trata como prohibido ni como prueba de marcha atrás; si la IA propone replanificar, solo se acepta un candidato alternativo completo que Valhalla haya trazado y que supere una comparación reproducible. Google se mantiene como benchmark sombra hasta medirlo con las mismas ubicaciones y categorías en Chile.
+
+Revalidación de continuación 2026-10-08: el worktree `codex/atlas-route-quality` compara sin diferencias no explicadas los helpers Edge con producción; cambios del planner se limitan al orden alternativo trazado. Unitarias 234/234, contratos 160/160, typecheck, Deno, build, auditorías de migración/seguridad, diff-check y Guardian pasan. Guardian deja un warning de 829 líneas; build conserva el chunk 1.089 kB y el umbral 520 kB. Seguridad encontró 88 warnings históricos. Producción mostró 756 vehículos y cero perfiles de dimensiones verificados; los dos intentos IA recientes fallaron por timeout/salida inválida. La nueva migración exige evidencia OpenAI ligada a ruta y ahora reserva el registro de auditoría a `service_role`, impidiendo que un cliente fabrique esa evidencia. Comparación empírica con Google Chile pendiente por falta de credencial.
