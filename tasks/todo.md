@@ -4962,13 +4962,13 @@ Resultado local (2026-10-08): TypeScript y ambos `deno check` pasan; unit 193/19
 - [x] Comparar el tipo seleccionado al planificar con el tipo del equipo asignado y mostrar advertencia no bloqueante si difieren.
 - [x] Rediseñar el detalle operacional: datos de conductor en una sola fila; equipo en bloques compactos con tipo, marca y modelo; adaptar pantallas estrechas.
 - [x] Añadir regresiones de persistencia, comparación, datos nulos y layout; ejecutar pruebas focalizadas, build frontend, Guardian y `git diff --check`.
-- [ ] Integrar y publicar con migración antes del frontend; verificar datos/advertencia y bundle en producción sin modificar servicios reales.
+- [x] Integrar y publicar con migración antes del frontend; verificar datos/advertencia y bundle en producción sin modificar servicios reales.
 
 ## Evidencia parcial de producción
 
 El navegador Supabase autenticado apuntó al proyecto `pzblmbahnoyntrhistea`, mismo ref usado por `https://gestion.busesjm.cl`. El esquema previo coincidía con la versión de `origin/main`: 23 columnas en `atlas_ops_control_tower` y la RPC de guardado de 7 argumentos. Se ejecutó la migración `20261008010246` en una transacción; Supabase SQL Editor reportó `Success. No rows returned`. La versión se registró en `supabase_migrations.schema_migrations`. La inspección posterior confirmó columna de tipo planificado, columna de discrepancia, ejecución concedida a `authenticated`, sin ejecución para `anon`, y lectura autenticada del view. No se crearon ni modificaron servicios.
 
-CI de PR #95: Cloudflare Pages preview y `audit-enterprise-guardrails` aprobados. La publicación de producción queda pendiente del merge y del despliegue final de Cloudflare.
+PR #97 integrado en `main` como `ccb1f7f3`. Migración `20261008011000` aplicada a `pzblmbahnoyntrhistea`; se confirmó RPC de 8 argumentos, ejecución para `authenticated`, denegación para `anon`, y 473 Bus / 60 Taxibus / 151 Minibus activos. La función `atlas-tomtom-planning` quedó desplegada en versión 15. Cloudflare Pages sirve el nuevo bundle de planificación con las tres categorías y las fichas de referencia; el preview del PR y `audit-enterprise-guardrails` pasaron.
 
 ## Revisión del plan
 
@@ -4995,9 +4995,9 @@ Validación local: prueba focalizada 7/7; TypeScript y `npm run build:frontend-c
 - [x] Solicitar intervención manual solo si no queda alternativa transitable o un punto no tiene acceso viable; indicar el punto y la causa concreta.
 - [x] Agregar pruebas para alternativa factible, destino fijado, límites de exploración, ningún candidato factible y visita única de cada dirección.
 - [x] Ejecutar pruebas focalizadas, Deno check, build frontend, Guardian, auditorías y `git diff --check`.
-- [ ] Integrar y desplegar tras CI; verificar artefactos productivos usando fixtures sintéticos, sin modificar despachos reales.
-- [ ] Integrar y desplegar tras CI; verificar artefactos productivos usando fixtures sintéticos, sin modificar despachos reales.
+- [x] Integrar y desplegar tras CI: PR #97 integrado (`ccb1f7f3`), migración `20261008011000` aplicada, Edge Function versión 15 y bundle de Cloudflare con Bus/Taxibus/Minibus verificado.
+- [ ] Completar smoke autenticado de cálculo de ruta con direcciones sintéticas y medir llamadas/latencia para escenarios crecientes; no se hicieron cambios a despachos reales.
 
 Revisión del plan: ninguna dirección ingresada representa un inicio o una posición de recogida: el solver elige el inicio y la secuencia para minimizar el recorrido total; solo un destino fijado por la persona permanece al final. La categoría elegida determina perfil bus y valores de referencia por modelo. Los parámetros dimensionales enviados no certifican factibilidad: dependen de las restricciones que existan en OpenStreetMap y no codifican radio de giro. No convertir valores supuestos de carrocería en hechos de la flota; mostrar la limitación. El tiempo será criterio secundario a evitar giros en U/retrocesos. No se alteran ni eliminan direcciones ingresadas. La intervención manual se reserva para cuando no exista alternativa verificable.
 
-Validación local: 18 pruebas focalizadas aprobadas; Guardian pasó los 34 archivos de contrato (140 pruebas), las unidades y todos sus gates con 0 errores/advertencias; Deno check, auditoría de migraciones, guardia destructiva y build pasan. El build mantiene la advertencia del chunk del planificador (>520 kB); no se elevó el límite. Las dos migraciones históricas remotas diferían de nombre/timestamp, pero su contenido SQL coincide exactamente; sus archivos locales ahora usan las versiones productivas. `db push --dry-run --linked` muestra únicamente `20261008011000_atlas_route_vehicle_category_profiles.sql` como pendiente. La publicación y el smoke productivo quedan para después de CI.
+Validación: 18 pruebas focalizadas aprobadas; Guardian remoto aprobó todos sus gates con 0 errores/advertencias; Deno check, auditorías de migraciones y build pasan. El build conserva la advertencia del chunk del planificador (1.086,53 kB minificado); no se elevó el umbral. `db push --dry-run --linked` mostró únicamente la migración nueva como pendiente antes de aplicarla. Las dos versiones productivas de migraciones anteriores tenían timestamps distintos al checkout, pero el SQL coincidía exactamente; se alinearon los nombres sin reparar ni reescribir el historial remoto. El navegador disponible no tenía sesión autenticada, por lo que aún falta el smoke del cálculo interactivo en producción.

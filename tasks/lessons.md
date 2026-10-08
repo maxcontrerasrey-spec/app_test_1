@@ -4306,3 +4306,10 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - Al calcular un mes cuya UF de cierre aún no existe, seleccionar el indicador mensual más reciente `period_month <= mes solicitado`; nunca exigir igualdad exacta ni copiar un valor futuro.
 - Separar la vigencia del indicador mensual de las tasas con calendario propio (AFP, UTM/IUSC), y mostrar cuál período se usó para que una estimación no parezca liquidación oficial del mes abierto.
 - Al cambiar el helper interno de renta, conservar su guard de autorización, ACL, búsqueda acotada de una estructura y no reintroducir proyecciones de jornadas/personas que causaron el timeout anterior.
+
+## 2026-10-08 - El optimizador de recorridos no puede inferir el orden de entrada
+
+- Las direcciones son un conjunto sin orden semántico: calcular posibles inicios y secuencias completas, manteniendo al final solo el destino que la persona haya fijado explícitamente.
+- Optimizar por tipo de vehículo requiere una categoría canónica y perfiles específicos; mapear etiquetas de flota no debe perderse en la matriz, el trazado, la simulación, la persistencia ni la comparación del despacho.
+- Las dimensiones de ficha son referencias si no corresponden a la carrocería/unidad real. No presentar un trazador de mapas como certificación de radio de giro o gálibo cuando las restricciones del grafo no cubren esos límites.
+- Un rechazo por giro en U debe iniciar una búsqueda automática de órdenes alternativas y escoger la más rápida entre las candidatas validadas; admitir que una búsqueda acotada no demuestra un óptimo global ni factibilidad física.
