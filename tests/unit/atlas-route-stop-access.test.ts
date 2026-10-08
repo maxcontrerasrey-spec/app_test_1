@@ -2,18 +2,18 @@ import { describe, expect, it } from "vitest";
 import {
   collectStopAccessAdjustments,
   distanceBetweenPointsMeters,
-  findStopsNearUTurns,
+  findStopsNearTurningManeuvers,
   isStopAccessRouteImproved,
   MAX_STOP_ACCESS_RADIUS_METERS
 } from "../../supabase/functions/atlas-tomtom-planning/routeStopAccess";
 import { applyRouteAccessAdjustments } from "../../src/modules/operaciones/lib/applyRouteAccessAdjustments";
 
 describe("Atlas nearby stop access", () => {
-  it("only selects stops next to U-turn maneuvers and caps the search", () => {
+  it("selects nearby route turns for access review and caps the search", () => {
     const stops = Array.from({ length: 6 }, (_, index) => ({ lat: -22.45, lng: -68.93 + index * 0.001 }));
-    const maneuvers = stops.slice(0, 5).map((stop) => ({ type: 12, latitude: stop.lat, longitude: stop.lng }));
-    expect(findStopsNearUTurns(stops, maneuvers)).toHaveLength(4);
-    expect(findStopsNearUTurns(stops, [{ type: 1, latitude: stops[5]!.lat, longitude: stops[5]!.lng }])).toEqual([]);
+    const maneuvers = stops.slice(0, 5).map((stop, index) => ({ type: index === 0 ? 9 : 12, latitude: stop.lat, longitude: stop.lng }));
+    expect(findStopsNearTurningManeuvers(stops, maneuvers)).toHaveLength(4);
+    expect(findStopsNearTurningManeuvers(stops, [{ type: 1, latitude: stops[5]!.lat, longitude: stops[5]!.lng }])).toEqual([]);
   });
 
   it("keeps candidate access changes in the 20 meter limit and ignores negligible snaps", () => {
@@ -32,6 +32,8 @@ describe("Atlas nearby stop access", () => {
     expect(isStopAccessRouteImproved({ durationSeconds: 600, uturnCount: 2 }, { durationSeconds: 631, uturnCount: 1 })).toBe(false);
     expect(isStopAccessRouteImproved({ durationSeconds: 600, uturnCount: 1 }, { durationSeconds: 595, uturnCount: 1 })).toBe(false);
     expect(isStopAccessRouteImproved({ durationSeconds: 600, uturnCount: 1 }, { durationSeconds: 590, uturnCount: 1 })).toBe(true);
+    expect(isStopAccessRouteImproved({ durationSeconds: 600, uturnCount: 0, turnCount: 8 }, { durationSeconds: 620, uturnCount: 0, turnCount: 7 })).toBe(true);
+    expect(isStopAccessRouteImproved({ durationSeconds: 600, uturnCount: 0, turnCount: 8 }, { durationSeconds: 631, uturnCount: 0, turnCount: 7 })).toBe(false);
   });
 
   it("keeps stop identity, label, and a pinned destination while applying its adjusted access point", () => {

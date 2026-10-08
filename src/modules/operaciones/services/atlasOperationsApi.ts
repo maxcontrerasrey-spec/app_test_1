@@ -109,8 +109,8 @@ export type AtlasRouteAuditResponse = {
   evaluationScope?: "RISK_PRIORITIZED_SAMPLE" | "DISTRIBUTED_ROUTE_SAMPLE"; vehicleProfileVerified?: boolean;
   errorCategory?: string | null; status?: string;
 };
-export type AtlasPlannedRoute = { coordinates: [number, number][]; distanceMeters: number; durationSeconds: number; provider: "valhalla"; travelMode: "bus"; plannedVehicleType?: string; referenceModel?: string; referenceDimensions?: { length: number; width: number; height: number; weight: number }; dimensionEvidence?: string; referenceDimensionsSent?: boolean; uturnCount?: number; maneuvers?: AtlasRouteManeuver[]; maneuverRiskCandidates?: Array<{ maneuverId: string; score: number; reasons: string[]; requiresAiAudit: boolean }> };
-export type AtlasStopAccessAdjustment = { stopIndex: number; original: { lat: number; lng: number }; adjusted: { lat: number; lng: number }; displacementMeters: number };
+export type AtlasPlannedRoute = { coordinates: [number, number][]; distanceMeters: number; durationSeconds: number; provider: "valhalla"; travelMode: "bus"; plannedVehicleType?: string; referenceModel?: string; referenceDimensions?: { length: number; width: number; height: number; weight: number }; dimensionEvidence?: string; referenceDimensionsSent?: boolean; uturnCount?: number; turnCount?: number; maneuvers?: AtlasRouteManeuver[]; maneuverRiskCandidates?: Array<{ maneuverId: string; score: number; reasons: string[]; requiresAiAudit: boolean }> };
+export type AtlasStopAccessAdjustment = { stopIndex: number; original: { lat: number; lng: number }; adjusted: { lat: number; lng: number }; displacementMeters: number; pedestrianAccessMeters?: number };
 export type AtlasOptimizedRoute = AtlasPlannedRoute & { order: number[]; matrixDurationSeconds: number; inputOrderMatrixDurationSeconds: number | null; stopAccessAdjustments?: AtlasStopAccessAdjustment[]; optimizationMethod: "valhalla_matrix_open_path_v1" };
 
 export async function getAtlasOperationsCatalogs() {

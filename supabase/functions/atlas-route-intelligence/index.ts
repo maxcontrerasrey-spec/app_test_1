@@ -1,4 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { extractResponsesOutputText } from "./responsesOutput.ts";
 import { attachValidatedRestrictions, normalizeClientManeuverFeature, parseRouteAuditOutput, preFilterRouteManeuvers, selectManeuversForAiAudit, type RouteAuditOutput, type RouteManeuverFeature, type ValidatedRouteRestriction } from "../atlas-tomtom-planning/routeIntelligence.ts";
 
 const ALLOWED_ORIGINS = new Set(["https://gestion.busesjm.cl", "http://127.0.0.1:5173", "http://localhost:5173"]);
@@ -147,8 +148,12 @@ async function callAuditor(candidates: RouteManeuverFeature[], vehicleProfile: R
     });
     const raw = await response.json().catch(() => ({})) as Record<string, unknown>;
     if (!response.ok) throw new Error(`openai_http_${response.status}`);
-    const outputText = typeof raw.output_text === "string" ? raw.output_text : "";
-    const parsed = outputText ? parseRouteAuditOutput(JSON.parse(outputText), new Set(candidates.map((item) => item.maneuverId))) : null;
+    const outputText = extractResponsesOutputText(raw);
+    let parsed: RouteAuditOutput | null = null;
+    if (outputText) {
+      try { parsed = parseRouteAuditOutput(JSON.parse(outputText), new Set(candidates.map((item) => item.maneuverId))); }
+      catch { parsed = null; }
+    }
     if (!parsed) throw new Error("openai_invalid_output");
     const profileIsVerified = Boolean(vehicleProfile?.verified_at && vehicleProfile.vehicle_type && vehicleProfile.length_m && vehicleProfile.width_m && vehicleProfile.height_m && vehicleProfile.turning_radius_m);
     const output = !profileIsVerified && parsed.decision === "APPROVE"

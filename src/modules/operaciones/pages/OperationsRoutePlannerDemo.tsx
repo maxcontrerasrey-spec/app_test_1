@@ -487,7 +487,11 @@ export function OperationsRoutePlannerDemo() {
       const routeNotices = ["Calculé automáticamente el recorrido más rápido; no asumí que las direcciones venían ordenadas."];
       routeNotices.push(`Perfil ${result.referenceModel ?? plannedVehicleType}; Valhalla recibió dimensiones de referencia. La red vial no certifica el espacio físico ni el radio de giro de cada unidad.`);
       if ((result.uturnCount ?? 0) > 0) {
-        routeNotices.push(`La ruta incluye ${result.uturnCount} giro(s) en U que la red vial permite trazar. Los datos disponibles no permiten confirmar si el espacio alcanza para ejecutarlos hacia delante con esta unidad; no se asumió que requieran marcha atrás ni se descartó la ruta por ese código.`);
+        routeNotices.push(`${result.uturnCount} giro(s) en U trazables; la red no confirma espacio físico ni necesidad de reversa.`);
+      }
+      if (result.stopAccessAdjustments?.length) {
+        const longestAdjustment = Math.max(...result.stopAccessAdjustments.map(({ displacementMeters }) => displacementMeters));
+        routeNotices.push(`${result.stopAccessAdjustments.length} parada(s) ajustadas hasta ${longestAdjustment} m; acceso peatonal mapeado ≤30 m. Revisa el mapa.`);
       }
       setNotice(routeNotices.join(" "));
       const auditRequest = ++auditSequence.current;

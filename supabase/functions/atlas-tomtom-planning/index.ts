@@ -4,7 +4,7 @@ import { buildMatrixBlocks } from "./matrixBlocks.ts";
 import { buildRouteSegments } from "./routeSegments.ts";
 import { countUTurns, routeLocationType, type RouteManeuver } from "./routeQuality.ts";
 import { analyzeValhallaManeuvers, preFilterRouteManeuvers } from "./routeIntelligence.ts";
-import { collectStopAccessAdjustments, findStopsNearUTurns, isStopAccessRouteImproved, MAX_STOP_ACCESS_RADIUS_METERS, MAX_STOP_ACCESS_WALK_METERS, type StopAccessAdjustment } from "./routeStopAccess.ts";
+import { collectStopAccessAdjustments, findStopsNearTurningManeuvers, isStopAccessRouteImproved, MAX_STOP_ACCESS_RADIUS_METERS, MAX_STOP_ACCESS_WALK_METERS, type StopAccessAdjustment } from "./routeStopAccess.ts";
 import { resolveAtlasVehicleRoutingModel } from "../../../src/modules/operaciones/lib/vehicleRoutingCosting.ts";
 
 const ALLOWED_ORIGINS = new Set([
@@ -174,6 +174,7 @@ async function valhallaRoute(sites: Point[], model: ReturnType<typeof resolveAtl
   const maneuvers = complete.flatMap((result) => result.maneuvers);
   const maneuverFeatures = analyzeValhallaManeuvers(maneuvers);
   const uturnCount = countUTurns(maneuvers);
+  const turnCount = maneuverFeatures.filter(({ maneuverType }) => maneuverType === "LEFT" || maneuverType === "RIGHT" || maneuverType === "UTURN").length;
   return {
     coordinates,
     stopAccessPoints,
@@ -181,6 +182,7 @@ async function valhallaRoute(sites: Point[], model: ReturnType<typeof resolveAtl
     durationSeconds: complete.reduce((total, result) => total + result.durationSeconds, 0),
     maneuvers: maneuverFeatures,
     uturnCount,
+    turnCount,
     maneuverRiskCandidates: preFilterRouteManeuvers(maneuverFeatures),
     provider: "valhalla" as const,
     travelMode: model.costing
@@ -214,7 +216,7 @@ async function tryNearbyStopAccessAdjustment(
   model: ReturnType<typeof resolveAtlasVehicleRoutingModel>
 ) {
   const orderedStops = baseOrder.map((index) => stops[index]!);
-  const eligible = findStopsNearUTurns(orderedStops, baseRoute.maneuvers.map(({ maneuverType, latitude, longitude }) => ({ type: maneuverType, latitude: latitude ?? undefined, longitude: longitude ?? undefined })));
+  const eligible = findStopsNearTurningManeuvers(orderedStops, baseRoute.maneuvers.map(({ maneuverType, latitude, longitude }) => ({ type: maneuverType, latitude: latitude ?? undefined, longitude: longitude ?? undefined })));
   if (!eligible.length) return null;
 
   try {
@@ -226,9 +228,10 @@ async function tryNearbyStopAccessAdjustment(
       stopIndex: adjustment.stopIndex,
       accessible: await pedestrianAccessDistanceMeters(adjustment.original, adjustment.adjusted)
     })));
-    const verifiedIndexes = new Set(accessChecks
-      .filter((check) => check.accessible !== null && check.accessible <= MAX_STOP_ACCESS_WALK_METERS)
-      .map((check) => check.stopIndex));
+    let verifiedWalkDistances = new Map(accessChecks
+      .filter((check): check is typeof check & { accessible: number } => check.accessible !== null && check.accessible <= MAX_STOP_ACCESS_WALK_METERS)
+      .map((check) => [check.stopIndex, check.accessible]));
+    const verifiedIndexes = new Set(verifiedWalkDistances.keys());
     if (verifiedIndexes.size !== adjustments.length) {
       if (!verifiedIndexes.size) return null;
       // Remove unverified cross-street candidates and retrace only the access points with a short mapped walking path.
@@ -237,16 +240,17 @@ async function tryNearbyStopAccessAdjustment(
       if (!adjustments.length) return null;
       const verifiedAgain = await Promise.all(adjustments.map(async (adjustment) => {
         const distance = await pedestrianAccessDistanceMeters(adjustment.original, adjustment.adjusted);
-        return distance !== null && distance <= MAX_STOP_ACCESS_WALK_METERS;
+        return { stopIndex: adjustment.stopIndex, distance };
       }));
-      if (verifiedAgain.some((isAccessible) => !isAccessible)) return null;
+      if (verifiedAgain.some(({ distance }) => distance === null || distance > MAX_STOP_ACCESS_WALK_METERS)) return null;
+      verifiedWalkDistances = new Map(verifiedAgain.map(({ stopIndex, distance }) => [stopIndex, distance!]));
     }
 
     const adjustedStops = stops.map((stop) => ({ ...stop }));
     const stopAccessAdjustments: StopAccessAdjustment[] = adjustments.map((adjustment) => {
       const originalIndex = baseOrder[adjustment.stopIndex]!;
       adjustedStops[originalIndex] = { ...adjustedStops[originalIndex]!, ...adjustment.adjusted };
-      return { ...adjustment, stopIndex: originalIndex };
+      return { ...adjustment, pedestrianAccessMeters: verifiedWalkDistances.get(adjustment.stopIndex), stopIndex: originalIndex };
     });
 
     const adjustedMatrix = await valhallaMatrix(adjustedStops, model);

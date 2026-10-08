@@ -6,6 +6,8 @@ La primera entrega funciona en modo `SHADOW`. TomTom resuelve direcciones, el op
 
 El límite es deliberado: `LEGAL`, `ROUTABLE`, `PHYSICALLY_POSSIBLE` y `OPERATIONALLY_REASONABLE` son propiedades distintas. Una respuesta del auditor nunca demuestra por sí sola las cuatro.
 
+La geometría la calcula Valhalla. Cerca de un giro, el planificador puede probar un ajuste de acceso de hasta 20 m a una parada, verificar una conexión peatonal mapeada de hasta 30 m y conservarlo solo si el recorrido reduce maniobras o mejora el tiempo dentro del margen configurado. La propuesta muestra el punto original y el sugerido para revisión. La red peatonal no certifica que el cruce sea seguro. OpenAI revisa evidencia y explica riesgos; no genera coordenadas ni elige trazados.
+
 ## Arquitectura
 
 ```mermaid
@@ -52,11 +54,12 @@ Desactivar inmediatamente configurando `ATLAS_ROUTE_INTELLIGENCE_MODE=OFF`. Las 
 
 ## Restricciones conocidas y siguiente etapa
 
-- El flujo actual de Valhalla rechaza U-turns antes de devolver una ruta candidata. Por eso esos fallos históricos no se convierten automáticamente en una ejecución de auditoría; se mantiene la protección existente.
+- Los U-turns continúan permitidos cuando Valhalla puede trazarlos; el sistema no los interpreta como marcha atrás ni los prohíbe globalmente. Para giros próximos a una parada, prueba un acceso alternativo cercano con la misma categoría de equipo y evidencia peatonal acotada.
 - La API actual calcula una sola ruta y no expone alternativas ni una abstracción verificada de penalización de segmento. V1 registra `requiresReplan`, pero no reintenta, penaliza calles ni inventa restricciones. La propuesta no se modifica. La tasa de rutas con mejora comprobada es una métrica distinta de la cobertura IA y no puede garantizarse en 100%; si no existe una alternativa mejor y validada por Valhalla, se conserva la ruta base.
 - Las restricciones tienen RPC segura y audit trail. La gestión inicial se realiza por RPC con rol superadministrador; aún falta una pantalla administrativa dedicada.
 - El perfil dimensional no se llena desde patentes o tipo de flota. Debe cargarse desde una fuente técnica confiable.
 - Tráfico, señalización y restricciones de faena no están conectados salvo las restricciones Atlas validadas.
+- La búsqueda de cambios de trazado de una o dos cuadras todavía no forma parte de esta versión. Valhalla entrega rutas alternas solo para tramos de dos ubicaciones, así que esa mejora debe comparar alternativas por tramo y volver a evaluar el recorrido completo antes de aplicarlas.
 - No se midieron tiempos productivos ni se generó corpus real de operación. Para permitir mejoras automáticas se requiere una siguiente etapa que genere rutas alternativas reales, las calcule con Valhalla para cada tipo de equipo, defina una regla de comparación operacional revisable y aplique solo una alternativa demostrablemente superior. El LLM no debe inventar geometría ni decidir una ponderación opaca entre minutos y maniobras.
 
 ## Validación y fixture
