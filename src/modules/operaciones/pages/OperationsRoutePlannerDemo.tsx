@@ -490,7 +490,6 @@ export function OperationsRoutePlannerDemo() {
       if ((result.uturnCount ?? 0) > 0) {
         routeNotices.push(`La ruta incluye ${result.uturnCount} giro(s) en U que la red vial permite trazar. Los datos disponibles no permiten confirmar si el espacio alcanza para ejecutarlos hacia delante con esta unidad; no se asumió que requieran marcha atrás ni se descartó la ruta por ese código.`);
       }
-      if (result.stopAccessAdjustments?.length) routeNotices.push(`${result.stopAccessAdjustments.length} acceso(s) vial(es) ajustado(s) hasta 20 m; el punto original aparece en gris.`);
       setNotice(routeNotices.join(" "));
       const auditRequest = ++auditSequence.current;
       setRouteAuditStatus("loading");
@@ -531,8 +530,7 @@ export function OperationsRoutePlannerDemo() {
     setProposal(null);
     setRoute(null);
     setRouteState("ready");
-    const adjustedCount = proposal.route.stopAccessAdjustments?.length ?? 0;
-    setNotice(`Propuesta aplicada${adjustedCount ? ` · ${adjustedCount} acceso(s) ajustado(s); original en gris en el mapa` : ""}. El primer punto es el inicio y el último el destino.`);
+    setNotice("Orden propuesto aplicado. El primer punto es el inicio y el último es el destino; el recorrido termina allí.");
   }
 
   async function startSimulation() {
