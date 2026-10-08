@@ -2,6 +2,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { optimizeOpenRoute } from "./openRouteOptimizer.ts";
 import { buildMatrixBlocks } from "./matrixBlocks.ts";
 import { buildRouteSegments } from "./routeSegments.ts";
+import { hasUTurn, hasUTurnAtSegmentJoin, routeLocationType, type RouteManeuver } from "./routeQuality.ts";
 
 const ALLOWED_ORIGINS = new Set([
   "https://gestion.busesjm.cl",
@@ -106,21 +107,24 @@ function decodePolyline6(value: string): [number, number][] {
 }
 
 async function valhallaRouteSegment(sites: Point[]) {
+  const locations = sites.map(({ lat, lng }, index) => ({ lat, lon: lng, type: routeLocationType(index, sites.length) }));
   const routeResponse = await fetch(`${VALHALLA}/route`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ locations: sites.map(({ lat, lng }) => ({ lat, lon: lng })), costing: "auto", costing_options: { auto: { use_ferry: 0, use_tolls: 0.5 } }, units: "kilometers", shape_format: "polyline6" }),
+    body: JSON.stringify({ locations, costing: "auto", costing_options: { auto: { use_ferry: 0, use_tolls: 0.5 } }, units: "kilometers", shape_format: "polyline6" }),
     signal: AbortSignal.timeout(18_000)
   });
   if (!routeResponse.ok) throw new Error(`valhalla_route_http_${routeResponse.status}`);
-  const payload = await routeResponse.json() as { trip?: { status?: number; summary?: { length?: number; time?: number }; legs?: Array<{ shape?: string }> } };
+  const payload = await routeResponse.json() as { trip?: { status?: number; summary?: { length?: number; time?: number }; legs?: Array<{ shape?: string; maneuvers?: RouteManeuver[] }> } };
   const summary = payload.trip?.summary;
   const coordinates = (payload.trip?.legs ?? []).flatMap((leg) => typeof leg.shape === "string" ? decodePolyline6(leg.shape) : []);
   const deduplicated = coordinates.filter((coordinate, index) => index === 0 || coordinate[0] !== coordinates[index - 1]![0] || coordinate[1] !== coordinates[index - 1]![1]);
   if (payload.trip?.status !== 0 || typeof summary?.length !== "number" || typeof summary.time !== "number" || deduplicated.length < 2 || !Number.isFinite(summary.length) || !Number.isFinite(summary.time)) {
     throw new Error("valhalla_route_not_returned");
   }
-  return { coordinates: deduplicated, distanceMeters: Math.round(summary.length * 1000), durationSeconds: Math.round(summary.time), provider: "valhalla" as const, travelMode: "auto" as const };
+  const maneuvers = (payload.trip?.legs ?? []).flatMap((leg) => leg.maneuvers ?? []);
+  if (hasUTurn(maneuvers)) throw new Error("valhalla_route_uturn_detected");
+  return { coordinates: deduplicated, distanceMeters: Math.round(summary.length * 1000), durationSeconds: Math.round(summary.time), maneuvers, provider: "valhalla" as const, travelMode: "auto" as const };
 }
 
 async function valhallaRoute(sites: Point[]) {
@@ -132,6 +136,9 @@ async function valhallaRoute(sites: Point[]) {
     }));
   }
   const complete = results.filter((result): result is Awaited<ReturnType<typeof valhallaRouteSegment>> => Boolean(result));
+  if (complete.some((result, index) => index > 0 && hasUTurnAtSegmentJoin(complete[index - 1]!.coordinates, result.coordinates))) {
+    throw new Error("valhalla_route_uturn_detected");
+  }
   const coordinates = complete.flatMap((result, index) => index === 0 ? result.coordinates : result.coordinates.slice(1));
   return {
     coordinates,

@@ -33,6 +33,7 @@ import {
   saveAtlasServiceTemplate,
   saveAtlasVehicle,
   refreshAtlasSlaAlerts,
+  reassignAtlasDispatchResources,
   resolveAtlasAlert,
   searchAtlasDrivers,
   setAtlasContractEditor,
@@ -52,8 +53,9 @@ type PlanningDriver = {
   documentNumber: string;
   jobTitle: string;
   contractCode: string | null;
-  isWorkingDay: boolean;
-  isRestDay: boolean;
+  isWorkingDay: boolean | null;
+  isRestDay: boolean | null;
+  rosterStatus: string | null;
 };
 
 function useAtlasDriverSearch(search: string, enabled: boolean, serviceDate = localDate()) {
@@ -86,7 +88,8 @@ function mapPlanningDriver(driver: AtlasDriver): PlanningDriver {
     jobTitle: "Conductor",
     contractCode: driver.contract_code,
     isWorkingDay: driver.is_working_day,
-    isRestDay: driver.is_rest_day
+    isRestDay: driver.is_rest_day,
+    rosterStatus: driver.roster_effective_status
   };
 }
 
@@ -110,7 +113,7 @@ function PlanningDriverLookup({ serviceDate, disabled }: { serviceDate: string; 
         minSearchLength={2}
       />
       <input type="hidden" name="driver_buk_employee_id" value={selectedDriver?.bukEmployeeId ?? ""} />
-      {selectedDriver ? <small className="atlas-ops__driver-status">{selectedDriver.isWorkingDay && !selectedDriver.isRestDay ? "En jornada" : "Jornada no validada"}</small> : null}
+      {selectedDriver ? <DriverRosterBadge isWorkingDay={selectedDriver.isWorkingDay} isRestDay={selectedDriver.isRestDay} rosterStatus={selectedDriver.rosterStatus} /> : null}
     </div>
   );
 }
@@ -171,6 +174,7 @@ function OperationsControlTowerApp() {
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [incidentFor, setIncidentFor] = useState("");
+  const [reassignDispatch, setReassignDispatch] = useState("");
   const [presentation, setPresentation] = useState<"map" | "list">("map");
   const [serviceSearch, setServiceSearch] = useState("");
   const [dispatchServiceTemplateId, setDispatchServiceTemplateId] = useState("");
@@ -282,6 +286,8 @@ function OperationsControlTowerApp() {
 
   const currentTitle = VIEWS.find((item) => item.id === view)?.label ?? "Control Tower";
   const selectedDispatchRecord = (dispatchQuery.data ?? []).find((item) => item.id === selectedDispatch);
+  const reassignDispatchRecord = (dispatchQuery.data ?? []).find((item) => item.id === reassignDispatch);
+  const canEditSelectedDispatch = Boolean(selectedDispatchRecord && (isAdmin || (catalogs?.editableContractIds ?? []).includes(selectedDispatchRecord.contract_id)));
   const usesServiceDate = view !== "configuracion" && view !== "conductor";
 
   async function submitDispatch(form: FormData) {
@@ -387,13 +393,13 @@ function OperationsControlTowerApp() {
             onClearFilter={() => setFilterContract("")}
           />
         ) : (
-          <DispatchTable rows={view === "excepciones" ? ordered.filter((row) => row.risk_status !== "green") : ordered} loading={dispatchQuery.isLoading} onSelect={setSelectedDispatch} onTransition={(id, action) => mutation.mutate(() => transitionAtlasDispatch(id, action))} canOperate={canOperate} />
+          <DispatchTable rows={view === "excepciones" ? ordered.filter((row) => row.risk_status !== "green") : ordered} loading={dispatchQuery.isLoading} onSelect={setSelectedDispatch} onTransition={(id, action) => mutation.mutate(() => transitionAtlasDispatch(id, action))} onReassign={setReassignDispatch} canOperate={canOperate} isAdmin={isAdmin} editableContractIds={catalogs?.editableContractIds ?? []} />
         )}
       </>}
 
       {view === "planificacion" && <section className="atlas-ops__workspace">
         <form className="atlas-ops__panel atlas-ops__form" onSubmit={(event: FormEvent<HTMLFormElement>) => { event.preventDefault(); void submitDispatch(new FormData(event.currentTarget)); }}>
-          <div className="atlas-ops__panel-heading"><div><h2>Programar servicio</h2><p>La ficha BUK exacta y su roster se validan en el servidor.</p></div><span className="atlas-ops__step">01 / PLAN</span></div>
+          <div className="atlas-ops__panel-heading"><div><h2>Programar servicio</h2><p>Se valida la ficha BUK activa; la jornada se muestra como advertencia no bloqueante.</p></div><span className="atlas-ops__step">01 / PLAN</span></div>
           <div className="atlas-ops__form-grid">
             <Field label="Contrato"><select name="contract_id" required defaultValue=""><option value="" disabled>Selecciona contrato</option>{editableContracts.map((item) => <option value={item.id} key={item.id}>{item.code} · {item.contract_name}</option>)}</select></Field>
             <Field label="Servicio base"><select name="service_template_id" required value={dispatchServiceTemplateId} onChange={(event) => { setDispatchServiceTemplateId(event.target.value); setDispatchRouteId(""); }}><option value="" disabled>Selecciona servicio</option>{catalogs?.templates.map((item) => <option value={item.id} key={item.id}>{item.name} · {item.service_type}</option>)}</select></Field>
@@ -409,19 +415,19 @@ function OperationsControlTowerApp() {
           </div>
           <div className="atlas-ops__form-footer"><span>El servicio se crea en planificación. Debe quedar listo antes de publicar.</span><button className="atlas-ops__button atlas-ops__button--primary" disabled={mutation.isPending || !canOperate}>Crear planificación</button></div>
         </form>
-        <aside className="atlas-ops__side-note"><span className="atlas-ops__side-note-mark">i</span><div><strong>Validación de recursos</strong><p>Atlas comprueba ficha BUK activa, jornada en la fecha, contrato y estado del vehículo. La publicación también comprueba conflictos horarios.</p></div></aside>
+        <aside className="atlas-ops__side-note"><span className="atlas-ops__side-note-mark">i</span><div><strong>Validación de recursos</strong><p>Atlas comprueba ficha BUK activa, vehículo activo y contrato. La jornada genera una advertencia; la publicación comprueba conflictos horarios. No existe un dato de mantenimiento conectado.</p></div></aside>
       </section>}
 
       {view === "despacho" && <>
         <section className="atlas-ops__toolbar"><div><strong>Servicios listos para despacho</strong><span>Preparación y publicación controlada</span></div></section>
-        <DispatchTable rows={ordered} loading={dispatchQuery.isLoading} onSelect={setSelectedDispatch} onTransition={(id, action) => mutation.mutate(() => transitionAtlasDispatch(id, action))} canOperate={canOperate} dispatchMode />
+        <DispatchTable rows={ordered} loading={dispatchQuery.isLoading} onSelect={setSelectedDispatch} onTransition={(id, action) => mutation.mutate(() => transitionAtlasDispatch(id, action))} onReassign={setReassignDispatch} canOperate={canOperate} isAdmin={isAdmin} editableContractIds={catalogs?.editableContractIds ?? []} dispatchMode />
       </>}
 
       {view === "conductor" && <DriverView rows={driverDispatchQuery.data ?? []} loading={driverDispatchQuery.isLoading} onAcknowledge={(id) => mutation.mutate(() => driverAcknowledgeDispatch(id))} onIncident={(id) => setIncidentFor(id)} onOpenRoute={(id) => navigate(`/operaciones/planificador-rutas?routeId=${encodeURIComponent(id)}`)} />}
 
       {view === "historial" && <>
         <section className="atlas-ops__toolbar"><div><strong>Timeline de servicio</strong><span>Selecciona un servicio para revisar eventos auditables.</span></div></section>
-        <DispatchTable rows={ordered} loading={dispatchQuery.isLoading} onSelect={setSelectedDispatch} onTransition={() => undefined} canOperate={false} />
+        <DispatchTable rows={ordered} loading={dispatchQuery.isLoading} onSelect={setSelectedDispatch} onTransition={() => undefined} onReassign={() => undefined} canOperate={false} isAdmin={false} editableContractIds={[]} />
       </>}
 
       {view === "configuracion" && <ConfigurationView contracts={editableContracts} templates={catalogs?.templates ?? []} users={adminUsersQuery.data ?? []} drivers={driverQuery.data ?? []} driverSearch={driverSearch} onDriverSearchChange={setDriverSearch} canAdmin={isAdmin} onSaveTemplate={saveTemplate} onSaveMilestone={saveMilestone} onSaveVehicle={saveVehicle} onSaveEditor={saveEditor} onBindDriver={bindDriver} pending={mutation.isPending} />}
@@ -433,16 +439,19 @@ function OperationsControlTowerApp() {
             <div><dt>Servicio</dt><dd>{selectedDispatchRecord.service_name ?? "Sin nombre"}</dd></div>
             <div><dt>Contrato</dt><dd>{selectedDispatchRecord.contract_code}</dd></div>
             <div><dt>Conductor</dt><dd>{selectedDispatchRecord.driver_name_snapshot ?? "Sin asignar"}</dd></div>
-            <div><dt>Vehículo</dt><dd>{selectedDispatchRecord.vehicle_code ?? "Sin asignar"}{selectedDispatchRecord.plate ? ` · ${selectedDispatchRecord.plate}` : ""}</dd></div>
+            <div><dt>Vehículo</dt><dd><VehicleDescription dispatch={selectedDispatchRecord} /></dd></div>
+            <div><dt>Jornada del conductor</dt><dd><DriverRosterBadge isWorkingDay={selectedDispatchRecord.driver_is_working_day} isRestDay={selectedDispatchRecord.driver_is_rest_day} rosterStatus={selectedDispatchRecord.driver_roster_status} /></dd></div>
             <div><dt>Planificación</dt><dd><Status value={selectedDispatchRecord.planning_status} /></dd></div>
             <div><dt>Riesgo</dt><dd><Risk value={selectedDispatchRecord.risk_status} /></dd></div>
           </dl>}
+          {canEditSelectedDispatch && selectedDispatchRecord && isReassignable(selectedDispatchRecord) && <button className="atlas-ops__button atlas-ops__button--quiet" type="button" onClick={() => setReassignDispatch(selectedDispatchRecord.id)}>Cambiar conductor o vehículo</button>}
           <h3 className="atlas-ops__timeline-title">Actividad registrada</h3>
-          {eventsQuery.isLoading ? <p className="atlas-ops__timeline-state">Cargando historial…</p> : eventsQuery.isError ? <p className="atlas-ops__timeline-state" role="alert">No se pudo cargar el historial.</p> : eventsQuery.data?.length ? <ol className="atlas-ops__timeline">{eventsQuery.data.map((event) => <li key={String(event.id)}><span className="atlas-ops__timeline-dot" /><div><strong>{readableStatus(String(event.event_type))}</strong><small>{new Date(String(event.occurred_at)).toLocaleString("es-CL")} · {String(event.source)}</small></div></li>)}</ol> : <p className="atlas-ops__timeline-state">Este servicio aún no registra eventos de actividad.</p>}
+          {eventsQuery.isLoading ? <p className="atlas-ops__timeline-state">Cargando historial…</p> : eventsQuery.isError ? <p className="atlas-ops__timeline-state" role="alert">No se pudo cargar el historial.</p> : eventsQuery.data?.length ? <ol className="atlas-ops__timeline">{eventsQuery.data.map((event) => <DispatchEvent key={String(event.id)} event={event} />)}</ol> : <p className="atlas-ops__timeline-state">Este servicio aún no registra eventos de actividad.</p>}
         </aside>
       </div>}
 
       {incidentFor && <IncidentDialog pending={mutation.isPending} onClose={() => setIncidentFor("")} onSubmit={(category, severity, description) => mutation.mutate(() => driverReportIncident(incidentFor, category, severity, description))} />}
+      {reassignDispatchRecord && <ResourceReassignmentDialog dispatch={reassignDispatchRecord} vehicles={catalogs?.vehicles ?? []} pending={mutation.isPending} onClose={() => setReassignDispatch("")} onSubmit={async (driverId, vehicleId, reason) => { await mutation.mutateAsync(() => reassignAtlasDispatchResources(reassignDispatch, driverId, vehicleId, reason)); setReassignDispatch(""); }} />}
       {catalogsQuery.isError && <p className="atlas-ops__empty" role="alert">{catalogsQuery.error instanceof Error ? catalogsQuery.error.message : "No fue posible cargar catálogos."}</p>}
     </PageShell>
   );
@@ -508,17 +517,76 @@ function Field({ label, children, wide = false }: { label: string; children: Rea
   return <label className={`atlas-ops__field${wide ? " atlas-ops__field--wide" : ""}`}><span>{label}</span>{children}</label>;
 }
 
-function DispatchTable({ rows, loading, onSelect, onTransition, canOperate, dispatchMode = false }: {
-  rows: AtlasDispatch[]; loading: boolean; onSelect: (id: string) => void; onTransition: (id: string, action: string) => void; canOperate: boolean; dispatchMode?: boolean;
+function DispatchTable({ rows, loading, onSelect, onTransition, onReassign, canOperate, isAdmin, editableContractIds, dispatchMode = false }: {
+  rows: AtlasDispatch[]; loading: boolean; onSelect: (id: string) => void; onTransition: (id: string, action: string) => void; onReassign: (id: string) => void; canOperate: boolean; isAdmin: boolean; editableContractIds: number[]; dispatchMode?: boolean;
 }) {
   return <div className="atlas-ops__table-wrap"><table className="atlas-ops__table"><thead><tr><th>Servicio / Hora</th><th>Contrato</th><th>Conductor</th><th>Vehículo</th><th>Plan</th><th>Ejecución</th><th>Riesgo</th><th /></tr></thead>
     <tbody>{loading ? <tr><td colSpan={8}>Cargando servicios…</td></tr> : rows.length === 0 ? <tr><td colSpan={8} className="atlas-ops__empty">Sin servicios para los filtros seleccionados.</td></tr> : rows.map((row) => <tr key={row.id}>
       <td data-label="Servicio / Hora"><button className="atlas-ops__service-link" onClick={() => onSelect(row.id)} type="button">{row.service_name ?? "Servicio importado"}<small>{row.planned_start_at ? new Date(row.planned_start_at).toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" }) : "Hora pendiente"} · {row.shift}</small></button></td>
-      <td data-label="Contrato">{row.contract_code}</td><td data-label="Conductor">{row.driver_name_snapshot ?? <span className="atlas-ops__muted">Sin asignar</span>}</td>
-      <td data-label="Vehículo">{row.vehicle_code ?? <span className="atlas-ops__muted">Sin asignar</span>}{row.plate ? <small className="atlas-ops__cell-sub">{row.plate}</small> : null}</td>
+      <td data-label="Contrato">{row.contract_code}</td><td data-label="Conductor">{row.driver_name_snapshot ?? <span className="atlas-ops__muted">Sin asignar</span>}{row.driver_buk_employee_id && <DriverRosterBadge isWorkingDay={row.driver_is_working_day} isRestDay={row.driver_is_rest_day} rosterStatus={row.driver_roster_status} />}</td>
+      <td data-label="Vehículo"><VehicleDescription dispatch={row} /></td>
       <td data-label="Plan"><Status value={row.planning_status} /></td><td data-label="Ejecución">{readableStatus(row.execution_status)}</td><td data-label="Riesgo"><Risk value={row.risk_status} /></td>
-      <td data-label="Acciones" className="atlas-ops__actions">{canOperate && row.planning_status === "planning" && <button onClick={() => onTransition(row.id, "ready")} type="button">Validar</button>}{canOperate && row.planning_status === "ready" && <button onClick={() => onTransition(row.id, "publish")} type="button">Publicar</button>}{dispatchMode && row.execution_status === "not_started" && row.acknowledged_at && <button onClick={() => onTransition(row.id, "start")} type="button">Iniciar</button>}</td>
+      <td data-label="Acciones" className="atlas-ops__actions">{canOperate && (isAdmin || editableContractIds.includes(row.contract_id)) && isReassignable(row) && <button onClick={() => onReassign(row.id)} type="button">Cambiar recursos</button>}{canOperate && (isAdmin || editableContractIds.includes(row.contract_id)) && row.planning_status === "planning" && <button onClick={() => onTransition(row.id, "ready")} type="button">Validar</button>}{canOperate && (isAdmin || editableContractIds.includes(row.contract_id)) && row.planning_status === "ready" && <button onClick={() => onTransition(row.id, "publish")} type="button">Publicar</button>}{dispatchMode && isAdmin && row.execution_status === "not_started" && row.acknowledged_at && <button onClick={() => onTransition(row.id, "start")} type="button">Iniciar</button>}</td>
     </tr>)}</tbody></table></div>;
+}
+
+function isReassignable(dispatch: AtlasDispatch) {
+  return dispatch.planning_status !== "cancelled" && !["completed", "failed"].includes(dispatch.execution_status);
+}
+
+function VehicleDescription({ dispatch }: { dispatch: AtlasDispatch }) {
+  if (!dispatch.vehicle_id) return <span className="atlas-ops__muted">Sin asignar</span>;
+  const detail = [dispatch.vehicle_type, dispatch.brand, dispatch.model, dispatch.year].filter(Boolean).join(" · ");
+  return <span className="atlas-ops__vehicle-description"><strong>{dispatch.vehicle_code ?? "Equipo"}</strong><small>{dispatch.plate ?? "Patente sin informar"}</small>{detail && <small>{detail}</small>}</span>;
+}
+
+function DriverRosterBadge({ isWorkingDay, isRestDay, rosterStatus }: { isWorkingDay: boolean | null | undefined; isRestDay: boolean | null | undefined; rosterStatus?: string | null }) {
+  const exceptionalStatusLabels: Record<string, string> = { extra_shift: "Turno extra", training: "Capacitación", leave: "Permiso", vacation: "Vacaciones", medical_leave: "Licencia médica" };
+  if (rosterStatus && !["working", "resting", "unassigned"].includes(rosterStatus)) {
+    return <span className="atlas-ops__roster-badge atlas-ops__roster-badge--unknown">{exceptionalStatusLabels[rosterStatus] ?? `Jornada: ${readableStatus(rosterStatus)}`}</span>;
+  }
+  if (isRestDay) return <span className="atlas-ops__roster-badge atlas-ops__roster-badge--rest">En descanso · revisar asignación</span>;
+  if (isWorkingDay == null || isRestDay == null || isWorkingDay !== true) return <span className="atlas-ops__roster-badge atlas-ops__roster-badge--unknown">{rosterStatus && rosterStatus !== "unassigned" ? `Jornada: ${readableStatus(rosterStatus)}` : "Jornada sin información"}</span>;
+  return <span className="atlas-ops__roster-badge atlas-ops__roster-badge--working">En turno</span>;
+}
+
+function DispatchEvent({ event }: { event: Record<string, unknown> }) {
+  const payload = event.payload && typeof event.payload === "object" ? event.payload as Record<string, unknown> : {};
+  const reassignment = event.event_type === "dispatch.resources_reassigned";
+  const resource = (value: unknown, fallback: string) => {
+    if (!value || typeof value !== "object") return fallback;
+    const item = value as Record<string, unknown>;
+    return [item.name ?? item.code, item.plate, item.type, item.brand, item.model, item.year].filter(Boolean).join(" · ") || fallback;
+  };
+  return <li><span className="atlas-ops__timeline-dot" /><div><strong>{reassignment ? "Cambio de recursos" : readableStatus(String(event.event_type))}</strong>
+    <small>{new Date(String(event.occurred_at)).toLocaleString("es-CL")} · {String(event.source)}</small>
+    {reassignment && <div className="atlas-ops__timeline-change"><span>Conductor: {resource(payload.old_driver, "Sin asignar")} → {resource(payload.new_driver, "Sin asignar")}</span><span>Equipo: {resource(payload.old_vehicle, "Sin asignar")} → {resource(payload.new_vehicle, "Sin asignar")}</span>{typeof payload.reason === "string" && <span>Motivo: {payload.reason}</span>}{payload.contingency === true && <span className="atlas-ops__contingency-label">Contingencia durante servicio</span>}</div>}
+  </div></li>;
+}
+
+function ResourceReassignmentDialog({ dispatch, vehicles, pending, onClose, onSubmit }: {
+  dispatch: AtlasDispatch;
+  vehicles: Array<{ id: string; code: string; plate: string | null; vehicle_type: string | null; brand: string | null; model: string | null; year: string | null }>;
+  pending: boolean; onClose: () => void; onSubmit: (driverId: string | null, vehicleId: string | null, reason: string) => Promise<void>;
+}) {
+  const [driver, setDriver] = useState<PlanningDriver | null>(null);
+  const [vehicleId, setVehicleId] = useState("");
+  const [reason, setReason] = useState("");
+  const isContingency = ["in_progress", "suspended"].includes(dispatch.execution_status);
+  return <div className="atlas-ops__modal-backdrop" role="presentation"><form className="atlas-ops__modal" aria-label="Cambiar recursos del servicio" onSubmit={(event) => {
+    event.preventDefault();
+    if (!driver && !vehicleId) return;
+    void onSubmit(driver?.bukEmployeeId ?? null, vehicleId || null, reason.trim());
+  }}>
+    <div className="atlas-ops__panel-heading"><div><h2>{isContingency ? "Reasignar recursos · contingencia" : "Cambiar recursos"}</h2><p>{isContingency ? "El servicio ya inició. Registra la contingencia para conservar la trazabilidad." : "Busca un reemplazo para conductor o vehículo. Deja sin cambio el recurso que quieras conservar."}</p></div><button onClick={onClose} type="button" aria-label="Cerrar">×</button></div>
+    <div className="atlas-ops__form-grid">
+      <div className="atlas-ops__field atlas-ops__field--wide"><StandardWorkerLookupField<PlanningDriver, string> id="atlas-reassignment-driver" label="Reemplazar conductor (opcional)" placeholder="Buscar por nombre o RUT" selectedWorker={driver} onSelect={setDriver} useSearchQuery={useAtlasPlanningDriverSearch} searchContext={dispatch.service_date} loadingMessage="Buscando conductores BUK…" emptyMessage="No hay conductores BUK activos que coincidan con esta búsqueda." disabled={pending} minSearchLength={2} /></div>
+      <Field label="Reemplazar vehículo (opcional)"><select value={vehicleId} onChange={(event) => setVehicleId(event.target.value)} disabled={pending}><option value="">Sin cambio</option>{vehicles.filter((item) => item.id !== dispatch.vehicle_id).map((item) => <option value={item.id} key={item.id}>{item.code} · {item.plate ?? "Sin patente"} · {[item.vehicle_type, item.brand, item.model, item.year].filter(Boolean).join(" ")}</option>)}</select></Field>
+      <Field label={isContingency ? "Motivo de contingencia" : "Motivo del cambio"} wide><textarea value={reason} onChange={(event) => setReason(event.target.value)} rows={3} minLength={5} required disabled={pending} placeholder={isContingency ? "Ej.: conductor original no llegó; se reasigna a…" : "Indica por qué se reemplazan los recursos."} /></Field>
+    </div>
+    {driver && <DriverRosterBadge isWorkingDay={driver.isWorkingDay} isRestDay={driver.isRestDay} rosterStatus={driver.rosterStatus} />}
+    <div className="atlas-ops__form-footer"><button className="atlas-ops__button atlas-ops__button--quiet" onClick={onClose} type="button">Cancelar</button><button className="atlas-ops__button atlas-ops__button--primary" disabled={pending || (!driver && !vehicleId) || reason.trim().length < 5}>Guardar cambio</button></div>
+  </form></div>;
 }
 
 function AlertTable({ rows, loading, onSelect, canOperate, onAcknowledge, onResolve }: {
@@ -593,7 +661,7 @@ function ConfigurationView({ contracts, templates, users, drivers, driverSearch,
       <label className="atlas-ops__check"><input type="checkbox" name="required" value="true" defaultChecked /> Hito obligatorio</label>
     </div><button className="atlas-ops__button atlas-ops__button--primary" disabled={pending || !canAdmin}>Publicar nueva versión</button></form>
     <form className="atlas-ops__panel atlas-ops__form" onSubmit={(event: FormEvent<HTMLFormElement>) => { event.preventDefault(); void onSaveVehicle(new FormData(event.currentTarget)); }}><div className="atlas-ops__panel-heading"><div><h2>Alta de vehículo</h2><p>El padrón parte vacío; registra la flota autorizada.</p></div></div><div className="atlas-ops__form-grid">
-      <Field label="Código"><input name="code" required /></Field><Field label="Patente"><input name="plate" /></Field><Field label="Tipo"><input name="vehicle_type" /></Field><Field label="Cliente"><input name="client_label" /></Field>
+            <Field label="Código"><input name="code" required /></Field><Field label="Patente"><input name="plate" /></Field><Field label="Tipo"><input name="vehicle_type" /></Field><Field label="Marca"><input name="brand" /></Field><Field label="Modelo"><input name="model" /></Field><Field label="Año"><input name="year" inputMode="numeric" /></Field><Field label="Cliente"><input name="client_label" /></Field>
     </div><button className="atlas-ops__button atlas-ops__button--primary" disabled={pending || !canAdmin}>Agregar vehículo</button></form>
     <form className="atlas-ops__panel atlas-ops__form" onSubmit={(event: FormEvent<HTMLFormElement>) => { event.preventDefault(); void onSaveEditor(new FormData(event.currentTarget)); }}><div className="atlas-ops__panel-heading"><div><h2>Acceso de Operaciones</h2><p>Asigna usuarios L1/L2 a contratos; el backend valida su rol.</p></div></div><div className="atlas-ops__form-grid">
       <Field label="Usuario"><select name="user_id" required defaultValue=""><option value="" disabled>Selecciona cuenta</option>{users.map((user) => <option value={user.id} key={user.id}>{user.full_name || user.email} · {user.email}</option>)}</select></Field>

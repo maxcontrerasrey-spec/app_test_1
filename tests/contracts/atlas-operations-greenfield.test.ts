@@ -19,6 +19,8 @@ const guards = readFileSync(new URL("../../src/modules/auth/components/RouteGuar
 const navigation = readFileSync(new URL("../../src/shared/config/navigation.ts", import.meta.url), "utf8");
 const derivedDispatchMigration = readFileSync(new URL("../../supabase/migrations/20261007191119_atlas_dispatch_route_derived_fields.sql", import.meta.url), "utf8");
 const crossContractDriversMigration = readFileSync(new URL("../../supabase/migrations/20261007195521_allow_atlas_cross_contract_drivers.sql", import.meta.url), "utf8");
+const resourceReassignmentMigration = readFileSync(new URL("../../supabase/migrations/20261007235755_atlas_dispatch_resource_reassignment_and_roster_warning.sql", import.meta.url), "utf8");
+const atlasOperationsApi = readFileSync(new URL("../../src/modules/operaciones/services/atlasOperationsApi.ts", import.meta.url), "utf8");
 
 describe("Atlas Operations greenfield replacement", () => {
   it("retires prior module-owned storage without importing rows into the new schema", () => {
@@ -68,6 +70,34 @@ describe("Atlas Operations greenfield replacement", () => {
     expect(crossContractDriversMigration).toMatch(/grant execute on function public\.atlas_ops_create_dispatch\(jsonb\) to authenticated/i);
     expect(crossContractDriversMigration).toMatch(/revoke all on function public\.atlas_ops_transition_dispatch\(uuid, text\) from public, anon/i);
     expect(crossContractDriversMigration).toMatch(/grant execute on function public\.atlas_ops_transition_dispatch\(uuid, text\) to authenticated/i);
+  });
+
+  it("makes roster advisory and records resource changes through an authorized immutable event", () => {
+    expect(resourceReassignmentMigration).not.toContain("La jornada BUK no habilita este conductor");
+    expect(resourceReassignmentMigration).not.toContain("La jornada BUK ya no habilita este conductor");
+    expect(resourceReassignmentMigration).toMatch(/where e\.buk_employee_id = driver_key and e\.is_active = true/);
+    expect(resourceReassignmentMigration).toMatch(/where v\.id = vehicle_key and v\.is_active = true/);
+    expect(resourceReassignmentMigration).toMatch(/atlas_ops_can_edit_contract\(actor, d\.contract_id\)/);
+    expect(resourceReassignmentMigration).toMatch(/execution_status in \('in_progress','suspended'\)/);
+    expect(resourceReassignmentMigration).toMatch(/'contingency', in_execution/);
+    expect(resourceReassignmentMigration).toMatch(/'dispatch\.resources_reassigned'/);
+    expect(resourceReassignmentMigration).toMatch(/'old_driver', old_driver, 'new_driver', new_driver/);
+    expect(resourceReassignmentMigration).toMatch(/revoke all on function public\.atlas_ops_reassign_dispatch\(uuid, text, uuid, text\) from public, anon/i);
+    expect(resourceReassignmentMigration).toMatch(/grant execute on function public\.atlas_ops_reassign_dispatch\(uuid, text, uuid, text\) to authenticated/i);
+    expect(resourceReassignmentMigration).toMatch(/with \(security_invoker = true\)/i);
+    expect(resourceReassignmentMigration).toMatch(/v\.vehicle_type, v\.brand, v\.model, v\.year/);
+    expect(resourceReassignmentMigration).toMatch(/roster\.effective_status as driver_roster_status/);
+    expect(atlasOperationsApi).toContain('"atlas_ops_reassign_dispatch"');
+  });
+
+  it("shows equipment metadata and non-blocking roster warnings in dispatch workflows", () => {
+    expect(page).toContain("Cambiar conductor o vehículo");
+    expect(page).toContain("Contingencia durante servicio");
+    expect(page).toContain("En descanso · revisar asignación");
+    expect(page).toContain("Jornada: ${readableStatus(rosterStatus)}");
+    expect(page).toContain("dispatch.vehicle_type, dispatch.brand, dispatch.model, dispatch.year");
+    expect(page).toContain("No existe un dato de mantenimiento conectado");
+    expect(atlasOperationsApi).toContain("driver_roster_status: string | null");
   });
 
   it("keeps the operational planner free of demo data and reports actionable driver simulation errors", () => {

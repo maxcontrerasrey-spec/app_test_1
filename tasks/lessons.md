@@ -1,5 +1,17 @@
 # Lecciones Técnicas Aprendidas (Lessons)
 
+## 2026-10-07 — No bloquear por una condición operacional que el sistema no registra
+
+- Un catálogo de vehículo activo no es un sistema de mantenimiento: no inferir disponibilidad mecánica ni bloquear por mantenimiento sin una fuente explícita.
+- Jornada BUK puede ser una señal de planificación y advertencia, pero debe quedar fuera de las condiciones duras cuando la regla del negocio dice que no bloquea; conservar la validación de identidad activa y vehículo activo por separado.
+- Si el servicio está en ejecución, permitir la reasignación solicitada con motivo obligatorio marcado como contingencia e historial append-only; preservar el contrato de autorización exacto.
+
+## 2026-10-07 — La ruta optimizada por tiempo también necesita validar maniobras
+
+- Valhalla permite giros en U en ubicaciones `break` predeterminadas; usar `break_through` en paradas intermedias y conservar códigos de maniobra para detectar U-turns.
+- Una ruta larga dividida en solicitudes puede crear un retroceso en el punto de unión aunque cada segmento sea válido; revisar el cambio de dirección al unir geometrías.
+- Rechazar con una indicación de corrección cuando la propuesta contiene un giro en U; un tiempo/distancia calculado no demuestra aplicabilidad física del trayecto.
+
 ## 2026-10-07 — El límite Valhalla `/route` también aplica a Ferrostar
 
 - El planificador ya divide rutas largas en solicitudes de hasta 10 ubicaciones, pero el simulador Ferrostar puede recibir la ruta completa; una ruta guardada con 12 paradas reproducía HTTP 400 `InvalidValue`.
