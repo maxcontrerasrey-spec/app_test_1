@@ -4332,3 +4332,9 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - Si el productor incluye `validatedRestrictions: []` como placeholder, el validador debe aceptar solo ese arreglo vacío; jamás debe confiar en restricciones no vacías enviadas por el navegador, que se cargan desde el servidor.
 - Separar cobertura de rutas enviadas al modelo de porcentaje de rutas que obtienen una mejora validada; un pre-filtro sin riesgo no debe saltarse la evaluación, y una llamada exitosa no demuestra que haya una alternativa mejor.
 - Si el modelo falla, mantener disponible la ruta de Valhalla y registrar la evaluación como fallida; no contarla como cobertura exitosa ni afirmar que el modelo modificó el recorrido.
+
+## 2026-10-08 - Mejorar una parada exige conservar su referencia original
+
+- Un punto de acceso vial ajustado debe mantener dirección, identidad de parada y destino fijado; guardar coordenada original, coordenada vial propuesta y desplazamiento como procedencia explícita.
+- Limitar el snapping por radio y confirmar que exista una ruta peatonal mapeada corta; esto aporta evidencia de conexión en el grafo, pero no certifica cruces seguros ni el espacio físico de maniobra.
+- Aplicar un cambio solo tras comparar el recorrido completo con el mismo perfil de vehículo y demostrar una mejora declarada; si el proveedor falla o no mejora la métrica, conservar la ruta base sin impedir su cálculo.

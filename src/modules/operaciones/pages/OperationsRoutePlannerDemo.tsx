@@ -8,6 +8,7 @@ import type { FerrostarCore, FerrostarMap, SimulatedLocationProvider } from "@st
 import type { Route, TripState, UserLocation, Waypoint } from "@stadiamaps/ferrostar";
 import { auditAtlasRouteIntelligence, calculateAtlasValhallaRoute, getAtlasOperationsCatalogs, getAtlasServiceRoute, getAtlasServiceRoutes, optimizeAtlasOpenRoute, recordAtlasRouteIntelligenceFeedback, resolveAtlasTomTomSuggestion, saveAtlasServiceRoute, searchAtlasTomTom, type AtlasOptimizedRoute, type AtlasPlannedRoute, type AtlasRouteAuditResponse, type AtlasServiceRoute, type TomTomSuggestion } from "../services/atlasOperationsApi";
 import { appendRouteStop, moveRouteStop, normalizeRouteStops, setFixedDestination } from "../lib/routeStopOrder";
+import { applyRouteAccessAdjustments } from "../lib/applyRouteAccessAdjustments";
 import { matchRouteDestinationPresets, type RouteDestinationPreset } from "../lib/routeDestinationCatalog";
 import { formatDriverSimulationError, mergeFerrostarRouteSegments, splitRouteStops } from "../lib/routeSimulation";
 import { atlasVehicleTypesMatch, getAvailableAtlasRouteVehicleCategories, resolveAtlasRouteVehicleCategory } from "../lib/vehicleRoutingCosting";
@@ -32,7 +33,7 @@ const MAP_STYLE = {
   layers: [{ id: "osm", type: "raster" as const, source: "osm" }]
 };
 
-type Stop = { id: string; label: string; lat: number; lng: number; kind: "origin" | "stop" | "destination"; providerPlaceId: string | null; source: "tomtom" | "map_pin" | "preset"; fixedDestination?: boolean };
+type Stop = { id: string; label: string; lat: number; lng: number; kind: "origin" | "stop" | "destination"; providerPlaceId: string | null; source: "tomtom" | "map_pin" | "preset"; fixedDestination?: boolean; accessAdjustment?: { original: { lat: number; lng: number }; displacementMeters: number } };
 type RouteProposal = { stops: Stop[]; route: AtlasOptimizedRoute };
 type SearchState = { id: string; query: string; sessionId: string; revision?: number; results: TomTomSuggestion[]; status: "idle" | "loading" | "ready" | "error"; error?: string };
 type SuggestionAnchor = { top: number; left: number; width: number; maxHeight: number };
@@ -219,12 +220,20 @@ export function OperationsRoutePlannerDemo() {
     markersRef.current.forEach((marker) => marker.remove());
     const visibleStops = proposal?.stops ?? stops;
     const locatedStops = visibleStops.filter((stop) => stop.label.trim().length > 0);
-    markersRef.current = locatedStops.map((stop) => {
+    markersRef.current = [];
+    locatedStops.forEach((stop) => {
       const index = visibleStops.findIndex((item) => item.id === stop.id);
+      if (stop.accessAdjustment) {
+        const originalNode = document.createElement("div");
+        originalNode.className = "ops-route-demo__map-marker ops-route-demo__map-marker--access-origin";
+        originalNode.textContent = "•";
+        originalNode.title = `Punto ingresado originalmente; acceso vial ajustado ${stop.accessAdjustment.displacementMeters} m`;
+        markersRef.current.push(new maplibregl.Marker({ element: originalNode }).setLngLat([stop.accessAdjustment.original.lng, stop.accessAdjustment.original.lat]).addTo(map));
+      }
       const node = document.createElement("div");
       node.className = `ops-route-demo__map-marker ops-route-demo__map-marker--${stop.kind}`;
       node.textContent = stop.kind === "origin" ? "A" : stop.kind === "destination" ? "B" : String(index + 1);
-      return new maplibregl.Marker({ element: node }).setLngLat([stop.lng, stop.lat]).addTo(map);
+      markersRef.current.push(new maplibregl.Marker({ element: node }).setLngLat([stop.lng, stop.lat]).addTo(map));
     });
     if (!mapReady) return;
     const planningCoordinates = proposal?.route.coordinates ?? planningRoute?.coordinates ?? [];
@@ -238,7 +247,10 @@ export function OperationsRoutePlannerDemo() {
     source.setData(geo ?? { type: "FeatureCollection", features: [] });
     if (activeView === "planning" && (locatedStops.length > 0 || planningCoordinates.length > 0)) {
       const bounds = new maplibregl.LngLatBounds();
-      locatedStops.forEach((stop) => bounds.extend([stop.lng, stop.lat]));
+      locatedStops.forEach((stop) => {
+        bounds.extend([stop.lng, stop.lat]);
+        if (stop.accessAdjustment) bounds.extend([stop.accessAdjustment.original.lng, stop.accessAdjustment.original.lat]);
+      });
       planningCoordinates.forEach(([lng, lat]) => bounds.extend([lng, lat]));
       if (!bounds.isEmpty()) {
         map.fitBounds(bounds, { padding: { top: 80, bottom: 80, left: 65, right: 65 }, maxZoom: 15, duration: 500 });
@@ -332,7 +344,7 @@ export function OperationsRoutePlannerDemo() {
     setStops((current) => {
       const found = current.some((stop) => stop.id === stopId);
       const updated = found
-        ? current.map((stop) => stop.id === stopId ? { ...stop, ...location } : stop)
+        ? current.map((stop) => stop.id === stopId ? { ...stop, ...location, accessAdjustment: undefined } : stop)
         : [...current, { id: stopId, ...location, kind: "stop" as const }];
       return normalizeRouteStops(updated);
     });
@@ -468,7 +480,7 @@ export function OperationsRoutePlannerDemo() {
     try {
       const fixedDestinationIndex = stops.findIndex((stop) => stop.fixedDestination);
       const result = await optimizeAtlasOpenRoute(stops.map(({ lat, lng }) => ({ lat, lng })), plannedVehicleType, fixedDestinationIndex < 0 ? undefined : fixedDestinationIndex);
-      const proposedStops = normalizeRouteStops(result.order.map((index) => stops[index]!));
+      const proposedStops = normalizeRouteStops(applyRouteAccessAdjustments(stops, result.order, result.stopAccessAdjustments));
       setProposal({ stops: proposedStops, route: result });
       setPlanningRoute(null);
       setRoute(null);
@@ -478,6 +490,7 @@ export function OperationsRoutePlannerDemo() {
       if ((result.uturnCount ?? 0) > 0) {
         routeNotices.push(`La ruta incluye ${result.uturnCount} giro(s) en U que la red vial permite trazar. Los datos disponibles no permiten confirmar si el espacio alcanza para ejecutarlos hacia delante con esta unidad; no se asumió que requieran marcha atrás ni se descartó la ruta por ese código.`);
       }
+      if (result.stopAccessAdjustments?.length) routeNotices.push(`Ajusté automáticamente ${result.stopAccessAdjustments.length} punto(s) de acceso hasta 20 m para mejorar la ruta; revisa el punto original y el acceso vial propuesto antes de aplicar.`);
       setNotice(routeNotices.join(" "));
       const auditRequest = ++auditSequence.current;
       setRouteAuditStatus("loading");
@@ -518,7 +531,8 @@ export function OperationsRoutePlannerDemo() {
     setProposal(null);
     setRoute(null);
     setRouteState("ready");
-    setNotice("Orden propuesto aplicado. El primer punto es el inicio y el último es el destino; el recorrido termina allí.");
+    const adjustedCount = proposal.route.stopAccessAdjustments?.length ?? 0;
+    setNotice(`Orden propuesto aplicado. ${adjustedCount ? `${adjustedCount} punto(s) conservan el acceso vial ajustado; el punto original se muestra en el mapa.` : "No fue necesario ajustar accesos."} El primer punto es el inicio y el último es el destino; el recorrido termina allí.`);
   }
 
   async function startSimulation() {
@@ -583,7 +597,7 @@ export function OperationsRoutePlannerDemo() {
       const id = await saveAtlasServiceRoute({
         serviceTemplateId: Number(selectedServiceId),
         prefix: routePrefix,
-        stops: stops.map((stop) => ({ label: stop.label, lat: stop.lat, lng: stop.lng, providerPlaceId: stop.providerPlaceId, source: stop.source })),
+        stops: stops.map((stop) => ({ label: stop.label, lat: stop.lat, lng: stop.lng, ...(stop.accessAdjustment ? { requestedLat: stop.accessAdjustment.original.lat, requestedLng: stop.accessAdjustment.original.lng, accessAdjustmentMeters: stop.accessAdjustment.displacementMeters } : {}), providerPlaceId: stop.providerPlaceId, source: stop.source })),
         distanceMeters: planningRoute.distanceMeters,
         durationSeconds: planningRoute.durationSeconds,
         matrixDurationSeconds: planningRoute.matrixDurationSeconds,
@@ -626,7 +640,10 @@ export function OperationsRoutePlannerDemo() {
       id: uid(), label: stop.label, lat: stop.latitude, lng: stop.longitude,
       kind: "stop" as const,
       fixedDestination: index === orderedStops.length - 1,
-      providerPlaceId: stop.provider_place_id, source: stop.location_source
+      providerPlaceId: stop.provider_place_id, source: stop.location_source,
+      ...(stop.requested_latitude !== null && stop.requested_longitude !== null && stop.access_adjustment_meters !== null
+        ? { accessAdjustment: { original: { lat: stop.requested_latitude, lng: stop.requested_longitude }, displacementMeters: stop.access_adjustment_meters } }
+        : {})
     })));
     setStops(loaded);
     setRoutePrefix(selected.prefix);
@@ -728,7 +745,7 @@ export function OperationsRoutePlannerDemo() {
           <div className="ops-route-demo__panel-divider" />
           {(proposal || planningRoute) && routeState === "ready" && <div className="ops-route-demo__summary"><div><span>Distancia · Valhalla</span><strong>{formatDistance((proposal?.route ?? planningRoute!).distanceMeters)}</strong></div><div><span>Tiempo estimado</span><strong>{formatDuration((proposal?.route ?? planningRoute!).durationSeconds)}</strong></div></div>}
           <div className="ops-route-demo__actions"><button type="button" className="ops-route-demo__primary" disabled={!allStopsPresent || !plannedVehicleType || routeState === "loading"} onClick={() => void generateRoute()}>{routeState === "loading" ? "Buscando mejor orden…" : "Proponer recorrido optimizado"}</button></div>
-          {proposal && <div className="ops-route-demo__message" role="status"><strong>Propuesta de recorrido abierto</strong><p>Inicio: {proposal.stops[0]?.label}</p><p>Destino: {proposal.stops[proposal.stops.length - 1]?.label}</p><details><summary>Ver las {proposal.stops.length} direcciones en orden</summary><ol>{proposal.stops.map((stop) => <li key={stop.id}>{stop.label}</li>)}</ol></details>{proposal.route.inputOrderMatrixDurationSeconds !== null && <small>{proposal.route.inputOrderMatrixDurationSeconds > proposal.route.matrixDurationSeconds ? `Ahorro estimado: ${formatDuration(proposal.route.inputOrderMatrixDurationSeconds - proposal.route.matrixDurationSeconds)} frente al orden ingresado.` : "El orden ingresado ya es equivalente o más rápido según la matriz."}</small>}<div className="ops-route-demo__actions"><button type="button" className="ops-route-demo__primary" onClick={applyProposal}>Aplicar este orden</button><button type="button" className="ops-route-demo__secondary" onClick={() => { setProposal(null); setRouteState("idle"); }}>Descartar propuesta</button></div></div>}
+          {proposal && <div className="ops-route-demo__message" role="status"><strong>Propuesta de recorrido abierto</strong><p>Inicio: {proposal.stops[0]?.label}</p><p>Destino: {proposal.stops[proposal.stops.length - 1]?.label}</p><details><summary>Ver las {proposal.stops.length} direcciones en orden</summary><ol>{proposal.stops.map((stop) => <li key={stop.id}>{stop.label}{stop.accessAdjustment && <small className="ops-route-demo__access-note">Acceso vial ajustado {stop.accessAdjustment.displacementMeters} m; punto ingresado marcado en gris en el mapa.</small>}</li>)}</ol></details>{proposal.route.inputOrderMatrixDurationSeconds !== null && <small>{proposal.route.inputOrderMatrixDurationSeconds > proposal.route.matrixDurationSeconds ? `Ahorro estimado: ${formatDuration(proposal.route.inputOrderMatrixDurationSeconds - proposal.route.matrixDurationSeconds)} frente al orden ingresado.` : "El orden ingresado ya es equivalente o más rápido según la matriz."}</small>}{Boolean(proposal.route.stopAccessAdjustments?.length) && <small>Se conservan todas las direcciones. El ajuste busca acercar el punto al acceso vial; no certifica que cruzar la calle sea seguro.</small>}<div className="ops-route-demo__actions"><button type="button" className="ops-route-demo__primary" onClick={applyProposal}>Aplicar este orden</button><button type="button" className="ops-route-demo__secondary" onClick={() => { setProposal(null); setRouteState("idle"); }}>Descartar propuesta</button></div></div>}
           {routeAuditStatus !== "idle" && <AtlasRouteAuditPanel
             status={routeAuditStatus}
             audit={routeAudit}

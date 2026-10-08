@@ -82,6 +82,9 @@ export type AtlasServiceRoute = {
     label: string;
     latitude: number;
     longitude: number;
+    requested_latitude: number | null;
+    requested_longitude: number | null;
+    access_adjustment_meters: number | null;
     provider_place_id: string | null;
     location_source: "tomtom" | "map_pin" | "preset";
   }>;
@@ -105,7 +108,8 @@ export type AtlasRouteAuditResponse = {
   errorCategory?: string | null; status?: string;
 };
 export type AtlasPlannedRoute = { coordinates: [number, number][]; distanceMeters: number; durationSeconds: number; provider: "valhalla"; travelMode: "bus"; plannedVehicleType?: string; referenceModel?: string; referenceDimensions?: { length: number; width: number; height: number; weight: number }; dimensionEvidence?: string; referenceDimensionsSent?: boolean; uturnCount?: number; maneuvers?: AtlasRouteManeuver[]; maneuverRiskCandidates?: Array<{ maneuverId: string; score: number; reasons: string[]; requiresAiAudit: boolean }> };
-export type AtlasOptimizedRoute = AtlasPlannedRoute & { order: number[]; matrixDurationSeconds: number; inputOrderMatrixDurationSeconds: number | null; optimizationMethod: "valhalla_matrix_open_path_v1" };
+export type AtlasStopAccessAdjustment = { stopIndex: number; original: { lat: number; lng: number }; adjusted: { lat: number; lng: number }; displacementMeters: number };
+export type AtlasOptimizedRoute = AtlasPlannedRoute & { order: number[]; matrixDurationSeconds: number; inputOrderMatrixDurationSeconds: number | null; stopAccessAdjustments?: AtlasStopAccessAdjustment[]; optimizationMethod: "valhalla_matrix_open_path_v1" };
 
 export async function getAtlasOperationsCatalogs() {
   const db = client();
@@ -216,7 +220,7 @@ export async function saveAtlasServiceTemplate(payload: Record<string, unknown>)
 
 export async function getAtlasServiceRoutes(serviceTemplateId: number): Promise<AtlasServiceRoute[]> {
   const result = await client().from("atlas_ops_service_routes")
-    .select("id, service_template_id, prefix, route_code, version, is_active, planning_distance_meters, planning_duration_seconds, planned_vehicle_type, atlas_ops_service_route_stops(id, stop_order, label, latitude, longitude, provider_place_id, location_source)")
+    .select("id, service_template_id, prefix, route_code, version, is_active, planning_distance_meters, planning_duration_seconds, planned_vehicle_type, atlas_ops_service_route_stops(id, stop_order, label, latitude, longitude, requested_latitude, requested_longitude, access_adjustment_meters, provider_place_id, location_source)")
     .eq("service_template_id", serviceTemplateId)
     .order("created_at", { ascending: false });
   if (result.error) throw new Error(getSupabaseErrorMessage(result.error, "No fue posible cargar las rutas del servicio base."));
@@ -225,7 +229,7 @@ export async function getAtlasServiceRoutes(serviceTemplateId: number): Promise<
 
 export async function getAtlasServiceRoute(routeId: string): Promise<AtlasServiceRoute> {
   const result = await client().from("atlas_ops_service_routes")
-    .select("id, service_template_id, prefix, route_code, version, is_active, planning_distance_meters, planning_duration_seconds, planned_vehicle_type, atlas_ops_service_route_stops(id, stop_order, label, latitude, longitude, provider_place_id, location_source)")
+    .select("id, service_template_id, prefix, route_code, version, is_active, planning_distance_meters, planning_duration_seconds, planned_vehicle_type, atlas_ops_service_route_stops(id, stop_order, label, latitude, longitude, requested_latitude, requested_longitude, access_adjustment_meters, provider_place_id, location_source)")
     .eq("id", routeId).single();
   if (result.error) throw new Error(getSupabaseErrorMessage(result.error, "No fue posible cargar la ruta asignada."));
   return result.data as AtlasServiceRoute;
@@ -234,7 +238,7 @@ export async function getAtlasServiceRoute(routeId: string): Promise<AtlasServic
 export async function saveAtlasServiceRoute(input: {
   serviceTemplateId: number;
   prefix: string;
-  stops: Array<{ label: string; lat: number; lng: number; providerPlaceId?: string | null; source: "tomtom" | "map_pin" | "preset" }>;
+  stops: Array<{ label: string; lat: number; lng: number; requestedLat?: number | null; requestedLng?: number | null; accessAdjustmentMeters?: number | null; providerPlaceId?: string | null; source: "tomtom" | "map_pin" | "preset" }>;
   distanceMeters: number;
   durationSeconds: number;
   matrixDurationSeconds: number;
