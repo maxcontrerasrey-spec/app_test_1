@@ -30,12 +30,14 @@ describe("Atlas Route Intelligence security contract", () => {
     expect(edge).not.toContain("service_role");
   });
 
-  it("defaults to OFF, calls the model for every valid route, keeps risk triage bounded, and leaves planning intact on model failure", () => {
+  it("defaults to OFF, calls the model for every valid route, keeps risk triage bounded, and leaves failed routes as blocked drafts", () => {
     expect(edge).toContain('|| "OFF"');
     expect(edge).toContain('mode !== "SHADOW"');
     expect(edge).toContain("selectManeuversForAiAudit(maneuversWithRestrictions, allCandidates, MAX_AUDITED_MANEUVERS)");
     expect(edge).toContain("const result = await callAuditor(candidates, profile, plannedVehicleType");
-    expect(edge).toContain("La ruta calculada sigue disponible sin cambios");
+    expect(edge).toContain("La ruta se conserva como borrador; no se puede aplicar ni guardar");
+    expect(edge).toContain("invalid_evaluation_id");
+    expect(edge).toContain("{ evaluationId, candidateHash, vehicleId, model");
   });
 
   it("accepts only the producer's empty restriction placeholder and reloads validated restrictions server-side", () => {

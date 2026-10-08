@@ -18,7 +18,7 @@ PASS
 ## Resumen
 
 - Errores: 0
-- Warnings: 0
+- Warnings: 1
 - Info: 24
 
 ## Errores
@@ -27,7 +27,7 @@ PASS
 
 ## Warnings
 
-- Sin warnings.
+- PERF-001 · `src/modules/operaciones/pages/OperationsRoutePlannerDemo.tsx` · Archivo sobre 800 lineas: 822.
 
 ## Gates informativos
 

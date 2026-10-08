@@ -4351,3 +4351,9 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - Para corregir un tramo incómodo sin pedir que la persona reordene puntos, consultar alternativas de dos extremos al motor vial solo en piernas que realmente contienen U-turns; conservar la secuencia de paradas.
 - Volver a comparar la ruta completa (maniobras, tiempo y distancia) con el perfil y dimensiones originales; limitar llamadas, concurrencia, desvío y timeout. Si no hay mejora validada o falla el proveedor, mantener el trazado base.
 - Separar “sin alternativa mejor dentro del margen” de “búsqueda incompleta”; no anunciar una mejora de IA como sustituto de una geometría transitable generada por el motor.
+# 2026-10-08 - Una ruta no se valida si la evaluación IA falla
+
+- Una respuesta HTTP 200 de una función de IA no demuestra que el modelo haya evaluado la ruta: revisar `decision`, proveedor, maniobras auditadas y persistencia (`runId`).
+- Mantener la geometría como borrador y bloquear aplicar, navegar o guardar hasta una evaluación IA completa; mostrar error y permitir reintentar la evaluación sin recalcular el recorrido.
+- Diferenciar la clave de idempotencia por evaluación lógica: los reintentos de transporte reutilizan el identificador, mientras que un reintento manual crea uno nuevo para no devolver un error cacheado.
+- El orden y trazado siguen siendo responsabilidad del motor de rutas; la IA valida evidencia y no certifica radio de giro, espacio físico, seguridad peatonal u optimalidad global.

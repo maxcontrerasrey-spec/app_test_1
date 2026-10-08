@@ -323,7 +323,7 @@ export async function auditAtlasRouteIntelligence(route: AtlasOptimizedRoute, se
   if (!route.maneuvers?.length) throw new Error("Valhalla no entregó maniobras para auditar esta ruta.");
   const response = await fetch(`${supabaseUrl.replace(/\/$/, "")}/functions/v1/atlas-route-intelligence`, {
     method: "POST", headers: { "content-type": "application/json", apikey: anonKey, authorization: `Bearer ${accessToken}` },
-    body: JSON.stringify({ serviceTemplateId, vehicleId, plannedVehicleType, maneuvers: route.maneuvers }), signal
+    body: JSON.stringify({ evaluationId: crypto.randomUUID(), serviceTemplateId, vehicleId, plannedVehicleType, maneuvers: route.maneuvers }), signal
   });
   const payload = await response.json() as AtlasRouteAuditResponse & { error?: string };
   if (!response.ok) throw new Error(payload.error === "audit_persistence_failed" ? "La auditoría no quedó guardada; la propuesta de ruta sigue disponible." : `No se pudo auditar la ruta (${payload.error ?? response.status}).`);
