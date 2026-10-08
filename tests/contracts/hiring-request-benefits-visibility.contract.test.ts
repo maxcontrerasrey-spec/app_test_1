@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const migration = readFileSync(
-  "supabase/migrations/20261008144407_hiring_request_accommodation_and_travel_allowance.sql",
+  "supabase/migrations/20261008154901_hiring_request_accommodation_and_travel_allowance.sql",
   "utf8"
 );
 const requestPage = readFileSync("src/modules/recruitment/pages/HiringRequestPage.tsx", "utf8");

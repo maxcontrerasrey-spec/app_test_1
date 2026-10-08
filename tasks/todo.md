@@ -6,10 +6,11 @@
 - [x] Capturar el monto entero del bono de traslado en la aprobación de Control de Contratos y exponerlo en el resumen expandido de reclutamiento.
 - [x] Limitar “Otros beneficios” a aprobación pendiente asignada de Gerencia de Área/Control de Contratos (o administrador de sistema), y redaccionarlo en vistas de reclutamiento/solicitante una vez fuera de esa etapa.
 - [x] Agregar prueba de contrato; ejecutar Guardian, TypeScript/build, contratos, auditoría de migraciones y `git diff --check`.
-- [ ] **BLOCKED_VALIDATION**: validar/aplicar migración con PostgreSQL/staging disponible y prueba de regresión/equivalencia en BD. No hay `psql`, Docker ni rama Supabase de staging.
-- [ ] **BLOCKED_VALIDATION**: desplegar frontend y migración a producción, verificar respaldo recuperable antes de cambios y comprobar con cuentas representativas que permisos y visibilidad coinciden con los roles. El estado Supabase no informa respaldos/PITR y no hay herramienta conectada para demostrar recuperabilidad.
+- [x] Aplicar en Supabase producción la migración atómica `20261008154901` después de CI verde; verificar columnas, constraints, RPC nuevas/legacy, SECURITY DEFINER, `search_path`, ejecución autenticada/no anónima, guardas de aprobación y redacción de RPC generales.
+- [ ] Publicar el frontend en Cloudflare Pages y comprobar que el dominio productivo sirve el bundle integrado.
+- [ ] **BLOCKED_VALIDATION**: smoke autenticado de extremo a extremo creando una solicitud y aprobando un bono con cuentas reales autorizadas; no simular aprobaciones o datos en producción sin un flujo de prueba designado.
 
-Resultado local: Guardian 0 errores/0 advertencias; TypeScript y Vite build PASS (solo avisos preexistentes de chunks grandes); contrato nuevo 4/4 y suite contracts 159/159; auditoría de 623 migraciones y `git diff --check` PASS. No se escribió en producción. Pendiente externo: staging PostgreSQL para compilar/ejecutar/ensayar rollback de la migración, y evidencia de respaldo recuperable antes de aplicar el DDL productivo.
+Resultado: PR #103 integrado en `main` como `17c50b5a`; Guardian CI pasó 0 errores/0 advertencias y la migración `20261008154901` quedó aplicada en Supabase producción. Verificación post-DDL: nuevas columnas presentes; dos constraints aditivas; RPC de envío y aprobación nuevas conservan `SECURITY DEFINER` y `search_path=public`, permiten `authenticated` y deniegan `anon`; RPC legacy de aprobación sigue disponible; campos estructurados y guardas/redacciones comprobadas en las RPC afectadas. Pendiente: confirmar Pages y hacer un smoke E2E con roles reales sin crear registros operativos de prueba.
 
 ## Unificar y acelerar búsquedas de personal BUK — 2026-10-07
 
