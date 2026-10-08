@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { analyzeValhallaManeuvers, attachValidatedRestrictions, normalizeClientManeuverFeature, parseRouteAuditOutput, preFilterRouteManeuvers, selectManeuversForAiAudit } from "../../supabase/functions/atlas-tomtom-planning/routeIntelligence.ts";
+import { analyzeValhallaManeuvers, attachValidatedRestrictions, hasValidManeuverLegContext, normalizeClientManeuverFeature, parseRouteAuditOutput, preFilterRouteManeuvers, selectManeuversForAiAudit } from "../../supabase/functions/atlas-tomtom-planning/routeIntelligence.ts";
 
 describe("Atlas Route Intelligence maneuver analyzer", () => {
   it("normaliza los giros cerrados de Valhalla sin fabricar datos viales", () => {
@@ -48,6 +48,18 @@ describe("Atlas Route Intelligence maneuver analyzer", () => {
     expect(normalizeClientManeuverFeature(feature, 0)?.maneuverId).toBe("m-001");
     expect(normalizeClientManeuverFeature({ ...feature, validatedRestrictions: [{ id: "forged" }] }, 0)).toBeNull();
     expect(normalizeClientManeuverFeature({ ...feature, validatedRestrictions: "[]" }, 0)).toBeNull();
+  });
+
+  it("conserva el contexto de tramo y distingue una llegada intermedia de la parada final", () => {
+    const route = analyzeValhallaManeuvers([
+      { type: 4, instruction: "Llegue al destino", routeLegIndex: 0, legDestinationStopIndex: 1, legDestinationIsFinal: false },
+      { type: 4, instruction: "Llegue al destino", routeLegIndex: 1, legDestinationStopIndex: 2, legDestinationIsFinal: true },
+    ]);
+    const normalized = route.map(normalizeClientManeuverFeature);
+    expect(normalized[0]).toMatchObject({ routeLegIndex: 0, legDestinationStopIndex: 1, legDestinationIsFinal: false });
+    expect(hasValidManeuverLegContext(normalized.filter((item) => item !== null), 3)).toBe(true);
+    expect(hasValidManeuverLegContext(normalized.filter((item) => item !== null), 2)).toBe(false);
+    expect(hasValidManeuverLegContext([normalized[0]!], 3)).toBe(false);
   });
 
   it("envía la ruta al auditor aunque el pre-filtro no encuentre riesgo y distribuye la muestra", () => {

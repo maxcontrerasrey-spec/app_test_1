@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isRouteAuditOperationallyComplete } from "../../src/modules/operaciones/components/AtlasRouteAuditPanel";
+import { isRouteAuditEvaluationComplete, isRouteAuditOperationallyComplete } from "../../src/modules/operaciones/components/AtlasRouteAuditPanel";
 import type { AtlasRouteAuditResponse } from "../../src/modules/operaciones/services/atlasOperationsApi";
 
 const successfulAudit: AtlasRouteAuditResponse = {
@@ -8,8 +8,15 @@ const successfulAudit: AtlasRouteAuditResponse = {
 };
 
 describe("Atlas mandatory route audit gate", () => {
-  it("allows an audited proposal only after a persisted OpenAI evaluation inspected maneuvers", () => {
-    expect(isRouteAuditOperationallyComplete("ready", successfulAudit)).toBe(true);
+  it("requires a positive human review when the audit asks for one", () => {
+    expect(isRouteAuditEvaluationComplete("ready", successfulAudit)).toBe(true);
+    expect(isRouteAuditOperationallyComplete("ready", successfulAudit)).toBe(false);
+    expect(isRouteAuditOperationallyComplete("ready", successfulAudit, true)).toBe(true);
+    expect(isRouteAuditOperationallyComplete("ready", successfulAudit, false)).toBe(false);
+  });
+
+  it("allows an audited proposal without extra feedback when human review is not requested", () => {
+    expect(isRouteAuditOperationallyComplete("ready", { ...successfulAudit, requiresHumanReview: false })).toBe(true);
   });
 
   it.each([
@@ -24,6 +31,6 @@ describe("Atlas mandatory route audit gate", () => {
     ["ready", { ...successfulAudit, requiresReplan: true }],
     ["ready", { ...successfulAudit, auditedManeuverCount: 0 }]
   ] as const)("keeps an unverified route unavailable (%s)", (status, audit) => {
-    expect(isRouteAuditOperationallyComplete(status, audit)).toBe(false);
+    expect(isRouteAuditOperationallyComplete(status, audit, true)).toBe(false);
   });
 });

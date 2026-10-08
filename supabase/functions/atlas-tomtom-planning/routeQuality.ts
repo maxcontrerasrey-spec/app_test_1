@@ -7,6 +7,9 @@ export type RouteManeuver = {
   street_names?: string[];
   latitude?: number;
   longitude?: number;
+  routeLegIndex?: number;
+  legDestinationStopIndex?: number;
+  legDestinationIsFinal?: boolean;
 };
 /** `break` preserves arrival/departure guidance and allows a U-turn when Valhalla's graph supports one. */
 export function routeLocationType(_index: number, _size: number): "break" {

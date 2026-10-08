@@ -2,7 +2,7 @@
 
 ## Estado y objetivo
 
-La primera entrega funciona en modo `SHADOW`. TomTom resuelve direcciones, el optimizador determinista ordena paradas, Valhalla calcula el recorrido y Ferrostar conserva la navegación del conductor. Route Intelligence intenta revisar con OpenAI cada propuesta válida y registra la evaluación sin modificar el trazado, bloquearlo ni certificar que sea seguro. El 100% se refiere a cobertura de evaluación de las propuestas que llegan al endpoint con modo habilitado; no garantiza una mejora positiva en una ruta que ya sea la mejor opción verificable.
+La primera entrega funciona en modo `SHADOW`. TomTom resuelve direcciones, el optimizador determinista ordena paradas, Valhalla calcula el recorrido y Ferrostar conserva la navegación del conductor. Route Intelligence revisa con OpenAI cada propuesta válida y registra la evaluación sin modificar el trazado ni certificar que sea seguro. Cuando el resultado exige revisión humana, el usuario debe registrar aceptación o viabilidad antes de aplicar, guardar o simular la ruta; la interfaz y la RPC de guardado aplican la misma regla.
 
 El límite es deliberado: `LEGAL`, `ROUTABLE`, `PHYSICALLY_POSSIBLE` y `OPERATIONALLY_REASONABLE` son propiedades distintas. Una respuesta del auditor nunca demuestra por sí sola las cuatro.
 
@@ -48,19 +48,19 @@ El modo se controla en Supabase Edge Function con `ATLAS_ROUTE_INTELLIGENCE_MODE
 
 ## Operación, feedback y recuperación
 
-La propuesta de ruta se muestra antes de esperar la auditoría. Los errores del auditor no impiden revisar/aplicar la propuesta. El panel presenta la decisión, motivos, latencia, maniobras revisadas y feedback: aceptar, override viable/no viable o falta de información. Los overrides requieren motivo y quedan inmutables.
+La propuesta de ruta se muestra antes de esperar la auditoría. Si la auditoría falla, o si pide revisión humana y aún no hay un feedback positivo, la ruta permanece como borrador y no se puede aplicar, guardar ni simular. El panel presenta decisión, motivos, latencia, maniobras revisadas y feedback: aceptar, override viable/no viable o falta de información. Los overrides requieren motivo y quedan inmutables; el guardado valida el feedback nuevamente en PostgreSQL.
 
 Desactivar inmediatamente configurando `ATLAS_ROUTE_INTELLIGENCE_MODE=OFF`. Las ejecuciones, restricciones y eventos son evidencia histórica; no borrarlos para hacer rollback. Para investigar: revisar logs de `atlas-route-intelligence`, categoría de error, idempotency/candidate hashes, versiones y `estimated_cost_usd` en `atlas_ops_route_intelligence_runs`.
 
 ## Restricciones conocidas y siguiente etapa
 
 - Los U-turns continúan permitidos cuando Valhalla puede trazarlos; el sistema no los interpreta como marcha atrás ni los prohíbe globalmente. Para giros próximos a una parada, prueba un acceso alternativo cercano con la misma categoría de equipo y evidencia peatonal acotada.
-- La API actual calcula una sola ruta y no expone alternativas ni una abstracción verificada de penalización de segmento. V1 registra `requiresReplan`, pero no reintenta, penaliza calles ni inventa restricciones. La propuesta no se modifica. La tasa de rutas con mejora comprobada es una métrica distinta de la cobertura IA y no puede garantizarse en 100%; si no existe una alternativa mejor y validada por Valhalla, se conserva la ruta base.
+- La búsqueda del orden de paradas evalúa un conjunto acotado de hasta cuatro órdenes alternativos, los traza de nuevo con Valhalla y elige el más rápido entre los trazados válidos. No equivale a explorar todas las permutaciones ni garantiza el óptimo global. Si no hay mejora comprobada, se conserva el mejor candidato trazado y se informa cuántos se evaluaron.
 - Las restricciones tienen RPC segura y audit trail. La gestión inicial se realiza por RPC con rol superadministrador; aún falta una pantalla administrativa dedicada.
 - El perfil dimensional no se llena desde patentes o tipo de flota. Debe cargarse desde una fuente técnica confiable.
 - Tráfico, señalización y restricciones de faena no están conectados salvo las restricciones Atlas validadas.
-- La búsqueda de cambios de trazado de una o dos cuadras todavía no forma parte de esta versión. Valhalla entrega rutas alternas solo para tramos de dos ubicaciones, así que esa mejora debe comparar alternativas por tramo y volver a evaluar el recorrido completo antes de aplicarlas.
-- No se midieron tiempos productivos ni se generó corpus real de operación. Para permitir mejoras automáticas se requiere una siguiente etapa que genere rutas alternativas reales, las calcule con Valhalla para cada tipo de equipo, defina una regla de comparación operacional revisable y aplique solo una alternativa demostrablemente superior. El LLM no debe inventar geometría ni decidir una ponderación opaca entre minutos y maniobras.
+- La búsqueda de cambios de trazado local por una o dos cuadras todavía no forma parte de esta versión. Las alternativas de orden cambian la secuencia de paradas; no generan puntos de acceso o geometrías alternativas alrededor de cada parada.
+- No se midieron tiempos productivos ni se generó corpus real de operación. La IA audita y solicita revisión, mientras Valhalla calcula y busca entre candidatos acotados; no se garantiza una mejora cuando no existe una alternativa demostrablemente superior. El LLM no inventa geometría ni decide una ponderación opaca entre minutos y maniobras.
 
 ## Validación y fixture
 

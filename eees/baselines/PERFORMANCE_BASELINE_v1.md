@@ -187,12 +187,14 @@ Revision 2026-10-08 Atlas revisión IA obligatoria: Guardian CI run 37813152087 
 
 Revision 2026-10-08 Atlas selección de órdenes y snapshot auditable: el build comparativo con variables públicas idénticas al CI midió +1.600 bytes JS (5.342.353 bytes) respecto del main para la búsqueda acotada de alternativas trazadas por Valhalla, el snapshot exacto de ruta/vehículo/métricas y la invalidación de auditorías obsoletas. El total `dist` queda bajo el máximo existente, CSS y vendors sin cambio; el límite de chunk 520 KB y las tolerancias de incremento permanecen intactos.
 
+Revision 2026-10-08 Atlas contexto de tramos y confirmación de revisión humana: Guardian CI run 37825233968 midió +586 bytes JS sobre el baseline canónico previo de 5.342.353 bytes, para un total medido de 5.342.939 bytes. El incremento implementa la confirmación humana cuando OpenAI la solicita y el mensaje del buscador de órdenes alternativas; el gate de guardado también se aplica en PostgreSQL. Se registra el tamaño JS medido, manteniendo tolerancia cero, el límite de chunk 520 KB, CSS, vendors y assets trackeados sin cambios.
+
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
   "distTotalBytes": 7470218,
   "jsFileCount": 74,
-  "jsTotalBytes": 5342353,
+  "jsTotalBytes": 5342939,
   "cssFileCount": 15,
   "cssTotalBytes": 540940,
   "budgetPolicy": {

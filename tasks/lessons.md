@@ -4357,3 +4357,9 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - Mantener la geometría como borrador y bloquear aplicar, navegar o guardar hasta una evaluación IA completa; mostrar error y permitir reintentar la evaluación sin recalcular el recorrido.
 - Diferenciar la clave de idempotencia por evaluación lógica: los reintentos de transporte reutilizan el identificador, mientras que un reintento manual crea uno nuevo para no devolver un error cacheado.
 - El orden y trazado siguen siendo responsabilidad del motor de rutas; la IA valida evidencia y no certifica radio de giro, espacio físico, seguridad peatonal u optimalidad global.
+
+# 2026-10-08 - Las maniobras deben conservar el tramo de la parada
+
+- En una ruta multiparada, el mensaje de Valhalla "llegue al destino" puede ser el cierre normal de una etapa intermedia; incluir el índice del tramo y destino final en cada maniobra antes de pedir evaluación IA.
+- No aceptar auditorías ni registrar alertas de llegada anticipada si falta contexto consistente con el snapshot exacto de paradas.
+- Cuando la IA solicita revisión humana, exigir feedback positivo antes de aplicar, guardar o simular. Repetir la guarda dentro de la RPC de persistencia; la UI por sí sola no protege el flujo.
