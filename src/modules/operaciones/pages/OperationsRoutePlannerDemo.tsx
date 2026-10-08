@@ -226,8 +226,7 @@ export function OperationsRoutePlannerDemo() {
       if (stop.accessAdjustment) {
         const originalNode = document.createElement("div");
         originalNode.className = "ops-route-demo__map-marker ops-route-demo__map-marker--access-origin";
-        originalNode.textContent = "•";
-        originalNode.title = `Punto original · acceso +${stop.accessAdjustment.displacementMeters} m`;
+        originalNode.title = `Original · +${stop.accessAdjustment.displacementMeters} m`;
         markersRef.current.push(new maplibregl.Marker({ element: originalNode }).setLngLat([stop.accessAdjustment.original.lng, stop.accessAdjustment.original.lat]).addTo(map));
       }
       const node = document.createElement("div");
@@ -639,8 +638,8 @@ export function OperationsRoutePlannerDemo() {
       kind: "stop" as const,
       fixedDestination: index === orderedStops.length - 1,
       providerPlaceId: stop.provider_place_id, source: stop.location_source,
-      ...(stop.requested_latitude !== null && stop.requested_longitude !== null && stop.access_adjustment_meters !== null
-        ? { accessAdjustment: { original: { lat: stop.requested_latitude, lng: stop.requested_longitude }, displacementMeters: stop.access_adjustment_meters } }
+      ...(stop.original_lat !== null && stop.original_lng !== null && stop.access_m !== null
+        ? { accessAdjustment: { original: { lat: stop.original_lat, lng: stop.original_lng }, displacementMeters: stop.access_m } }
         : {})
     })));
     setStops(loaded);
@@ -743,7 +742,7 @@ export function OperationsRoutePlannerDemo() {
           <div className="ops-route-demo__panel-divider" />
           {(proposal || planningRoute) && routeState === "ready" && <div className="ops-route-demo__summary"><div><span>Distancia · Valhalla</span><strong>{formatDistance((proposal?.route ?? planningRoute!).distanceMeters)}</strong></div><div><span>Tiempo estimado</span><strong>{formatDuration((proposal?.route ?? planningRoute!).durationSeconds)}</strong></div></div>}
           <div className="ops-route-demo__actions"><button type="button" className="ops-route-demo__primary" disabled={!allStopsPresent || !plannedVehicleType || routeState === "loading"} onClick={() => void generateRoute()}>{routeState === "loading" ? "Buscando mejor orden…" : "Proponer recorrido optimizado"}</button></div>
-          {proposal && <div className="ops-route-demo__message" role="status"><strong>Propuesta de recorrido abierto</strong><p>Inicio: {proposal.stops[0]?.label}</p><p>Destino: {proposal.stops[proposal.stops.length - 1]?.label}</p><details><summary>Ver las {proposal.stops.length} direcciones en orden</summary><ol>{proposal.stops.map((stop) => <li key={stop.id}>{stop.label}{stop.accessAdjustment && <small className="ops-route-demo__access-note">Acceso +{stop.accessAdjustment.displacementMeters} m · original en gris</small>}</li>)}</ol></details>{proposal.route.inputOrderMatrixDurationSeconds !== null && <small>{proposal.route.inputOrderMatrixDurationSeconds > proposal.route.matrixDurationSeconds ? `Ahorro estimado: ${formatDuration(proposal.route.inputOrderMatrixDurationSeconds - proposal.route.matrixDurationSeconds)} frente al orden ingresado.` : "El orden ingresado ya es equivalente o más rápido según la matriz."}</small>}<div className="ops-route-demo__actions"><button type="button" className="ops-route-demo__primary" onClick={applyProposal}>Aplicar este orden</button><button type="button" className="ops-route-demo__secondary" onClick={() => { setProposal(null); setRouteState("idle"); }}>Descartar propuesta</button></div></div>}
+          {proposal && <div className="ops-route-demo__message" role="status"><strong>Propuesta de recorrido abierto</strong><p>Inicio: {proposal.stops[0]?.label}</p><p>Destino: {proposal.stops[proposal.stops.length - 1]?.label}</p><details><summary>Ver las {proposal.stops.length} direcciones en orden</summary><ol>{proposal.stops.map((stop) => <li key={stop.id}>{stop.label}{stop.accessAdjustment && <small className="ops-route-demo__access-note">+{stop.accessAdjustment.displacementMeters} m · original en gris</small>}</li>)}</ol></details>{proposal.route.inputOrderMatrixDurationSeconds !== null && <small>{proposal.route.inputOrderMatrixDurationSeconds > proposal.route.matrixDurationSeconds ? `Ahorro estimado: ${formatDuration(proposal.route.inputOrderMatrixDurationSeconds - proposal.route.matrixDurationSeconds)} frente al orden ingresado.` : "El orden ingresado ya es equivalente o más rápido según la matriz."}</small>}<div className="ops-route-demo__actions"><button type="button" className="ops-route-demo__primary" onClick={applyProposal}>Aplicar este orden</button><button type="button" className="ops-route-demo__secondary" onClick={() => { setProposal(null); setRouteState("idle"); }}>Descartar propuesta</button></div></div>}
           {routeAuditStatus !== "idle" && <AtlasRouteAuditPanel
             status={routeAuditStatus}
             audit={routeAudit}

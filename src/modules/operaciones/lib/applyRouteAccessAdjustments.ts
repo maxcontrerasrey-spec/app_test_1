@@ -8,16 +8,14 @@ export function applyRouteAccessAdjustments<T extends RouteStop>(
   order: number[],
   adjustments: AtlasStopAccessAdjustment[] = []
 ): Array<T & { accessAdjustment?: { original: { lat: number; lng: number }; displacementMeters: number } }> {
-  const adjustmentsByIndex = new Map(adjustments.map((adjustment) => [adjustment.stopIndex, adjustment]));
-  return order.flatMap((index) => {
-    const stop = stops[index];
-    if (!stop) return [];
-    const adjustment = adjustmentsByIndex.get(index);
-    return adjustment ? [{
+  return order.map((index) => {
+    const stop = stops[index]!;
+    const adjustment = adjustments.find((candidate) => candidate.stopIndex === index);
+    return adjustment ? {
       ...stop,
       lat: adjustment.adjusted.lat,
       lng: adjustment.adjusted.lng,
       accessAdjustment: { original: adjustment.original, displacementMeters: adjustment.displacementMeters }
-    }] : [stop];
+    } : stop;
   });
 }

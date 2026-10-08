@@ -82,13 +82,15 @@ export type AtlasServiceRoute = {
     label: string;
     latitude: number;
     longitude: number;
-    requested_latitude: number | null;
-    requested_longitude: number | null;
-    access_adjustment_meters: number | null;
+    original_lat: number | null;
+    original_lng: number | null;
+    access_m: number | null;
     provider_place_id: string | null;
     location_source: "tomtom" | "map_pin" | "preset";
   }>;
 };
+
+const ATLAS_SERVICE_ROUTE_SELECT = "id, service_template_id, prefix, route_code, version, is_active, planning_distance_meters, planning_duration_seconds, planned_vehicle_type, atlas_ops_service_route_stops(id, stop_order, label, latitude, longitude, original_lat:requested_latitude, original_lng:requested_longitude, access_m:access_adjustment_meters, provider_place_id, location_source)";
 
 export type TomTomSuggestion = { id: string | null; type: "address" | "street" | "intersection" | null; label: string };
 export type TomTomPlaceMatch = { id: string | null; type: string | null; label: string; lat: number; lng: number };
@@ -220,7 +222,7 @@ export async function saveAtlasServiceTemplate(payload: Record<string, unknown>)
 
 export async function getAtlasServiceRoutes(serviceTemplateId: number): Promise<AtlasServiceRoute[]> {
   const result = await client().from("atlas_ops_service_routes")
-    .select("id, service_template_id, prefix, route_code, version, is_active, planning_distance_meters, planning_duration_seconds, planned_vehicle_type, atlas_ops_service_route_stops(id, stop_order, label, latitude, longitude, requested_latitude, requested_longitude, access_adjustment_meters, provider_place_id, location_source)")
+    .select(ATLAS_SERVICE_ROUTE_SELECT)
     .eq("service_template_id", serviceTemplateId)
     .order("created_at", { ascending: false });
   if (result.error) throw new Error(getSupabaseErrorMessage(result.error, "No fue posible cargar las rutas del servicio base."));
@@ -229,7 +231,7 @@ export async function getAtlasServiceRoutes(serviceTemplateId: number): Promise<
 
 export async function getAtlasServiceRoute(routeId: string): Promise<AtlasServiceRoute> {
   const result = await client().from("atlas_ops_service_routes")
-    .select("id, service_template_id, prefix, route_code, version, is_active, planning_distance_meters, planning_duration_seconds, planned_vehicle_type, atlas_ops_service_route_stops(id, stop_order, label, latitude, longitude, requested_latitude, requested_longitude, access_adjustment_meters, provider_place_id, location_source)")
+    .select(ATLAS_SERVICE_ROUTE_SELECT)
     .eq("id", routeId).single();
   if (result.error) throw new Error(getSupabaseErrorMessage(result.error, "No fue posible cargar la ruta asignada."));
   return result.data as AtlasServiceRoute;
