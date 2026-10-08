@@ -489,10 +489,6 @@ export function OperationsRoutePlannerDemo() {
       if ((result.uturnCount ?? 0) > 0) {
         routeNotices.push(`${result.uturnCount} giro(s) en U trazables; la red no confirma espacio físico ni necesidad de reversa.`);
       }
-      const pathOptimization = result.routePathOptimization;
-      if (pathOptimization?.status === "APPLIED") {
-        routeNotices.push(`Mejora vial: U-turns ${pathOptimization.uturnsBefore}→${pathOptimization.uturnsAfter}.`);
-      }
       if (result.stopAccessAdjustments?.length) {
         const longestAdjustment = Math.max(...result.stopAccessAdjustments.map(({ displacementMeters }) => displacementMeters));
         routeNotices.push(`${result.stopAccessAdjustments.length} parada(s) ajustadas hasta ${longestAdjustment} m; acceso peatonal mapeado ≤30 m. Revisa el mapa.`);
