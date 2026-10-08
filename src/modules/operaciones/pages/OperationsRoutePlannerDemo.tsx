@@ -6,10 +6,11 @@ import { setWorkerUrl, type Map as MapLibreMap, type Marker } from "maplibre-gl"
 import mapLibreWorkerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import type { FerrostarCore, FerrostarMap, SimulatedLocationProvider } from "@stadiamaps/ferrostar-webcomponents";
 import type { Route, TripState, UserLocation, Waypoint } from "@stadiamaps/ferrostar";
-import { calculateAtlasValhallaRoute, getAtlasOperationsCatalogs, getAtlasServiceRoute, getAtlasServiceRoutes, optimizeAtlasOpenRoute, resolveAtlasTomTomSuggestion, saveAtlasServiceRoute, searchAtlasTomTom, type AtlasOptimizedRoute, type AtlasPlannedRoute, type AtlasServiceRoute, type TomTomSuggestion } from "../services/atlasOperationsApi";
+import { auditAtlasRouteIntelligence, calculateAtlasValhallaRoute, getAtlasOperationsCatalogs, getAtlasServiceRoute, getAtlasServiceRoutes, optimizeAtlasOpenRoute, recordAtlasRouteIntelligenceFeedback, resolveAtlasTomTomSuggestion, saveAtlasServiceRoute, searchAtlasTomTom, type AtlasOptimizedRoute, type AtlasPlannedRoute, type AtlasRouteAuditResponse, type AtlasServiceRoute, type TomTomSuggestion } from "../services/atlasOperationsApi";
 import { appendRouteStop, moveRouteStop, normalizeRouteStops, setFixedDestination } from "../lib/routeStopOrder";
 import { matchRouteDestinationPresets, type RouteDestinationPreset } from "../lib/routeDestinationCatalog";
 import { formatDriverSimulationError, mergeFerrostarRouteSegments, splitRouteStops } from "../lib/routeSimulation";
+import { AtlasRouteAuditPanel, type RouteAuditFeedbackType } from "../components/AtlasRouteAuditPanel";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "../styles/route-planner-demo.css";
 
@@ -167,8 +168,18 @@ export function OperationsRoutePlannerDemo() {
   const [routePrefix, setRoutePrefix] = useState("");
   const [savedRoutes, setSavedRoutes] = useState<AtlasServiceRoute[]>([]);
   const [selectedSavedRouteId, setSelectedSavedRouteId] = useState("");
+  const [auditVehicleId, setAuditVehicleId] = useState("");
+  const [routeAudit, setRouteAudit] = useState<AtlasRouteAuditResponse | null>(null);
+  const [routeAuditStatus, setRouteAuditStatus] = useState<"idle" | "loading" | "ready" | "off" | "error">("idle");
+  const [routeAuditError, setRouteAuditError] = useState("");
+  const preserveAuditOnProposalApply = useRef(false);
+  const [auditFeedbackType, setAuditFeedbackType] = useState<RouteAuditFeedbackType>("ACCEPT_AI");
+  const [auditFeedbackReason, setAuditFeedbackReason] = useState("");
+  const [auditFeedbackSaved, setAuditFeedbackSaved] = useState(false);
+  const [auditFeedbackSaving, setAuditFeedbackSaving] = useState(false);
   const [saving, setSaving] = useState(false);
   const routeLoadSequence = useRef(0);
+  const auditSequence = useRef(0);
 
   useEffect(() => {
     const routeId = searchParams.get("routeId");
@@ -205,6 +216,18 @@ export function OperationsRoutePlannerDemo() {
     }).catch((reason: unknown) => { if (active) setError(reason instanceof Error ? reason.message : "No fue posible leer las rutas del servicio."); });
     return () => { active = false; };
   }, [selectedServiceId, searchParams]);
+
+  useEffect(() => {
+    if (preserveAuditOnProposalApply.current) {
+      preserveAuditOnProposalApply.current = false;
+      return;
+    }
+    auditSequence.current += 1;
+    setRouteAudit(null);
+    setRouteAuditStatus("idle");
+    setRouteAuditError("");
+    setAuditFeedbackSaved(false);
+  }, [stops, selectedServiceId, auditVehicleId]);
 
   const hasEnteredDirection = (proposal?.stops ?? stops).some((stop) => stop.label.trim().length > 0);
 
@@ -481,6 +504,10 @@ export function OperationsRoutePlannerDemo() {
     setPlanningRoute(null);
     setProposal(null);
     setRoute(null);
+    setRouteAudit(null);
+    setRouteAuditStatus("idle");
+    setRouteAuditError("");
+    setAuditFeedbackSaved(false);
     try {
       const fixedDestinationIndex = stops.findIndex((stop) => stop.fixedDestination);
       const result = await optimizeAtlasOpenRoute(stops.map(({ lat, lng }) => ({ lat, lng })), fixedDestinationIndex < 0 ? undefined : fixedDestinationIndex);
@@ -490,14 +517,40 @@ export function OperationsRoutePlannerDemo() {
       setRoute(null);
       setRouteState("ready");
       setNotice("Propuesta lista. Revisa el inicio, el destino y el trazado; aplícala para guardarla o continuar al conductor.");
+      const auditRequest = ++auditSequence.current;
+      setRouteAuditStatus("loading");
+      void auditAtlasRouteIntelligence(result, Number(selectedServiceId) || null, auditVehicleId || null)
+        .then((audit) => {
+          if (auditSequence.current !== auditRequest) return;
+          setRouteAudit(audit);
+          setRouteAuditStatus(audit.mode === "OFF" ? "off" : "ready");
+        })
+        .catch((reason: unknown) => {
+          if (auditSequence.current !== auditRequest) return;
+          setRouteAuditError(reason instanceof Error ? reason.message : "No fue posible completar la auditoría de ruta.");
+          setRouteAuditStatus("error");
+        });
     } catch (reason) {
       setRouteState("error");
       setError(reason instanceof Error ? reason.message : "No fue posible calcular la ruta.");
     }
   }
 
+  async function submitRouteAuditFeedback() {
+    if (!routeAudit?.runId || auditFeedbackSaving) return;
+    setAuditFeedbackSaving(true);
+    try {
+      await recordAtlasRouteIntelligenceFeedback(routeAudit.runId, auditFeedbackType, auditFeedbackReason.trim());
+      setAuditFeedbackSaved(true);
+      setRouteAuditError("");
+    } catch (reason) {
+      setRouteAuditError(reason instanceof Error ? reason.message : "No fue posible guardar el feedback.");
+    } finally { setAuditFeedbackSaving(false); }
+  }
+
   function applyProposal() {
     if (!proposal) return;
+    preserveAuditOnProposalApply.current = true;
     setStops(proposal.stops);
     setPlanningRoute(proposal.route);
     setProposal(null);
@@ -657,6 +710,10 @@ export function OperationsRoutePlannerDemo() {
               return <option value={item.id} key={item.id}>{contract?.code ? `${contract.code} · ` : ""}{item.name}</option>;
             })}
           </select></label>
+          <label>Vehículo de referencia para la auditoría<select value={auditVehicleId} onChange={(event) => setAuditVehicleId(event.target.value)}>
+            <option value="">Sin vehículo definido</option>
+            {catalog?.vehicles.map((vehicle) => <option key={vehicle.id} value={vehicle.id}>{vehicle.code} · {vehicle.plate ?? "Sin patente"} · {vehicle.routingProfile?.verified_at ? "ficha técnica verificada" : "dimensiones sin verificar"}</option>)}
+          </select><small>Solo contexto para la auditoría en sombra; no asigna el equipo al despacho.</small></label>
           <div className="ops-route-demo__route-config-row">
             <label>Prefijo de ruta<input value={routePrefix} maxLength={40} onChange={(event) => setRoutePrefix(event.target.value)} placeholder="Turno A / Turno B" /></label>
             <div className="ops-route-demo__route-code"><span>CÓDIGO</span><strong>{routeCodePreview}</strong></div>
@@ -691,11 +748,23 @@ export function OperationsRoutePlannerDemo() {
           {(proposal || planningRoute) && routeState === "ready" && <div className="ops-route-demo__summary"><div><span>Distancia · Valhalla</span><strong>{formatDistance((proposal?.route ?? planningRoute!).distanceMeters)}</strong></div><div><span>Tiempo estimado</span><strong>{formatDuration((proposal?.route ?? planningRoute!).durationSeconds)}</strong></div></div>}
           <div className="ops-route-demo__actions"><button type="button" className="ops-route-demo__primary" disabled={!allStopsPresent || routeState === "loading"} onClick={() => void generateRoute()}>{routeState === "loading" ? "Buscando mejor orden…" : "Proponer recorrido optimizado"}</button></div>
           {proposal && <div className="ops-route-demo__message" role="status"><strong>Propuesta de recorrido abierto</strong><p>Inicio: {proposal.stops[0]?.label}</p><p>Destino: {proposal.stops[proposal.stops.length - 1]?.label}</p><details><summary>Ver las {proposal.stops.length} direcciones en orden</summary><ol>{proposal.stops.map((stop) => <li key={stop.id}>{stop.label}</li>)}</ol></details>{proposal.route.inputOrderMatrixDurationSeconds !== null && <small>{proposal.route.inputOrderMatrixDurationSeconds > proposal.route.matrixDurationSeconds ? `Ahorro estimado: ${formatDuration(proposal.route.inputOrderMatrixDurationSeconds - proposal.route.matrixDurationSeconds)} frente al orden ingresado.` : "El orden ingresado ya es equivalente o más rápido según la matriz."}</small>}<div className="ops-route-demo__actions"><button type="button" className="ops-route-demo__primary" onClick={applyProposal}>Aplicar este orden</button><button type="button" className="ops-route-demo__secondary" onClick={() => { setProposal(null); setRouteState("idle"); }}>Descartar propuesta</button></div></div>}
+          {routeAuditStatus !== "idle" && <AtlasRouteAuditPanel
+            status={routeAuditStatus}
+            audit={routeAudit}
+            error={routeAuditError}
+            feedbackType={auditFeedbackType}
+            feedbackReason={auditFeedbackReason}
+            feedbackSaving={auditFeedbackSaving}
+            feedbackSaved={auditFeedbackSaved}
+            onFeedbackTypeChange={(value) => { setAuditFeedbackType(value); setAuditFeedbackSaved(false); }}
+            onFeedbackReasonChange={(value) => { setAuditFeedbackReason(value); setAuditFeedbackSaved(false); }}
+            onSubmitFeedback={() => void submitRouteAuditFeedback()}
+          />}
           {planningRoute && !proposal && <><button type="button" className="ops-route-demo__driver-launch" disabled={simulationLoading} onClick={() => void startSimulation()}><span><strong>{simulationLoading ? "Preparando navegación…" : "Probar navegación del conductor"}</strong><small>Ferrostar + Valhalla desde el orden aplicado</small></span><span>→</span></button><button type="button" className="ops-route-demo__primary ops-route-demo__save-route" disabled={!selectedServiceId || !routePrefix.trim() || saving || !isOptimizedRoute(planningRoute)} onClick={() => void saveRoute()}>{saving ? "Guardando ruta…" : selectedSavedRouteId ? "Guardar nueva versión" : "Guardar ruta en servicio base"}</button>{!isOptimizedRoute(planningRoute) && <small>Para guardar una nueva versión, vuelve a proponer el recorrido.</small>}</>}
         </> : <div className="ops-route-demo__driver-panel"><div className="ops-route-demo__guidance"><span>PRÓXIMA INSTRUCCIÓN</span><strong>{nextInstruction}</strong><small>Ferrostar + Valhalla · simulación de referencia</small></div><div className="ops-route-demo__driver-stats"><div><span>Recorrido</span><strong>{route ? formatDistance(route.distance) : "—"}</strong></div><div><span>Tiempo base</span><strong>{route ? formatDuration(route.steps.reduce((total, step) => total + step.duration, 0)) : "—"}</strong></div></div><button type="button" className="ops-route-demo__secondary" onClick={() => void stopSimulation()}>Detener navegación</button><p>Se usan las coordenadas guardadas de las paradas; Valhalla puede elegir calles distintas a la vista previa de TomTom.</p></div>}
         {error && <div className="ops-route-demo__message ops-route-demo__message--error" role="alert">{error}</div>}
         {notice && <div className="ops-route-demo__message" role="status">{notice}</div>}
-        <div className="ops-route-demo__limitations"><strong>Cómo se conectan los motores</strong><p>TomTom busca direcciones; Valhalla (perfil auto) propone y traza. Ferrostar + Valhalla navegan la secuencia aplicada. Termina en el último punto, sin regreso al inicio. No considera restricciones de buses/faena. La heurística es determinista, no es IA ni garantiza el óptimo global.</p></div>
+        <div className="ops-route-demo__limitations"><strong>Cómo se conectan los motores</strong><p>TomTom busca direcciones; Valhalla (perfil auto) propone y traza. Ferrostar + Valhalla navegan la secuencia aplicada. Route Intelligence revisa maniobras de riesgo en sombra: nunca modifica ni certifica la ruta. Las dimensiones, tráfico, ancho vial y restricciones de faena solo se consideran cuando exista información verificada. El optimizador de orden sigue siendo determinista.</p></div>
       </section>
       <section className="ops-route-demo__map-section" aria-label="Mapa y ruta">
         <div className="ops-route-demo__map-topline"><div><span className="ops-route-demo__eyebrow">{activeView === "planning" ? "MAPA DE PLANIFICACIÓN" : "NAVEGACIÓN DEL CONDUCTOR"}</span><strong>{selectedContract?.contract_name ?? "Calama, Región de Antofagasta"}</strong></div><div className="ops-route-demo__map-legend"><span><i className="is-start" />Inicio</span><span><i className="is-stop" />Parada</span><span><i className="is-end" />Destino</span></div></div>

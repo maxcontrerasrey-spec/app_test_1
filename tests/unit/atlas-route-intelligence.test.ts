@@ -1,0 +1,52 @@
+import { describe, expect, it } from "vitest";
+import { analyzeValhallaManeuvers, attachValidatedRestrictions, parseRouteAuditOutput, preFilterRouteManeuvers } from "../../supabase/functions/atlas-tomtom-planning/routeIntelligence.ts";
+
+describe("Atlas Route Intelligence maneuver analyzer", () => {
+  it("normaliza los giros cerrados de Valhalla sin fabricar datos viales", () => {
+    const maneuvers = analyzeValhallaManeuvers([{ type: 11, instruction: "Gire pronunciadamente a la derecha", bearing_before: 0, bearing_after: 145, begin_shape_index: 1, street_names: ["Avenida Ejemplo"], latitude: -22.4, longitude: -68.9 }]);
+    expect(maneuvers[0]).toMatchObject({ maneuverId: "m-001", maneuverType: "RIGHT", turnAngleDeg: 145, roadNames: ["Avenida Ejemplo"], latitude: -22.4, longitude: -68.9 });
+    expect(maneuvers[0]?.estimatedRoadWidthM).toBeNull();
+    expect(maneuvers[0]?.trafficLevel).toBe("UNKNOWN");
+    expect(maneuvers[0]?.knownRestrictionCount).toBeNull();
+    expect(preFilterRouteManeuvers(maneuvers)).toEqual([{ maneuverId: "m-001", score: 75, reasons: ["Cambio de rumbo de 145°; requiere revisión operacional."], requiresAiAudit: true }]);
+  });
+
+  it("marca U-turn para auditoría, pero no deduce que el vehículo puede o no puede hacerlo", () => {
+    const maneuvers = analyzeValhallaManeuvers([{ type: 13, instruction: "Retorno", bearing_before: 20, bearing_after: 200 }]);
+    expect(maneuvers[0]?.maneuverType).toBe("UTURN");
+    expect(preFilterRouteManeuvers(maneuvers)[0]).toMatchObject({ score: 100, requiresAiAudit: true });
+    expect(maneuvers[0]?.estimatedRoadWidthM).toBeNull();
+  });
+
+  it("caso crítico: una maniobra casi en U para un bus se eleva a auditoría sin afirmar viabilidad física", () => {
+    const turn = analyzeValhallaManeuvers([{ type: 11, instruction: "Giro pronunciado", bearing_before: 4, bearing_after: 178, latitude: -22.45, longitude: -68.93 }]);
+    expect(preFilterRouteManeuvers(turn)).toHaveLength(1);
+    expect(turn[0]?.estimatedRoadWidthM).toBeNull();
+    expect(turn[0]?.trafficLevel).toBe("UNKNOWN");
+    expect(turn[0]?.knownRestrictionCount).toBeNull();
+  });
+
+  it("solo asocia restricciones Atlas validadas entregadas por el backend y compatibles", () => {
+    const turns = analyzeValhallaManeuvers([{ type: 11, instruction: "Gire", latitude: -22.45, longitude: -68.93 }]);
+    const restricted = attachValidatedRestrictions(turns, [{
+      id: "restriction-1", latitude: -22.4501, longitude: -68.9301, radius_m: 100, maneuver_type: "RIGHT",
+      vehicle_type: "BUS", restriction_level: "BLOCKED", reason: "Acceso no permitido a buses", source: "OPERATIONS", valid_from: null, valid_until: null
+    }], "BUS");
+    expect(restricted[0]?.knownRestrictionCount).toBe(1);
+    expect(preFilterRouteManeuvers(restricted)[0]).toMatchObject({ score: 100 });
+    expect(attachValidatedRestrictions(turns, [], "BUS")[0]?.knownRestrictionCount).toBe(0);
+  });
+
+  it("no eleva una ruta normal a alerta y conserva el ángulo conocido", () => {
+    const maneuvers = analyzeValhallaManeuvers([{ type: 8, instruction: "Continúe", bearing_before: 90, bearing_after: 90, street_names: ["Calle A"] }]);
+    expect(maneuvers[0]?.turnAngleDeg).toBe(0);
+    expect(preFilterRouteManeuvers(maneuvers)).toEqual([]);
+  });
+
+  it("valida decisiones estructuradas y rechaza IDs ajenos o REJECT sin evidencia", () => {
+    const valid = { decision: "WARNING", riskScore: 73, summary: "Requiere revisión humana.", analyzedManeuvers: [{ maneuverId: "m-001", decision: "CAUTION", riskScore: 73, reasons: ["Giro cerrado"], evidence: ["Valhalla reporta un cambio de rumbo de 145°"], recommendedAction: "HUMAN_REVIEW" }], requiresReplan: false, requiresHumanReview: true };
+    expect(parseRouteAuditOutput(valid, new Set(["m-001"]))?.decision).toBe("WARNING");
+    expect(parseRouteAuditOutput({ ...valid, decision: "REJECT", analyzedManeuvers: [{ ...valid.analyzedManeuvers[0], decision: "REJECT", evidence: [] }] }, new Set(["m-001"]))).toBeNull();
+    expect(parseRouteAuditOutput({ ...valid, analyzedManeuvers: [{ ...valid.analyzedManeuvers[0], maneuverId: "m-999" }] }, new Set(["m-001"]))).toBeNull();
+  });
+});
