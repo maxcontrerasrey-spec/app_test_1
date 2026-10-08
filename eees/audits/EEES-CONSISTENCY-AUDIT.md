@@ -13,21 +13,27 @@ baseline_date: 2026-07-22
 
 ## Estado
 
-PASS
+FAIL
 
 ## Resumen
 
-- Errores: 0
+- Errores: 1
 - Warnings: 1
-- Info: 30
+- Info: 23
 
 ## Errores
 
-- Sin errores bloqueantes.
+- EEES-GATE · `build:frontend-check` · > app_test_1@0.1.0 build:frontend-check
+> node scripts/run-frontend-build.mjs
+
+[build-check] 2026-10-08T20:52:37.109Z inicio de validacion frontend
+[build-check] 2026-10-08T21:17:46.272Z TypeScript sigue ejecutandose (1509s)
+
+[build-check] 2026-10-08T21:17:46.279Z TypeScript supero el timeout de 300s
 
 ## Warnings
 
-- PERF-001 · `src/modules/operaciones/pages/OperationsRoutePlannerDemo.tsx` · Archivo sobre 800 lineas: 837.
+- PERF-001 · `src/modules/operaciones/pages/OperationsRoutePlannerDemo.tsx` · Archivo sobre 800 lineas: 877.
 
 ## Gates informativos
 
@@ -52,12 +58,5 @@ PASS
 - audit:migrations: PASS
 - audit:supabase-security: PASS
 - audit:competency-catalog-guards: PASS
-- build:frontend-check: PASS
 - audit:performance-baseline: PASS
 - git diff --check: PASS
-- test:coverage: PASS
-- smoke:frontend-routes: PASS
-- check:edge:sync-buk-candidates: PASS
-- check:edge:verify-competency-certificate: PASS
-- check:edge:verify-hiring-document: PASS
-- check:edge:sync-buk-job-positions: PASS

@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { optimizeOpenRoute } from "./openRouteOptimizer.ts";
-import { buildRouteOrderAlternatives, selectFastestRoutedOrder } from "./routeOrderAlternatives.ts";
+import { buildRouteOrderAlternatives, routeOrderAlternativeBudget, selectFastestRoutedOrder } from "./routeOrderAlternatives.ts";
 import { buildMatrixBlocks } from "./matrixBlocks.ts";
 import { buildRouteSegments } from "./routeSegments.ts";
 import { countUTurns, routeLocationType, type RouteManeuver } from "./routeQuality.ts";
@@ -18,7 +18,6 @@ const MAX_BODY_BYTES = 64 * 1024;
 const MAX_STOPS = 151;
 const MATRIX_BLOCK_SIZE = 10;
 const ROUTE_MAX_LOCATIONS = 10;
-const MAX_ROUTED_ORDER_ALTERNATIVES = 8;
 const VALHALLA = "https://valhalla1.openstreetmap.de";
 const CALAMA = { longitude: -68.9294, latitude: -22.4544 };
 
@@ -505,21 +504,45 @@ Deno.serve(async (request) => {
       if (fixedDestinationIndex !== undefined && (!Number.isInteger(fixedDestinationIndex) || (fixedDestinationIndex as number) <= 0 || (fixedDestinationIndex as number) >= stops.length)) {
         return response({ error: "invalid_fixed_destination_index" }, 400, origin);
       }
+      const excludedOrders: number[][] = [];
+      if (payload.excludedOrders !== undefined) {
+        if (!Array.isArray(payload.excludedOrders) || payload.excludedOrders.length > 8) return response({ error: "invalid_excluded_orders" }, 400, origin);
+        for (const order of payload.excludedOrders) {
+          if (!Array.isArray(order) || order.length !== stops.length || order.some((index) => !Number.isInteger(index) || (index as number) < 0 || (index as number) >= stops.length)
+            || new Set(order).size !== stops.length
+            || fixedDestinationIndex !== undefined && order.at(-1) !== fixedDestinationIndex) return response({ error: "invalid_excluded_orders" }, 400, origin);
+          excludedOrders.push(order as number[]);
+        }
+      }
       const plannedVehicleType = text(payload.plannedVehicleType, 120, "vehicle_type");
       const vehicleRoutingModel = resolveAtlasVehicleRoutingModel(plannedVehicleType);
       const matrix = await valhallaMatrix(stops, vehicleRoutingModel);
       const optimized = optimizeOpenRoute(matrix, undefined, fixedDestinationIndex as number | undefined);
-      const seedOrder = optimized.order;
-      const baseRoute = await valhallaRoute(seedOrder.map((index) => stops[index]!), vehicleRoutingModel);
-      // The directed matrix is an estimate. For ordinary-sized routes, validate
-      // the two best neighboring orders with the road engine and choose by its
-      // full-route duration. Keep the search bounded for long routes.
-      const orderCandidates = stops.length <= 20
-        ? buildRouteOrderAlternatives(matrix, seedOrder, fixedDestinationIndex as number | undefined, MAX_ROUTED_ORDER_ALTERNATIVES)
+      const seedWasExcluded = excludedOrders.some((order) => order.every((point, index) => point === optimized.order[index]));
+      const fallbackSeeds = seedWasExcluded
+        ? buildRouteOrderAlternatives(matrix, optimized.order, fixedDestinationIndex as number | undefined, Math.max(32, routeOrderAlternativeBudget(stops.length) * 8), optimized.candidateOrders.slice(1, 9).map(({ order }) => order), excludedOrders)
         : [];
+      const baseOrder = seedWasExcluded ? fallbackSeeds[0]?.order : optimized.order;
+      if (!baseOrder) return response({ error: "route_alternative_exhausted" }, 409, origin);
+      const baseMatrixDuration = baseOrder === optimized.order ? optimized.durationSeconds
+        : baseOrder.slice(1).reduce((total, point, index) => total + matrix[baseOrder[index]!]![point]!, 0);
+      const seedOrder = baseOrder;
+      const baseRoute = await valhallaRoute(seedOrder.map((index) => stops[index]!), vehicleRoutingModel);
+      // Exact matrix search is used for small lists and multi-start search for
+      // larger ones. The matrix only ranks candidates: every selected order is
+      // retraced by Valhalla, including long lists, under an explicit call budget.
+      const routeCandidateBudget = routeOrderAlternativeBudget(stops.length);
+      const orderCandidates = buildRouteOrderAlternatives(
+        matrix,
+        seedOrder,
+        fixedDestinationIndex as number | undefined,
+        routeCandidateBudget,
+        [...optimized.candidateOrders.slice(1, 9).map(({ order }) => order), ...fallbackSeeds.slice(1, 17).map(({ order }) => order)],
+        excludedOrders
+      );
       let routeAlternativeFailures = 0;
       const routedOrder = await selectFastestRoutedOrder(
-        { order: seedOrder, matrixDurationSeconds: optimized.durationSeconds },
+        { order: seedOrder, matrixDurationSeconds: baseMatrixDuration },
         baseRoute,
         orderCandidates,
         async (order) => {
@@ -544,12 +567,15 @@ Deno.serve(async (request) => {
         matrixDurationSeconds: accessAdjustment?.adjustedOptimization.durationSeconds ?? selectedMatrixDurationSeconds,
         inputOrderMatrixDurationSeconds: accessAdjustment
           ? accessAdjustment.adjustedOptimization.inputOrderDurationSeconds
-          : optimized.inputOrderDurationSeconds,
+          : seedWasExcluded ? null : optimized.inputOrderDurationSeconds,
         routeOrderSearch: {
           candidatesEvaluated: routedOrder.alternativesEvaluated + 1,
           failedCandidates: routeAlternativeFailures,
           alternativeApplied: routedOrder.alternativeApplied,
-          status: stops.length > 20 ? "SKIPPED_ROUTE_SIZE" : routeAlternativeFailures ? "SEARCH_INCOMPLETE" : "COMPLETE"
+          status: routeAlternativeFailures ? "SEARCH_INCOMPLETE" : "COMPLETE",
+          searchScope: "BOUNDED",
+          searchMethod: optimized.searchMethod,
+          alternativeBudget: routeCandidateBudget
         },
         stopAccessAdjustments: accessAdjustment?.stopAccessAdjustments ?? [],
         routePathOptimization: pathAlternatives?.routePathOptimization ?? null,

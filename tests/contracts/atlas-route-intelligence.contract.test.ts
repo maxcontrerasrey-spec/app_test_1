@@ -80,13 +80,19 @@ describe("Atlas Route Intelligence security contract", () => {
     expect(operationsApi).toContain("reportedRouteOrderSearch: optimizedRoute.routeOrderSearch");
     expect(edge).toContain("reportedRouteOrderSearch");
     expect(edge).toContain("no afirmar que no hubo comparación de órdenes");
-    expect(edge).toContain("no llames exhaustiva ni global a una búsqueda acotada");
-    expect(edge).toContain("route-intelligence-prompt:1.5.0");
+    expect(edge).toContain("di que se evaluó una búsqueda acotada, nunca exhaustiva ni global");
+    expect(edge).toContain("route-intelligence-prompt:1.6.0");
     expect(edge).toContain('const routeKind = row.routeKind === undefined ? "OPTIMIZED_PROPOSAL" : row.routeKind');
     expect(edge).toContain('routeSnapshot.routeKind es SAVED_ROUTE_PREVIEW');
     expect(edge).toContain('service_route_id: serviceRouteId');
     expect(operationsApi).toContain('routeKind?: "OPTIMIZED_PROPOSAL" | "SAVED_ROUTE_PREVIEW"');
     expect(operationsApi).toContain('serviceRouteId: options.serviceRouteId ?? null');
+    expect(operationsApi).toContain('searchScope: optimizedRoute.routeOrderSearch.searchScope ?? "BOUNDED"');
+    expect(planner).toContain('searchScope: "BOUNDED"');
+    expect(planner).toContain('optimized.candidateOrders.slice(1, 9)');
+    expect(planner).toContain('routeOrderAlternativeBudget(stops.length)');
+    expect(planner).toContain('payload.excludedOrders.length > 8');
+    expect(operationsApi).toContain('...(excludedOrders?.length ? { excludedOrders } : {})');
   });
 
   it("accepts only the producer's empty restriction placeholder and reloads validated restrictions server-side", () => {
@@ -99,6 +105,6 @@ describe("Atlas Route Intelligence security contract", () => {
     expect(edge).toContain("invalid_maneuver_leg_context");
     expect(edge).toContain("routeLegIndex");
     expect(edge).toContain("legDestinationIsFinal");
-    expect(planner).toContain("const MAX_ROUTED_ORDER_ALTERNATIVES = 8");
+    expect(edge).toContain("const MAX_AUDITED_MANEUVERS = 20");
   });
 });

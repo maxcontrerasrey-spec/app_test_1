@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildRouteOrderAlternatives, selectFastestRoutedOrder } from "../../supabase/functions/atlas-tomtom-planning/routeOrderAlternatives";
+import { buildRouteOrderAlternatives, routeOrderAlternativeBudget, selectFastestRoutedOrder } from "../../supabase/functions/atlas-tomtom-planning/routeOrderAlternatives";
 
 describe("Atlas automatic route-feasibility alternatives", () => {
   it("generates distinct nearby orders ranked by directed road duration", () => {
@@ -31,6 +31,38 @@ describe("Atlas automatic route-feasibility alternatives", () => {
     expect(alternatives.length).toBeGreaterThan(0);
     expect(alternatives.every(({ order }) => order.at(-1) === 3)).toBe(true);
     expect(alternatives.every(({ order }) => new Set(order).size === durations.length)).toBe(true);
+  });
+
+  it("keeps alternative tracing bounded but does not skip long lists", () => {
+    expect([20, 21, 50, 51, 100, 101, 151].map(routeOrderAlternativeBudget)).toEqual([8, 6, 6, 4, 4, 2, 2]);
+    expect(() => routeOrderAlternativeBudget(152)).toThrow("La cantidad de paradas no es válida.");
+  });
+
+  it("adds candidates around multiple local optima and includes the alternate seed itself", () => {
+    const durations = [
+      [0, 2, 20, 25],
+      [20, 0, 2, 20],
+      [20, 20, 0, 2],
+      [20, 20, 20, 0]
+    ];
+    const primary = [0, 1, 2, 3];
+    const secondary = [0, 2, 1, 3];
+    const alternatives = buildRouteOrderAlternatives(durations, primary, undefined, 24, [secondary]);
+    expect(alternatives.some(({ order }) => order.join(",") === secondary.join(","))).toBe(true);
+    expect(alternatives.every(({ order }) => order.join(",") !== primary.join(","))).toBe(true);
+  });
+
+  it("never returns a route order the user already asked it to replace", () => {
+    const alreadyRejected = [1, 0, 2, 3];
+    const alternatives = buildRouteOrderAlternatives(
+      Array.from({ length: 4 }, (_, from) => Array.from({ length: 4 }, (_, to) => from === to ? 0 : Math.abs(from - to) + 1)),
+      [0, 1, 2, 3],
+      3,
+      24,
+      [],
+      [alreadyRejected]
+    );
+    expect(alternatives.every(({ order }) => order.join(",") !== alreadyRejected.join(","))).toBe(true);
   });
 
   it("returns no alternative when a two-point route has an immutable destination", () => {

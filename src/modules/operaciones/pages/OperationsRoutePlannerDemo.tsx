@@ -13,7 +13,7 @@ import { matchRouteDestinationPresets, type RouteDestinationPreset } from "../li
 import { formatDriverSimulationError, mergeFerrostarRouteSegments, splitRouteStops } from "../lib/routeSimulation";
 import { atlasVehicleTypesMatch, getAvailableAtlasRouteVehicleCategories, resolveAtlasRouteVehicleCategory } from "../lib/vehicleRoutingCosting";
 import { ensurePlannedRouteLayers } from "../lib/plannedRouteMapLayers";
-import { AtlasRouteAuditPanel, isRouteAuditEvaluationComplete, isRouteAuditOperationallyComplete, type RouteAuditFeedbackType } from "../components/AtlasRouteAuditPanel";
+import { AtlasRouteAuditPanel, isRouteAuditEvaluationComplete, isRouteAuditOperationallyComplete, routeAuditRequiresReplan, type RouteAuditFeedbackType } from "../components/AtlasRouteAuditPanel";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "../styles/route-planner-demo.css";
 
@@ -131,6 +131,8 @@ export function OperationsRoutePlannerDemo() {
   const [auditFeedbackReason, setAuditFeedbackReason] = useState("");
   const [auditFeedbackSaved, setAuditFeedbackSaved] = useState(false);
   const [auditFeedbackSaving, setAuditFeedbackSaving] = useState(false);
+  const [alternativeLoading, setAlternativeLoading] = useState(false);
+  const [alternativeAttempted, setAlternativeAttempted] = useState(false);
   const canUseAuditedRoute = isRouteAuditOperationallyComplete(
     routeAuditStatus,
     routeAudit,
@@ -494,6 +496,7 @@ export function OperationsRoutePlannerDemo() {
     setRouteAuditStatus("idle");
     setRouteAuditError("");
     setAuditFeedbackSaved(false);
+    setAlternativeAttempted(false);
     try {
       const fixedDestinationIndex = stops.findIndex((stop) => stop.fixedDestination);
       const result = await optimizeAtlasOpenRoute(stops.map(({ lat, lng }) => ({ lat, lng })), plannedVehicleType, fixedDestinationIndex < 0 ? undefined : fixedDestinationIndex);
@@ -513,12 +516,12 @@ export function OperationsRoutePlannerDemo() {
       }
       setNotice(routeNotices.join(" "));
       const orderCandidatesEvaluated = result.routeOrderSearch?.candidatesEvaluated ?? 0;
-      if (result.routeOrderSearch?.alternativeApplied) {
-        setNotice((current) => `${current} Se trazaron y compararon ${orderCandidatesEvaluated} órdenes candidatos; se eligió el más rápido entre los trazados válidos revisados.`);
-      } else if (result.routeOrderSearch?.status === "COMPLETE" && orderCandidatesEvaluated > 1) {
-        setNotice((current) => `${current} Se evaluaron ${orderCandidatesEvaluated} órdenes candidatos trazados; se conserva el más rápido entre las alternativas revisadas.`);
+      if (result.routeOrderSearch?.status === "COMPLETE") {
+        const selection = result.routeOrderSearch.alternativeApplied ? "se eligió" : "se conserva";
+        setNotice((current) => `${current} Se trazaron ${orderCandidatesEvaluated} ruta(s) completa(s); ${selection} la más rápida entre las evaluadas. La búsqueda es acotada y no garantiza un óptimo global.`);
       } else if (result.routeOrderSearch?.status === "SEARCH_INCOMPLETE") {
-        setNotice((current) => `${current} Valhalla no completó todas las alternativas de orden; se conserva la ruta base calculada.`);
+        const failedCandidates = result.routeOrderSearch?.failedCandidates ?? 0;
+        setNotice((current) => `${current} Valhalla no pudo completar ${failedCandidates} trazado(s) alternativo(s); se conserva la más rápida entre las rutas válidas. La búsqueda es acotada y no garantiza un óptimo global.`);
       } else if (result.routeOrderSearch?.status === "SKIPPED_ROUTE_SIZE") {
         setNotice((current) => `${current} Por el tamaño del recorrido no se evaluaron órdenes alternativos adicionales.`);
       }
@@ -526,6 +529,40 @@ export function OperationsRoutePlannerDemo() {
     } catch (reason) {
       setRouteState("error");
       setError(reason instanceof Error ? reason.message : "No fue posible calcular la ruta.");
+    }
+  }
+
+  async function requestRouteAlternative() {
+    if (!proposal || !routeAuditRequiresReplan(routeAudit) || alternativeLoading || alternativeAttempted) return;
+    setAlternativeLoading(true);
+    setRouteState("loading");
+    setError("");
+    setNotice("Route Intelligence pidió revisar la ruta. Buscaré otra secuencia con las mismas direcciones y el mismo destino.");
+    const inputStops = proposal.stops;
+    const fixedDestinationIndex = inputStops.findIndex((stop) => stop.fixedDestination);
+    const excludedOrder = inputStops.map((_, index) => index);
+    try {
+      const result = await optimizeAtlasOpenRoute(
+        inputStops.map(({ lat, lng }) => ({ lat, lng })),
+        plannedVehicleType,
+        fixedDestinationIndex < 0 ? undefined : fixedDestinationIndex,
+        undefined,
+        [excludedOrder]
+      );
+      const alternativeStops = normalizeRouteStops(applyRouteAccessAdjustments(inputStops, result.order, result.stopAccessAdjustments));
+      setProposal({ stops: alternativeStops, route: result });
+      setRouteState("ready");
+      setAlternativeAttempted(true);
+      setNotice(`Valhalla calculó y comparó una secuencia alternativa completa; se volvió a solicitar la auditoría IA. ${result.routeOrderSearch?.candidatesEvaluated ?? 1} ruta(s) completa(s) evaluadas en esta búsqueda acotada.`);
+      void evaluateRouteAudit(result, alternativeStops);
+    } catch (reason) {
+      setRouteState("ready");
+      setAlternativeAttempted(true);
+      setError(reason instanceof Error && reason.message.includes("route_alternative_exhausted")
+        ? "No quedó otra secuencia distinta dentro de las alternativas trazables por Valhalla. La ruta sigue bloqueada por la auditoría IA."
+        : reason instanceof Error ? reason.message : "No fue posible calcular otra secuencia.");
+    } finally {
+      setAlternativeLoading(false);
     }
   }
 
@@ -794,6 +831,9 @@ export function OperationsRoutePlannerDemo() {
             feedbackReason={auditFeedbackReason}
             feedbackSaving={auditFeedbackSaving}
             feedbackSaved={auditFeedbackSaved}
+            alternativeLoading={alternativeLoading}
+            alternativeAttempted={alternativeAttempted}
+            onRequestAlternative={() => void requestRouteAlternative()}
             onFeedbackTypeChange={(value) => { setAuditFeedbackType(value); setAuditFeedbackSaved(false); }}
             onFeedbackReasonChange={(value) => { setAuditFeedbackReason(value); setAuditFeedbackSaved(false); }}
             onSubmitFeedback={() => void submitRouteAuditFeedback()}
