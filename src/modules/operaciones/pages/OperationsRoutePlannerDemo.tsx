@@ -494,30 +494,14 @@ export function OperationsRoutePlannerDemo() {
         routeNotices.push(`${result.stopAccessAdjustments.length} parada(s) ajustadas hasta ${longestAdjustment} m; acceso peatonal mapeado ≤30 m. Revisa el mapa.`);
       }
       setNotice(routeNotices.join(" "));
-      const auditRequest = ++auditSequence.current;
-      setRouteAuditStatus("loading");
-      void auditAtlasRouteIntelligence(result, Number(selectedServiceId) || null, auditVehicleId || null, plannedVehicleType)
-        .then((audit) => {
-          if (auditSequence.current !== auditRequest) return;
-          setRouteAudit(audit);
-          const auditComplete = audit.mode === "SHADOW" && audit.provider === "openai" && Boolean(audit.runId) && audit.decision !== "ERROR" && (audit.auditedManeuverCount ?? 0) > 0;
-          setRouteAuditStatus(auditComplete ? "ready" : audit.mode === "OFF" ? "off" : "error");
-          if (!auditComplete) setRouteAuditError(audit.mode === "OFF" ? "La auditoría IA está desactivada; no se puede aplicar ni guardar esta ruta." : audit.decision === "ERROR" ? audit.summary : "La auditoría no produjo una evaluación IA persistida y verificable.");
-        })
-        .catch((reason: unknown) => {
-          if (auditSequence.current !== auditRequest) return;
-          setRouteAuditError(reason instanceof Error ? reason.message : "No fue posible completar la auditoría de ruta.");
-          setRouteAuditStatus("error");
-        });
+      void evaluateRouteAudit(result);
     } catch (reason) {
       setRouteState("error");
       setError(reason instanceof Error ? reason.message : "No fue posible calcular la ruta.");
     }
   }
 
-  async function retryRouteAudit() {
-    const candidate = proposal?.route ?? planningRoute;
-    if (!candidate || !isOptimizedRoute(candidate) || routeAuditStatus === "loading") return;
+  async function evaluateRouteAudit(candidate: AtlasOptimizedRoute) {
     const requestId = ++auditSequence.current;
     setRouteAudit(null);
     setRouteAuditError("");
@@ -526,14 +510,20 @@ export function OperationsRoutePlannerDemo() {
       const audit = await auditAtlasRouteIntelligence(candidate, Number(selectedServiceId) || null, auditVehicleId || null, plannedVehicleType);
       if (auditSequence.current !== requestId) return;
       setRouteAudit(audit);
-      const auditComplete = audit.mode === "SHADOW" && audit.provider === "openai" && Boolean(audit.runId) && audit.decision !== "ERROR" && (audit.auditedManeuverCount ?? 0) > 0;
-      setRouteAuditStatus(auditComplete ? "ready" : audit.mode === "OFF" ? "off" : "error");
-      if (!auditComplete) setRouteAuditError(audit.mode === "OFF" ? "La auditoría IA está desactivada; no se puede aplicar ni guardar esta ruta." : audit.decision === "ERROR" ? audit.summary : "La auditoría no produjo una evaluación IA persistida y verificable.");
+      const complete = isRouteAuditOperationallyComplete("ready", audit);
+      setRouteAuditStatus(audit.mode === "OFF" ? "off" : complete ? "ready" : "error");
+      if (!complete) setRouteAuditError(audit.mode === "OFF" ? "La auditoría IA está desactivada; no se puede aplicar ni guardar esta ruta." : audit.decision === "ERROR" ? audit.summary : "La auditoría no produjo una evaluación IA persistida y verificable.");
     } catch (reason) {
       if (auditSequence.current !== requestId) return;
       setRouteAuditError(reason instanceof Error ? reason.message : "No fue posible completar la auditoría de ruta.");
       setRouteAuditStatus("error");
     }
+  }
+
+  async function retryRouteAudit() {
+    const candidate = proposal?.route ?? planningRoute;
+    if (!candidate || !isOptimizedRoute(candidate) || routeAuditStatus === "loading") return;
+    await evaluateRouteAudit(candidate);
   }
 
   async function submitRouteAuditFeedback() {
