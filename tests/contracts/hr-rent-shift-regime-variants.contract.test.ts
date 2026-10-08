@@ -36,6 +36,8 @@ describe("jornadas y régimen en Estructuras de Renta", () => {
     expect(migration).toContain("No puedes quitar una jornada que ya tiene una estructura vigente");
     expect(page).toContain("Jornadas del cargo");
     expect(page).toContain("+ Agregar jornada");
+    expect(page).toContain('{view === "configuracion" && query.data?.canConfigure ? <button type="button" className="rent-secondary-button"');
+    expect(page).toContain('{view === "configuracion" && addShiftMenuOpen ? <div className="rent-shift-add-menu"');
     expect(page).toContain("savedApplicableShiftIds.filter");
     expect(page).not.toContain("Guardar jornadas");
   });

@@ -4973,3 +4973,13 @@ CI de PR #95: Cloudflare Pages preview y `audit-enterprise-guardrails` aprobados
 ## Revisión del plan
 
 La selección de tipo en planificación será una propiedad de la versión guardada de ruta y se ofrecerá desde los valores de `atlas_ops_vehicles.vehicle_type` activos y no vacíos. En la creación y consulta de despachos, el tipo de la ruta se compara con el del vehículo asignado; la discrepancia se presenta como advertencia informativa y no cambia la regla de despacho. El resumen visual agrupa conductor/jornada en una misma banda horizontal y separa equipo de patente, código, tipo, marca y modelo, ocultando campos ausentes sin inventar datos.
+## Mover “Agregar jornada” a Configuración de estructuras de renta — 2026-10-07
+
+- [x] Confirmar la navegación Control/Configuración, el permiso existente y el contrato de pruebas del mantenedor.
+- [x] Mostrar el botón y su menú solo en Configuración; mantener intacta la consulta/control y las autorizaciones.
+- [x] Ejecutar pruebas focalizadas, TypeScript, build frontend, Guardian y `git diff --check`.
+- [ ] Integrar y publicar el cambio acotado; verificar el bundle servido en producción.
+
+Revisión del plan: el listado de jornadas sirve para consulta en Control, pero la asociación de jornadas modifica configuración. El cambio solo condiciona visibilidad al tab existente `configuracion` y al permiso existente `canConfigure`; no altera RPC, SQL, ACL, roles ni datos.
+
+Validación local: prueba focalizada 7/7; TypeScript y `npm run build:frontend-check` pasan; `git diff --check` pasa. Guardian pasa sus demás gates, pero falla `audit:performance-baseline` con +8.420 B JS / +4.381 B `supabase-vendor` / +600 B `app-framework`, discrepancia previamente registrada en el baseline y ajena al cambio de visibilidad. No se modificaron límites ni se añadió una supresión.
