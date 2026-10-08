@@ -6,14 +6,16 @@ import { setWorkerUrl, type Map as MapLibreMap, type Marker } from "maplibre-gl"
 import mapLibreWorkerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import type { FerrostarCore, FerrostarMap, SimulatedLocationProvider } from "@stadiamaps/ferrostar-webcomponents";
 import type { Route, TripState, UserLocation, Waypoint } from "@stadiamaps/ferrostar";
-import { auditAtlasRouteIntelligence, calculateAtlasValhallaRoute, getAtlasOperationsCatalogs, getAtlasServiceRoute, getAtlasServiceRoutes, optimizeAtlasOpenRoute, recordAtlasRouteIntelligenceFeedback, resolveAtlasTomTomSuggestion, saveAtlasServiceRoute, searchAtlasTomTom, type AtlasOptimizedRoute, type AtlasPlannedRoute, type AtlasRouteAuditResponse, type AtlasServiceRoute, type TomTomSuggestion } from "../services/atlasOperationsApi";
+import { calculateAtlasValhallaRoute, getAtlasOperationsCatalogs, getAtlasServiceRoute, getAtlasServiceRoutes, optimizeAtlasOpenRoute, resolveAtlasTomTomSuggestion, saveAtlasServiceRoute, searchAtlasTomTom, type AtlasOptimizedRoute, type AtlasPlannedRoute, type AtlasServiceRoute, type TomTomSuggestion } from "../services/atlasOperationsApi";
 import { appendRouteStop, moveRouteStop, normalizeRouteStops, setFixedDestination } from "../lib/routeStopOrder";
 import { applyRouteAccessAdjustments } from "../lib/applyRouteAccessAdjustments";
 import { matchRouteDestinationPresets, type RouteDestinationPreset } from "../lib/routeDestinationCatalog";
-import { formatDriverSimulationError, mergeFerrostarRouteSegments, splitRouteStops } from "../lib/routeSimulation";
+import { formatDriverSimulationError, mergeFerrostarRouteSegments, splitRouteStops, toAtlasPlannedRoute } from "../lib/routeSimulation";
+import { searchAuditedRoute } from "../lib/auditedRouteSearch";
+import { useAtlasRouteAudit } from "../hooks/useAtlasRouteAudit";
 import { atlasVehicleTypesMatch, getAvailableAtlasRouteVehicleCategories, resolveAtlasRouteVehicleCategory } from "../lib/vehicleRoutingCosting";
 import { ensurePlannedRouteLayers } from "../lib/plannedRouteMapLayers";
-import { AtlasRouteAuditPanel, isRouteAuditEvaluationComplete, isRouteAuditOperationallyComplete, routeAuditRequiresReplan, type RouteAuditFeedbackType } from "../components/AtlasRouteAuditPanel";
+import { AtlasRouteAuditPanel, isRouteAuditEvaluationComplete, routeAuditNeedsHumanReview, routeAuditRequiresReplan } from "../components/AtlasRouteAuditPanel";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "../styles/route-planner-demo.css";
 
@@ -123,24 +125,16 @@ export function OperationsRoutePlannerDemo() {
   const [savedRoutes, setSavedRoutes] = useState<AtlasServiceRoute[]>([]);
   const [selectedSavedRouteId, setSelectedSavedRouteId] = useState("");
   const [auditVehicleId, setAuditVehicleId] = useState("");
-  const [routeAudit, setRouteAudit] = useState<AtlasRouteAuditResponse | null>(null);
-  const [routeAuditStatus, setRouteAuditStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
-  const [routeAuditError, setRouteAuditError] = useState("");
+  const routeAuditFlow = useAtlasRouteAudit(plannedVehicleType, selectedServiceId, auditVehicleId);
+  const { routeAudit, planningAudit, setPlanningAudit, routeAuditStatus, routeAuditError, auditFeedbackType,
+    setAuditFeedbackType, auditFeedbackReason, setAuditFeedbackReason, auditFeedbackSaved, setAuditFeedbackSaved,
+    auditFeedbackSaving, alternativeLoading, setAlternativeLoading, alternativeAttempts, setAlternativeAttempts,
+    alternativeSearchComplete, setAlternativeSearchComplete, canUseAuditedRoute, reset: resetRouteAudit, evaluateRouteAudit,
+    retryRouteAudit, submitRouteAuditFeedback } = routeAuditFlow;
   const preserveAuditOnProposalApply = useRef(false);
-  const [auditFeedbackType, setAuditFeedbackType] = useState<RouteAuditFeedbackType>("ACCEPT_AI");
-  const [auditFeedbackReason, setAuditFeedbackReason] = useState("");
-  const [auditFeedbackSaved, setAuditFeedbackSaved] = useState(false);
-  const [auditFeedbackSaving, setAuditFeedbackSaving] = useState(false);
-  const [alternativeLoading, setAlternativeLoading] = useState(false);
-  const [alternativeAttempted, setAlternativeAttempted] = useState(false);
-  const canUseAuditedRoute = isRouteAuditOperationallyComplete(
-    routeAuditStatus,
-    routeAudit,
-    auditFeedbackSaved && (auditFeedbackType === "ACCEPT_AI" || auditFeedbackType === "OVERRIDE_FEASIBLE"),
-  );
   const [saving, setSaving] = useState(false);
   const routeLoadSequence = useRef(0);
-  const auditSequence = useRef(0);
+  const driverRouteForSimulation = useRef<Route | null>(null);
 
   useEffect(() => {
     const routeId = searchParams.get("routeId");
@@ -183,12 +177,9 @@ export function OperationsRoutePlannerDemo() {
       preserveAuditOnProposalApply.current = false;
       return;
     }
-    auditSequence.current += 1;
-    setRouteAudit(null);
-    setRouteAuditStatus("idle");
-    setRouteAuditError("");
-    setAuditFeedbackSaved(false);
-  }, [stops, selectedServiceId, auditVehicleId, plannedVehicleType]);
+    resetRouteAudit();
+    driverRouteForSimulation.current = null;
+  }, [stops, selectedServiceId, auditVehicleId, plannedVehicleType, resetRouteAudit]);
 
   const hasEnteredDirection = (proposal?.stops ?? stops).some((stop) => stop.label.trim().length > 0);
 
@@ -471,13 +462,11 @@ export function OperationsRoutePlannerDemo() {
   }
 
   function invalidateRouteAudit() {
-    auditSequence.current += 1;
-    setRouteAudit(null);
-    setRouteAuditStatus("idle");
-    setRouteAuditError("");
+    resetRouteAudit();
+    driverRouteForSimulation.current = null;
   }
 
-  async function generateRoute() {
+  async function generateRoute(excludedOrders: number[][] = [], replanReason = "") {
     if (!plannedVehicleType) {
       setError("Selecciona el tipo de vehículo con el que se planificará esta ruta.");
       return;
@@ -492,16 +481,19 @@ export function OperationsRoutePlannerDemo() {
     setPlanningRoute(null);
     setProposal(null);
     setRoute(null);
-    setRouteAudit(null);
-    setRouteAuditStatus("idle");
-    setRouteAuditError("");
+    resetRouteAudit();
+    driverRouteForSimulation.current = null;
     setAuditFeedbackSaved(false);
-    setAlternativeAttempted(false);
+    setAlternativeAttempts(0);
+    setAlternativeSearchComplete(false);
     try {
       const fixedDestinationIndex = stops.findIndex((stop) => stop.fixedDestination);
-      const result = await optimizeAtlasOpenRoute(stops.map(({ lat, lng }) => ({ lat, lng })), plannedVehicleType, fixedDestinationIndex < 0 ? undefined : fixedDestinationIndex);
-      const proposedStops = normalizeRouteStops(applyRouteAccessAdjustments(stops, result.order, result.stopAccessAdjustments));
-      setProposal({ stops: proposedStops, route: result });
+      const inputStops = stops.map((stop) => ({ ...stop }));
+      const coordinates = inputStops.map(({ lat, lng }) => ({ lat, lng }));
+      const result = await optimizeAtlasOpenRoute(coordinates, plannedVehicleType, fixedDestinationIndex < 0 ? undefined : fixedDestinationIndex, undefined, excludedOrders);
+      const proposedStops = normalizeRouteStops(applyRouteAccessAdjustments(inputStops, result.order, result.stopAccessAdjustments));
+      const initial = { stops: proposedStops, route: result };
+      setProposal(initial);
       setPlanningRoute(null);
       setRoute(null);
       setRouteState("ready");
@@ -525,76 +517,49 @@ export function OperationsRoutePlannerDemo() {
       } else if (result.routeOrderSearch?.status === "SKIPPED_ROUTE_SIZE") {
         setNotice((current) => `${current} Por el tamaño del recorrido no se evaluaron órdenes alternativos adicionales.`);
       }
-      void evaluateRouteAudit(result, proposedStops);
+      setAlternativeLoading(false);
+      const search = await searchAuditedRoute({ value: initial, order: result.order }, {
+        audit: (candidate) => evaluateRouteAudit(candidate.route, candidate.stops),
+        requiresReplan: routeAuditRequiresReplan,
+        hasPersistedEvaluation: (audit) => Boolean(audit.runId && audit.mode === "SHADOW" && audit.provider === "openai" && audit.decision !== "ERROR" && (audit.auditedManeuverCount ?? 0) > 0),
+        findAlternative: async (excludedOrders) => {
+          const alternative = await optimizeAtlasOpenRoute(coordinates, plannedVehicleType, fixedDestinationIndex < 0 ? undefined : fixedDestinationIndex, undefined, excludedOrders);
+          return { value: { stops: normalizeRouteStops(applyRouteAccessAdjustments(inputStops, alternative.order, alternative.stopAccessAdjustments)), route: alternative }, order: alternative.order };
+        },
+        onCandidate: (candidate, auditAttempt) => {
+          setProposal(candidate);
+          setRouteState("ready");
+          setAlternativeAttempts(auditAttempt - 1);
+        },
+        onAlternativeSearch: (alternativeAttempt) => {
+          setAlternativeLoading(true);
+          setAlternativeAttempts(alternativeAttempt);
+          setNotice(`Route Intelligence pidió replantear una maniobra. Calculando automáticamente la alternativa ${alternativeAttempt} de 2 con las mismas direcciones, destino y tipo de equipo.`);
+        },
+        getErrorMessage: (reason) => reason instanceof Error ? reason.message : "No fue posible completar la búsqueda de rutas auditadas."
+      });
+      setAlternativeLoading(false);
+      setAlternativeAttempts(search.alternativeAttempts);
+      setPlanningAudit(search.status === "accepted" ? search.audit : null);
+      setAlternativeSearchComplete(search.alternativeAttempts > 0 && search.status !== "accepted");
+      if (search.status === "accepted" && replanReason) {
+        setNotice(`${replanReason} Se generó una nueva secuencia y cada alternativa se volvió a validar con IA.`);
+      } else if (search.status === "accepted" && search.alternativeAttempts > 0) {
+        setNotice(`La IA pidió revisar la ruta inicial; se evaluaron automáticamente ${search.auditAttempts} propuestas y se encontró una secuencia alternativa con auditoría IA persistida.`);
+      } else if (search.status === "alternatives_exhausted") {
+        setNotice(`La IA solicitó otra secuencia. Se evaluaron ${search.auditAttempts} propuestas y no se encontró una ruta aceptable dentro de las ${search.alternativeAttempts} alternativas automáticas; la ruta permanece bloqueada.`);
+        setAlternativeSearchComplete(true);
+      } else if (search.status === "alternative_error") {
+        setError(search.error ?? "No fue posible calcular una alternativa adicional; la ruta permanece bloqueada por IA.");
+        setAlternativeSearchComplete(true);
+      } else if (search.status === "audit_error") {
+        setError(search.error ?? "La evaluación IA no terminó o no quedó persistida. Reintenta la auditoría de la misma ruta.");
+      }
     } catch (reason) {
+      setAlternativeLoading(false);
       setRouteState("error");
       setError(reason instanceof Error ? reason.message : "No fue posible calcular la ruta.");
     }
-  }
-
-  async function requestRouteAlternative() {
-    if (!proposal || !routeAuditRequiresReplan(routeAudit) || alternativeLoading || alternativeAttempted) return;
-    setAlternativeLoading(true);
-    setRouteState("loading");
-    setError("");
-    setNotice("Route Intelligence pidió revisar la ruta. Buscaré otra secuencia con las mismas direcciones y el mismo destino.");
-    const inputStops = proposal.stops;
-    const fixedDestinationIndex = inputStops.findIndex((stop) => stop.fixedDestination);
-    const excludedOrder = inputStops.map((_, index) => index);
-    try {
-      const result = await optimizeAtlasOpenRoute(
-        inputStops.map(({ lat, lng }) => ({ lat, lng })),
-        plannedVehicleType,
-        fixedDestinationIndex < 0 ? undefined : fixedDestinationIndex,
-        undefined,
-        [excludedOrder]
-      );
-      const alternativeStops = normalizeRouteStops(applyRouteAccessAdjustments(inputStops, result.order, result.stopAccessAdjustments));
-      setProposal({ stops: alternativeStops, route: result });
-      setRouteState("ready");
-      setAlternativeAttempted(true);
-      setNotice(`Valhalla calculó y comparó una secuencia alternativa completa; se volvió a solicitar la auditoría IA. ${result.routeOrderSearch?.candidatesEvaluated ?? 1} ruta(s) completa(s) evaluadas en esta búsqueda acotada.`);
-      void evaluateRouteAudit(result, alternativeStops);
-    } catch (reason) {
-      setRouteState("ready");
-      setAlternativeAttempted(true);
-      setError(reason instanceof Error && reason.message.includes("route_alternative_exhausted")
-        ? "No quedó otra secuencia distinta dentro de las alternativas trazables por Valhalla. La ruta sigue bloqueada por la auditoría IA."
-        : reason instanceof Error ? reason.message : "No fue posible calcular otra secuencia.");
-    } finally {
-      setAlternativeLoading(false);
-    }
-  }
-
-  async function evaluateRouteAudit(candidate: AtlasPlannedRoute, candidateStops: Array<{ lat: number; lng: number }>, vehicleType = plannedVehicleType, serviceRouteId: string | null = null, routeKind: "OPTIMIZED_PROPOSAL" | "SAVED_ROUTE_PREVIEW" = "OPTIMIZED_PROPOSAL", serviceTemplateId = Number(selectedServiceId) || null) {
-    const requestId = ++auditSequence.current;
-    setRouteAudit(null);
-    setRouteAuditError("");
-    setRouteAuditStatus("loading");
-    try {
-      const audit = await auditAtlasRouteIntelligence(candidate, candidateStops, serviceTemplateId, auditVehicleId || null, vehicleType, { serviceRouteId, routeKind });
-      if (auditSequence.current !== requestId) return;
-      setRouteAudit(audit);
-      const complete = isRouteAuditEvaluationComplete("ready", audit);
-      setRouteAuditStatus(complete ? "ready" : "error");
-      if (!complete) setRouteAuditError(audit.summary || "La auditoría IA está desactivada; vuelve a proponer el recorrido para intentarlo otra vez.");
-    } catch (reason) {
-      if (auditSequence.current !== requestId) return;
-      setRouteAuditError(reason instanceof Error ? reason.message : "No fue posible completar la auditoría de ruta.");
-      setRouteAuditStatus("error");
-    }
-  }
-
-  async function submitRouteAuditFeedback() {
-    if (!routeAudit?.runId || auditFeedbackSaving) return;
-    setAuditFeedbackSaving(true);
-    try {
-      await recordAtlasRouteIntelligenceFeedback(routeAudit.runId, auditFeedbackType, auditFeedbackReason.trim());
-      setAuditFeedbackSaved(true);
-      setRouteAuditError("");
-    } catch (reason) {
-      setRouteAuditError(reason instanceof Error ? reason.message : "No fue posible guardar el feedback.");
-    } finally { setAuditFeedbackSaving(false); }
   }
 
   function applyProposal() {
@@ -622,6 +587,20 @@ export function OperationsRoutePlannerDemo() {
       }, plannedVehicleType);
       runtime.configureFerrostarCore(core, plannedVehicleType);
       coreRef.current = core;
+      const cachedDriverRoute = driverRouteForSimulation.current;
+      if (cachedDriverRoute) {
+        setRoute(cachedDriverRoute);
+        phase = "iniciar Ferrostar";
+        await core.stopNavigation();
+        const provider = runtime.createSimulatedLocationProvider();
+        core.locationProvider = provider;
+        locationProviderRef.current = provider;
+        core.startNavigation(cachedDriverRoute, navigationConfig());
+        provider.setSimulatedRoute(cachedDriverRoute);
+        setActiveView("driver");
+        setError("");
+        return;
+      }
       phase = "consultar Valhalla";
       const routeCore = runtime.createFerrostarCore(() => {}, plannedVehicleType);
       const routeSegments: Route[] = [];
@@ -638,6 +617,33 @@ export function OperationsRoutePlannerDemo() {
         routeSegments.push(routes[0]!);
       }
       const driverRoute = mergeFerrostarRouteSegments(routeSegments);
+      driverRouteForSimulation.current = driverRoute;
+      const driverAuditRoute = toAtlasPlannedRoute(driverRoute, planningRoute, stops.length);
+      setAuditFeedbackSaved(false);
+      const driverAudit = await evaluateRouteAudit(
+        driverAuditRoute,
+        stops.map(({ lat, lng }) => ({ lat, lng })),
+        plannedVehicleType,
+        null,
+        "OPTIMIZED_PROPOSAL",
+        Number(selectedServiceId) || null,
+        auditVehicleId || null,
+        false
+      );
+      if (!driverAudit || !isRouteAuditEvaluationComplete("ready", driverAudit)) {
+        if (driverAudit && routeAuditRequiresReplan(driverAudit)) {
+          driverRouteForSimulation.current = null;
+          const currentOrder = stops.map((_, index) => index);
+          await generateRoute([currentOrder], "Route Intelligence encontró una maniobra que requiere revisar el trazado del simulador.");
+          return;
+        }
+        setError("La IA no pudo aprobar el trazado que devolvió el simulador. La navegación quedó detenida; reintenta la auditoría o genera otra propuesta.");
+        return;
+      }
+      if (routeAuditNeedsHumanReview(driverAudit) && !auditFeedbackSaved) {
+        setError("La IA requiere revisión humana del trazado del simulador. Registra la evaluación para poder iniciar la navegación.");
+        return;
+      }
       setRoute(driverRoute);
       phase = "iniciar Ferrostar";
       await core.stopNavigation();
@@ -663,7 +669,7 @@ export function OperationsRoutePlannerDemo() {
   }
 
   async function saveRoute() {
-    if (!selectedServiceId || !routePrefix.trim() || !plannedVehicleType || !planningRoute || !isOptimizedRoute(planningRoute) || !canUseAuditedRoute || !routeAudit?.runId) return;
+    if (!selectedServiceId || !routePrefix.trim() || !plannedVehicleType || !planningRoute || !isOptimizedRoute(planningRoute) || !canUseAuditedRoute || !planningAudit?.runId) return;
     setSaving(true);
     setError("");
     try {
@@ -676,7 +682,7 @@ export function OperationsRoutePlannerDemo() {
         matrixDurationSeconds: planningRoute.matrixDurationSeconds,
         inputOrderMatrixDurationSeconds: planningRoute.inputOrderMatrixDurationSeconds,
         plannedVehicleType,
-        routeIntelligenceRunId: routeAudit.runId
+        routeIntelligenceRunId: planningAudit.runId
       });
       const routes = await getAtlasServiceRoutes(Number(selectedServiceId));
       setSavedRoutes(routes);
@@ -832,8 +838,9 @@ export function OperationsRoutePlannerDemo() {
             feedbackSaving={auditFeedbackSaving}
             feedbackSaved={auditFeedbackSaved}
             alternativeLoading={alternativeLoading}
-            alternativeAttempted={alternativeAttempted}
-            onRequestAlternative={() => void requestRouteAlternative()}
+            alternativeAttempts={alternativeAttempts}
+            alternativeSearchComplete={alternativeSearchComplete}
+            onRetryAudit={() => { setError(""); retryRouteAudit(); }}
             onFeedbackTypeChange={(value) => { setAuditFeedbackType(value); setAuditFeedbackSaved(false); }}
             onFeedbackReasonChange={(value) => { setAuditFeedbackReason(value); setAuditFeedbackSaved(false); }}
             onSubmitFeedback={() => void submitRouteAuditFeedback()}
