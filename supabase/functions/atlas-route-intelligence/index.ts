@@ -101,12 +101,13 @@ async function getVehicleProfile(vehicleId: string, accessToken: string, apiKey:
   return rows[0] ?? null;
 }
 
-function vehicleEvidenceForModel(profile: Record<string, unknown> | null) {
-  if (!profile) return { status: "UNKNOWN", note: "No hay dimensiones verificadas del vehículo." };
+function vehicleEvidenceForModel(profile: Record<string, unknown> | null, plannedVehicleType: string) {
+  if (!profile) return { status: "UNKNOWN", plannedVehicleType, note: "Solo se conoce el tipo elegido al planificar; no hay dimensiones verificadas del equipo asignado." };
   const enumValue = (value: unknown, allowed: string[]) => typeof value === "string" && allowed.includes(value) ? value : null;
   const numberValue = (value: unknown) => finite(value, 0, 100000);
   return {
     status: profile.verified_at ? "VERIFIED" : "UNVERIFIED",
+    plannedVehicleType,
     vehicleType: enumValue(profile.vehicle_type, ["BUS", "MINIBUS", "VAN", "OTHER"]),
     passengerCapacity: numberValue(profile.passenger_capacity), lengthM: numberValue(profile.length_m),
     widthM: numberValue(profile.width_m), heightM: numberValue(profile.height_m), wheelbaseM: numberValue(profile.wheelbase_m),
@@ -150,7 +151,7 @@ function normalizeError(error: unknown): AuditErrorCategory {
   return "OPENAI_UNAVAILABLE";
 }
 
-async function callAuditor(candidates: RouteManeuverFeature[], vehicleProfile: Record<string, unknown> | null): Promise<{ output: RouteAuditOutput; usage: ModelUsage }> {
+async function callAuditor(candidates: RouteManeuverFeature[], vehicleProfile: Record<string, unknown> | null, plannedVehicleType: string): Promise<{ output: RouteAuditOutput; usage: ModelUsage }> {
   const apiKey = Deno.env.get("OPENAI_API_KEY")?.trim();
   if (!apiKey) throw new Error("openai_unavailable");
   const controller = new AbortController();
@@ -162,7 +163,7 @@ async function callAuditor(candidates: RouteManeuverFeature[], vehicleProfile: R
         model: MODEL,
         input: [
           { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: JSON.stringify({ vehicleProfile: vehicleEvidenceForModel(vehicleProfile), maneuverEvidence: candidates }) }
+          { role: "user", content: JSON.stringify({ vehicleProfile: vehicleEvidenceForModel(vehicleProfile, plannedVehicleType), maneuverEvidence: candidates }) }
         ],
         text: { format: { type: "json_schema", name: "atlas_route_audit", strict: true, schema: OUTPUT_SCHEMA } },
         reasoning: { effort: "low" }, max_output_tokens: 1200, store: false
@@ -225,6 +226,8 @@ Deno.serve(async (request) => {
     if (templateId !== null && (!Number.isSafeInteger(templateId) || templateId < 1)) return json({ error: "invalid_service_template" }, 400, origin);
     const vehicleId = body.vehicleId === null || body.vehicleId === undefined || body.vehicleId === "" ? null : String(body.vehicleId);
     if (vehicleId !== null && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(vehicleId)) return json({ error: "invalid_vehicle_id" }, 400, origin);
+    const plannedVehicleType = typeof body.plannedVehicleType === "string" ? body.plannedVehicleType.trim().slice(0, 80) : "";
+    if (!plannedVehicleType) return json({ error: "planned_vehicle_type_required" }, 400, origin);
     let profile: Record<string, unknown> | null = null;
     let profileLookupFailed = false;
     try { profile = vehicleId ? await getVehicleProfile(vehicleId, token, apiKey) : null; }
@@ -254,7 +257,7 @@ Deno.serve(async (request) => {
       try {
         if (profileLookupFailed) throw new Error("profile_lookup_failed");
         if (restrictionLookupFailed) throw new Error("restriction_lookup_failed");
-        const result = await callAuditor(candidates, profile);
+        const result = await callAuditor(candidates, profile, plannedVehicleType);
         output = result.output;
         usage = result.usage;
       } catch (error) {
@@ -269,7 +272,7 @@ Deno.serve(async (request) => {
     try {
       runId = await recordRun(token, apiKey, {
         idempotency_key: idempotencyKey, candidate_hash: candidateHash, service_template_id: templateId,
-        service_route_id: null, vehicle_id: vehicleId, vehicle_profile_snapshot: profile ?? { status: "UNKNOWN", verified: false },
+        service_route_id: null, vehicle_id: vehicleId, vehicle_profile_snapshot: { ...(profile ?? { status: "UNKNOWN", verified: false }), planned_vehicle_type: plannedVehicleType },
         restriction_snapshot: [...new Map(maneuversWithRestrictions.flatMap((item) => item.validatedRestrictions).map((item) => [item.id, item])).values()]
           .slice(0, 40).map(({ id, level, reason, source }) => ({ id, level, reason: reason.slice(0, 200), source })),
         mode: "SHADOW", provider, model, agent_version: AGENT_VERSION, prompt_version: PROMPT_VERSION,

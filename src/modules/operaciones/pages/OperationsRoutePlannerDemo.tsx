@@ -10,6 +10,8 @@ import { auditAtlasRouteIntelligence, calculateAtlasValhallaRoute, getAtlasOpera
 import { appendRouteStop, moveRouteStop, normalizeRouteStops, setFixedDestination } from "../lib/routeStopOrder";
 import { matchRouteDestinationPresets, type RouteDestinationPreset } from "../lib/routeDestinationCatalog";
 import { formatDriverSimulationError, mergeFerrostarRouteSegments, splitRouteStops } from "../lib/routeSimulation";
+import { getAvailableVehicleTypes } from "../lib/vehicleType";
+import { ensurePlannedRouteLayers } from "../lib/plannedRouteMapLayers";
 import { AtlasRouteAuditPanel, type RouteAuditFeedbackType } from "../components/AtlasRouteAuditPanel";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "../styles/route-planner-demo.css";
@@ -77,56 +79,6 @@ function followNavigationCamera(map: MapLibreMap | null, state: TripState | null
   });
 }
 
-function createRouteArrowImage(): ImageData {
-  const canvas = document.createElement("canvas");
-  canvas.width = 32;
-  canvas.height = 32;
-  const context = canvas.getContext("2d");
-  if (!context) throw new Error("No fue posible preparar las flechas de ruta.");
-  context.fillStyle = "#4b37c7";
-  context.strokeStyle = "#ffffff";
-  context.lineWidth = 3;
-  context.lineJoin = "round";
-  context.beginPath();
-  context.moveTo(5, 7);
-  context.lineTo(26, 16);
-  context.lineTo(5, 25);
-  context.lineTo(9, 16);
-  context.closePath();
-  context.fill();
-  context.stroke();
-  return context.getImageData(0, 0, canvas.width, canvas.height);
-}
-
-function ensurePlannedRouteLayers(map: MapLibreMap) {
-  if (!map.getSource("planned-route")) {
-    map.addSource("planned-route", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
-  }
-  if (!map.getLayer("planned-route-halo")) {
-    map.addLayer({ id: "planned-route-halo", type: "line", source: "planned-route", layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": "#ffffff", "line-width": 10 } });
-  }
-  if (!map.getLayer("planned-route-line")) {
-    map.addLayer({ id: "planned-route-line", type: "line", source: "planned-route", layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": "#4b37c7", "line-width": 6 } });
-  }
-  if (!map.hasImage("planned-route-arrow")) map.addImage("planned-route-arrow", createRouteArrowImage(), { pixelRatio: 2 });
-  if (!map.getLayer("planned-route-arrows")) {
-    map.addLayer({
-      id: "planned-route-arrows",
-      type: "symbol",
-      source: "planned-route",
-      layout: {
-        "symbol-placement": "line",
-        "symbol-spacing": 110,
-        "icon-image": "planned-route-arrow",
-        "icon-size": 0.72,
-        "icon-rotation-alignment": "map",
-        "icon-allow-overlap": true,
-        "icon-ignore-placement": true
-      }
-    });
-  }
-}
-
 function navigationConfig() {
   return {
     stepAdvanceCondition: { DistanceEntryExit: { minimumHorizontalAccuracy: 25, distanceToEndOfStep: 30, distanceAfterEndStep: 5, hasReachedEndOfCurrentStep: false } },
@@ -166,6 +118,7 @@ export function OperationsRoutePlannerDemo() {
   const [catalog, setCatalog] = useState<Awaited<ReturnType<typeof getAtlasOperationsCatalogs>> | null>(null);
   const [selectedServiceId, setSelectedServiceId] = useState("");
   const [routePrefix, setRoutePrefix] = useState("");
+  const [plannedVehicleType, setPlannedVehicleType] = useState("");
   const [savedRoutes, setSavedRoutes] = useState<AtlasServiceRoute[]>([]);
   const [selectedSavedRouteId, setSelectedSavedRouteId] = useState("");
   const [auditVehicleId, setAuditVehicleId] = useState("");
@@ -227,7 +180,7 @@ export function OperationsRoutePlannerDemo() {
     setRouteAuditStatus("idle");
     setRouteAuditError("");
     setAuditFeedbackSaved(false);
-  }, [stops, selectedServiceId, auditVehicleId]);
+  }, [stops, selectedServiceId, auditVehicleId, plannedVehicleType]);
 
   const hasEnteredDirection = (proposal?.stops ?? stops).some((stop) => stop.label.trim().length > 0);
 
@@ -494,6 +447,10 @@ export function OperationsRoutePlannerDemo() {
   }
 
   async function generateRoute() {
+    if (!plannedVehicleType) {
+      setError("Selecciona el tipo de vehículo con el que se planificará esta ruta.");
+      return;
+    }
     if (stops.length < 2 || stops.some((stop) => !stop.label || !Number.isFinite(stop.lat) || !Number.isFinite(stop.lng))) {
       setError("Agrega al menos dos direcciones verificadas para proponer el recorrido.");
       return;
@@ -519,7 +476,7 @@ export function OperationsRoutePlannerDemo() {
       setNotice("Propuesta lista. Revisa el inicio, el destino y el trazado; aplícala para guardarla o continuar al conductor.");
       const auditRequest = ++auditSequence.current;
       setRouteAuditStatus("loading");
-      void auditAtlasRouteIntelligence(result, Number(selectedServiceId) || null, auditVehicleId || null)
+      void auditAtlasRouteIntelligence(result, Number(selectedServiceId) || null, auditVehicleId || null, plannedVehicleType)
         .then((audit) => {
           if (auditSequence.current !== auditRequest) return;
           setRouteAudit(audit);
@@ -613,7 +570,7 @@ export function OperationsRoutePlannerDemo() {
   }
 
   async function saveRoute() {
-    if (!selectedServiceId || !routePrefix.trim() || !planningRoute || !isOptimizedRoute(planningRoute)) return;
+    if (!selectedServiceId || !routePrefix.trim() || !plannedVehicleType || !planningRoute || !isOptimizedRoute(planningRoute)) return;
     setSaving(true);
     setError("");
     try {
@@ -624,7 +581,8 @@ export function OperationsRoutePlannerDemo() {
         distanceMeters: planningRoute.distanceMeters,
         durationSeconds: planningRoute.durationSeconds,
         matrixDurationSeconds: planningRoute.matrixDurationSeconds,
-        inputOrderMatrixDurationSeconds: planningRoute.inputOrderMatrixDurationSeconds
+        inputOrderMatrixDurationSeconds: planningRoute.inputOrderMatrixDurationSeconds,
+        plannedVehicleType
       });
       const routes = await getAtlasServiceRoutes(Number(selectedServiceId));
       setSavedRoutes(routes);
@@ -666,6 +624,7 @@ export function OperationsRoutePlannerDemo() {
     })));
     setStops(loaded);
     setRoutePrefix(selected.prefix);
+    setPlannedVehicleType(selected.planned_vehicle_type ?? "");
     setPlanningRoute(null);
     setProposal(null);
     setRoute(null);
@@ -692,6 +651,8 @@ export function OperationsRoutePlannerDemo() {
   const allStopsPresent = stops.length >= 2 && stops.every((stop) => stop.label && (search?.id !== stop.id || search.query.trim() === stop.label));
   const selectedTemplate = catalog?.templates.find((item) => String(item.id) === selectedServiceId);
   const selectedContract = catalog?.contracts.find((item) => item.id === selectedTemplate?.contract_id);
+  const availableVehicleTypes = getAvailableVehicleTypes(catalog?.vehicles ?? []);
+  const auditVehicles = catalog?.vehicles.filter((vehicle) => vehicle.vehicle_type?.trim().toLocaleLowerCase("es-CL") === plannedVehicleType.trim().toLocaleLowerCase("es-CL")) ?? [];
   const routeCodePreview = `${selectedTemplate?.name ?? "SERVICIO"}_${routePrefix.trim() || "PREFIJO"}`.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9]+/g, "_").replace(/^_|_$/g, "").toUpperCase();
 
   return <main className="ops-route-demo">
@@ -710,10 +671,22 @@ export function OperationsRoutePlannerDemo() {
               return <option value={item.id} key={item.id}>{contract?.code ? `${contract.code} · ` : ""}{item.name}</option>;
             })}
           </select></label>
-          <label>Vehículo de referencia para la auditoría<select value={auditVehicleId} onChange={(event) => setAuditVehicleId(event.target.value)}>
-            <option value="">Sin vehículo definido</option>
-            {catalog?.vehicles.map((vehicle) => <option key={vehicle.id} value={vehicle.id}>{vehicle.code} · {vehicle.plate ?? "Sin patente"} · {vehicle.routingProfile?.verified_at ? "ficha técnica verificada" : "dimensiones sin verificar"}</option>)}
-          </select><small>Solo contexto para la auditoría en sombra; no asigna el equipo al despacho.</small></label>
+          <label>Tipo de vehículo para la ruta<select value={plannedVehicleType} onChange={(event) => {
+            setPlannedVehicleType(event.target.value);
+            setAuditVehicleId("");
+            setPlanningRoute(null);
+            setProposal(null);
+            setRoute(null);
+            setRouteState("idle");
+            setError("");
+          }} required>
+            <option value="">Selecciona un tipo de la flota</option>
+            {availableVehicleTypes.map((type) => <option key={type} value={type}>{type}</option>)}
+          </select><small>La selección queda guardada en esta versión y se comparará con el equipo asignado al servicio.</small></label>
+          <label>Equipo de referencia para la auditoría<select value={auditVehicleId} onChange={(event) => setAuditVehicleId(event.target.value)} disabled={!plannedVehicleType || auditVehicles.length === 0}>
+            <option value="">Sin ficha técnica individual</option>
+            {auditVehicles.map((vehicle) => <option key={vehicle.id} value={vehicle.id}>{vehicle.code} · {vehicle.plate ?? "Sin patente"} · {vehicle.routingProfile?.verified_at ? "ficha técnica verificada" : "dimensiones sin verificar"}</option>)}
+          </select><small>Opcional. Solo aporta dimensiones a la auditoría; no asigna el equipo al despacho.</small></label>
           <div className="ops-route-demo__route-config-row">
             <label>Prefijo de ruta<input value={routePrefix} maxLength={40} onChange={(event) => setRoutePrefix(event.target.value)} placeholder="Turno A / Turno B" /></label>
             <div className="ops-route-demo__route-code"><span>CÓDIGO</span><strong>{routeCodePreview}</strong></div>
@@ -746,7 +719,7 @@ export function OperationsRoutePlannerDemo() {
           {stops.some((stop) => !stop.label.trim()) && <p id="ops-route-pending-stop" className="ops-route-demo__pending-stop" role="status">Completa o elimina la dirección {stops.findIndex((stop) => !stop.label.trim()) + 1} para proponer el recorrido.</p>}
           <div className="ops-route-demo__panel-divider" />
           {(proposal || planningRoute) && routeState === "ready" && <div className="ops-route-demo__summary"><div><span>Distancia · Valhalla</span><strong>{formatDistance((proposal?.route ?? planningRoute!).distanceMeters)}</strong></div><div><span>Tiempo estimado</span><strong>{formatDuration((proposal?.route ?? planningRoute!).durationSeconds)}</strong></div></div>}
-          <div className="ops-route-demo__actions"><button type="button" className="ops-route-demo__primary" disabled={!allStopsPresent || routeState === "loading"} onClick={() => void generateRoute()}>{routeState === "loading" ? "Buscando mejor orden…" : "Proponer recorrido optimizado"}</button></div>
+          <div className="ops-route-demo__actions"><button type="button" className="ops-route-demo__primary" disabled={!allStopsPresent || !plannedVehicleType || routeState === "loading"} onClick={() => void generateRoute()}>{routeState === "loading" ? "Buscando mejor orden…" : "Proponer recorrido optimizado"}</button></div>
           {proposal && <div className="ops-route-demo__message" role="status"><strong>Propuesta de recorrido abierto</strong><p>Inicio: {proposal.stops[0]?.label}</p><p>Destino: {proposal.stops[proposal.stops.length - 1]?.label}</p><details><summary>Ver las {proposal.stops.length} direcciones en orden</summary><ol>{proposal.stops.map((stop) => <li key={stop.id}>{stop.label}</li>)}</ol></details>{proposal.route.inputOrderMatrixDurationSeconds !== null && <small>{proposal.route.inputOrderMatrixDurationSeconds > proposal.route.matrixDurationSeconds ? `Ahorro estimado: ${formatDuration(proposal.route.inputOrderMatrixDurationSeconds - proposal.route.matrixDurationSeconds)} frente al orden ingresado.` : "El orden ingresado ya es equivalente o más rápido según la matriz."}</small>}<div className="ops-route-demo__actions"><button type="button" className="ops-route-demo__primary" onClick={applyProposal}>Aplicar este orden</button><button type="button" className="ops-route-demo__secondary" onClick={() => { setProposal(null); setRouteState("idle"); }}>Descartar propuesta</button></div></div>}
           {routeAuditStatus !== "idle" && <AtlasRouteAuditPanel
             status={routeAuditStatus}

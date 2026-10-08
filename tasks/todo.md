@@ -4953,3 +4953,17 @@ Base de trabajo `origin/main` (`48c9c24c`). El auditor será la única llamada L
 Revisión de implementación: añadir perfiles dimensionales opcionales, knowledge base con validación humana y eventos inmutables, auditoría acotada a maniobras de riesgo y feedback. El `APPROVE` del modelo se degrada a `INSUFFICIENT_EVIDENCE` si no hay perfil verificado. El registro de auditoría conserva snapshots pequeños y versionados. No se crea interfaz de mantenimiento de restricciones en esta entrega; el RPC seguro queda disponible para la siguiente pantalla operativa.
 
 Resultado local (2026-10-08): TypeScript y ambos `deno check` pasan; unit 193/193, contracts 151/151; `audit:migrations`, `audit:destructive-migrations`, `audit:enterprise-docs`, `audit:supabase-security` y `git diff --check` pasan. Guardian final 0 errores/0 warnings. `build:frontend-check` pasa con advertencia de chunk existente del planificador (1,084.96 kB sin minificar, gzip 295.79 kB); no se elevó el umbral. No hay Docker local ni ambiente Supabase de staging; los advisors actuales son baseline pre-cambio. Falta PR/CI y verificación del despliegue productivo antes de cerrar.
+# Atlas: vehículo de planificación y resumen compacto del despacho — 2026-10-08
+
+## Plan verificable
+
+- [x] Revisar contratos reales de planificación, versiones de ruta, flota, creación/consulta de dispatch y drawer operativo en `origin/main`.
+- [x] Agregar tipo de vehículo derivado del padrón activo, persistirlo junto a la versión de ruta y exponerlo al crear/consultar despachos.
+- [x] Comparar el tipo seleccionado al planificar con el tipo del equipo asignado y mostrar advertencia no bloqueante si difieren.
+- [x] Rediseñar el detalle operacional: datos de conductor en una sola fila; equipo en bloques compactos con tipo, marca y modelo; adaptar pantallas estrechas.
+- [ ] Añadir regresiones de persistencia, comparación, datos nulos y layout; ejecutar pruebas focalizadas, build frontend, Guardian y `git diff --check`.
+- [ ] Integrar y publicar con migración antes del frontend; verificar datos/advertencia y bundle en producción sin modificar servicios reales.
+
+## Revisión del plan
+
+La selección de tipo en planificación será una propiedad de la versión guardada de ruta y se ofrecerá desde los valores de `atlas_ops_vehicles.vehicle_type` activos y no vacíos. En la creación y consulta de despachos, el tipo de la ruta se compara con el del vehículo asignado; la discrepancia se presenta como advertencia informativa y no cambia la regla de despacho. El resumen visual agrupa conductor/jornada en una misma banda horizontal y separa equipo de patente, código, tipo, marca y modelo, ocultando campos ausentes sin inventar datos.

@@ -1,5 +1,11 @@
 # Lecciones Técnicas Aprendidas (Lessons)
 
+## 2026-10-08 — El detalle operacional debe respetar la continuidad visual solicitada
+
+- En el drawer de Control Tower, conductor y jornada son una sola fila lógica; mantenerlos en celdas separadas produce una lectura fragmentada.
+- Presentar equipo en datos independientes y compactos (número, patente, tipo, marca, modelo, año), sin esconderlos en una descripción concatenada.
+- Revisar también los datos faltantes y las versiones antiguas para que la advertencia de compatibilidad no invente coincidencias.
+
 ## 2026-10-07 — No bloquear por una condición operacional que el sistema no registra
 
 - Un catálogo de vehículo activo no es un sistema de mantenimiento: no inferir disponibilidad mecánica ni bloquear por mantenimiento sin una fuente explícita.
