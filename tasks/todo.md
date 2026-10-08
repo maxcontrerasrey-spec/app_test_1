@@ -5200,6 +5200,8 @@ Verificación final en producción tras PR #112 (2026-10-08): con sesión autent
 - [x] Añadir regresiones por cada bypass y decisión de selección; ejecutar Guardian, build, suites focalizadas, Deno, auditorías Supabase y diff check.
 - [ ] Integrar/deplegar cambios adicionales solo tras CI; repetir smoke productivo seguro, verificar los tres perfiles y no crear una versión operacional durante pruebas.
 
+CI `37832767235` pasó unitarias/contratos y checks de integridad, pero Guardian detectó +620 bytes JS sobre el baseline. Se registró ese tamaño exacto (`5,344,517` bytes) en el baseline, sin tolerancias adicionales ni cambio del límite de chunk. Debe repetirse CI antes de integrar o desplegar.
+
 ### Revisión de evidencia previa
 
 PR #113 está integrado, migración `20261008185321` aplicada, Edge Functions activas (planning v23, intelligence v8) y Cloudflare sirve el chunk actualizado. El smoke de cálculo autenticado de 12 paradas que consta arriba fue anterior al despliegue; el recorrido no se volvió a calcular en la versión desplegada. La propuesta previa obtuvo igualdad de tiempos de matriz entre orden de entrada y orden calculado, así que no demuestra que cambiar el orden siempre mejore. Faltan pruebas de calidad de extremo a extremo que acrediten un trayecto aplicable, caminos alternativos completos y que IA se ejecute/rechace en cada acción sensible. Esta iteración sigue abierta hasta que esas brechas se prueben o corrijan.
