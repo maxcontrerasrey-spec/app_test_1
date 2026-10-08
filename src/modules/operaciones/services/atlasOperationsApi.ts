@@ -31,6 +31,8 @@ export type AtlasDispatch = {
   driver_is_working_day: boolean | null;
   driver_is_rest_day: boolean | null;
   driver_roster_status: string | null;
+  planned_vehicle_type: string | null;
+  vehicle_type_mismatch: boolean;
   planning_status: string;
   execution_status: string;
   risk_status: "green" | "attention" | "at_risk" | "critical";
@@ -73,6 +75,7 @@ export type AtlasServiceRoute = {
   is_active: boolean;
   planning_distance_meters: number | null;
   planning_duration_seconds: number | null;
+  planned_vehicle_type: string | null;
   atlas_ops_service_route_stops: Array<{
     id: string;
     stop_order: number;
@@ -212,7 +215,7 @@ export async function saveAtlasServiceTemplate(payload: Record<string, unknown>)
 
 export async function getAtlasServiceRoutes(serviceTemplateId: number): Promise<AtlasServiceRoute[]> {
   const result = await client().from("atlas_ops_service_routes")
-    .select("id, service_template_id, prefix, route_code, version, is_active, planning_distance_meters, planning_duration_seconds, atlas_ops_service_route_stops(id, stop_order, label, latitude, longitude, provider_place_id, location_source)")
+    .select("id, service_template_id, prefix, route_code, version, is_active, planning_distance_meters, planning_duration_seconds, planned_vehicle_type, atlas_ops_service_route_stops(id, stop_order, label, latitude, longitude, provider_place_id, location_source)")
     .eq("service_template_id", serviceTemplateId)
     .order("created_at", { ascending: false });
   if (result.error) throw new Error(getSupabaseErrorMessage(result.error, "No fue posible cargar las rutas del servicio base."));
@@ -221,7 +224,7 @@ export async function getAtlasServiceRoutes(serviceTemplateId: number): Promise<
 
 export async function getAtlasServiceRoute(routeId: string): Promise<AtlasServiceRoute> {
   const result = await client().from("atlas_ops_service_routes")
-    .select("id, service_template_id, prefix, route_code, version, is_active, planning_distance_meters, planning_duration_seconds, atlas_ops_service_route_stops(id, stop_order, label, latitude, longitude, provider_place_id, location_source)")
+    .select("id, service_template_id, prefix, route_code, version, is_active, planning_distance_meters, planning_duration_seconds, planned_vehicle_type, atlas_ops_service_route_stops(id, stop_order, label, latitude, longitude, provider_place_id, location_source)")
     .eq("id", routeId).single();
   if (result.error) throw new Error(getSupabaseErrorMessage(result.error, "No fue posible cargar la ruta asignada."));
   return result.data as AtlasServiceRoute;
@@ -235,6 +238,7 @@ export async function saveAtlasServiceRoute(input: {
   durationSeconds: number;
   matrixDurationSeconds: number;
   inputOrderMatrixDurationSeconds: number | null;
+  plannedVehicleType: string;
 }) {
   return unwrap<string>(client().rpc("atlas_ops_save_optimized_service_route", {
     p_service_template_id: input.serviceTemplateId,
@@ -243,7 +247,8 @@ export async function saveAtlasServiceRoute(input: {
     p_distance_meters: Math.round(input.distanceMeters),
     p_duration_seconds: Math.round(input.durationSeconds),
     p_optimization_matrix_duration_seconds: Math.round(input.matrixDurationSeconds),
-    p_input_order_matrix_duration_seconds: input.inputOrderMatrixDurationSeconds === null ? null : Math.round(input.inputOrderMatrixDurationSeconds)
+    p_input_order_matrix_duration_seconds: input.inputOrderMatrixDurationSeconds === null ? null : Math.round(input.inputOrderMatrixDurationSeconds),
+    p_planned_vehicle_type: input.plannedVehicleType
   }), "No fue posible guardar la ruta.");
 }
 
@@ -291,7 +296,7 @@ export async function optimizeAtlasOpenRoute(stops: Array<{ lat: number; lng: nu
   return callAtlasValhalla({ action: "optimize", stops, ...(fixedDestinationIndex === undefined ? {} : { fixedDestinationIndex }) }, signal);
 }
 
-export async function auditAtlasRouteIntelligence(route: AtlasOptimizedRoute, serviceTemplateId: number | null, vehicleId: string | null, signal?: AbortSignal): Promise<AtlasRouteAuditResponse> {
+export async function auditAtlasRouteIntelligence(route: AtlasOptimizedRoute, serviceTemplateId: number | null, vehicleId: string | null, plannedVehicleType: string, signal?: AbortSignal): Promise<AtlasRouteAuditResponse> {
   const db = client();
   const { data: sessionData } = await db.auth.getSession();
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
@@ -301,7 +306,7 @@ export async function auditAtlasRouteIntelligence(route: AtlasOptimizedRoute, se
   if (!route.maneuvers?.length) throw new Error("Valhalla no entregó maniobras para auditar esta ruta.");
   const response = await fetch(`${supabaseUrl.replace(/\/$/, "")}/functions/v1/atlas-route-intelligence`, {
     method: "POST", headers: { "content-type": "application/json", apikey: anonKey, authorization: `Bearer ${accessToken}` },
-    body: JSON.stringify({ serviceTemplateId, vehicleId, maneuvers: route.maneuvers }), signal
+    body: JSON.stringify({ serviceTemplateId, vehicleId, plannedVehicleType, maneuvers: route.maneuvers }), signal
   });
   const payload = await response.json() as AtlasRouteAuditResponse & { error?: string };
   if (!response.ok) throw new Error(payload.error === "audit_persistence_failed" ? "La auditoría no quedó guardada; la propuesta de ruta sigue disponible." : `No se pudo auditar la ruta (${payload.error ?? response.status}).`);

@@ -14,6 +14,7 @@ import { useDebouncedValue } from "../../../shared/hooks/useDebouncedValue";
 import { supabase } from "../../../shared/lib/supabase";
 import { purgeLegacyOperationsDrafts } from "../lib/legacyCleanup";
 import { estimateLocalRouteEnd, getRouteEndpoints } from "../lib/routeSchedule";
+import { vehicleTypeMismatch } from "../lib/vehicleType";
 import { OperationsLiveMap } from "../components/OperationsLiveMap";
 import {
   createAtlasDispatch,
@@ -180,6 +181,7 @@ function OperationsControlTowerApp() {
   const [serviceSearch, setServiceSearch] = useState("");
   const [dispatchServiceTemplateId, setDispatchServiceTemplateId] = useState("");
   const [dispatchRouteId, setDispatchRouteId] = useState("");
+  const [dispatchVehicleId, setDispatchVehicleId] = useState("");
   const [plannedStartLocal, setPlannedStartLocal] = useState("");
   const [plannedEndLocal, setPlannedEndLocal] = useState("");
 
@@ -187,6 +189,9 @@ function OperationsControlTowerApp() {
   const canOperate = isAdmin || (catalogsQuery.data?.editableContractIds.length ?? 0) > 0;
   const dispatchRoutesQuery = useQuery({ queryKey: queryKeys.operations.serviceRoutes(dispatchServiceTemplateId), queryFn: () => getAtlasServiceRoutes(Number(dispatchServiceTemplateId)), enabled: view === "planificacion" && Boolean(dispatchServiceTemplateId), staleTime: 30_000 });
   const selectedDispatchRoute = dispatchRoutesQuery.data?.find((route) => route.id === dispatchRouteId && route.is_active);
+  const selectedDispatchVehicle = catalogsQuery.data?.vehicles.find((vehicle) => vehicle.id === dispatchVehicleId);
+  const assignmentTypeMismatch = vehicleTypeMismatch(selectedDispatchRoute?.planned_vehicle_type, selectedDispatchVehicle?.vehicle_type);
+  const assignmentTypeUnverified = Boolean(selectedDispatchRoute?.planned_vehicle_type && dispatchVehicleId && !selectedDispatchVehicle?.vehicle_type?.trim());
   const dispatchRouteEndpoints = getRouteEndpoints(selectedDispatchRoute?.atlas_ops_service_route_stops);
   useEffect(() => {
     setPlannedEndLocal(estimateLocalRouteEnd(plannedStartLocal, selectedDispatchRoute?.planning_duration_seconds));
@@ -403,12 +408,15 @@ function OperationsControlTowerApp() {
           <div className="atlas-ops__panel-heading"><div><h2>Programar servicio</h2><p>Se valida la ficha BUK activa; la jornada se muestra como advertencia no bloqueante.</p></div><span className="atlas-ops__step">01 / PLAN</span></div>
           <div className="atlas-ops__form-grid">
             <Field label="Contrato"><select name="contract_id" required defaultValue=""><option value="" disabled>Selecciona contrato</option>{editableContracts.map((item) => <option value={item.id} key={item.id}>{item.code} · {item.contract_name}</option>)}</select></Field>
-            <Field label="Servicio base"><select name="service_template_id" required value={dispatchServiceTemplateId} onChange={(event) => { setDispatchServiceTemplateId(event.target.value); setDispatchRouteId(""); }}><option value="" disabled>Selecciona servicio</option>{catalogs?.templates.map((item) => <option value={item.id} key={item.id}>{item.name} · {item.service_type}</option>)}</select></Field>
-            <Field label="Ruta del servicio"><select name="route_id" value={dispatchRouteId} onChange={(event) => setDispatchRouteId(event.target.value)} required={(dispatchRoutesQuery.data?.filter((route) => route.is_active).length ?? 0) > 0} disabled={!dispatchServiceTemplateId || dispatchRoutesQuery.isLoading}><option value="">{dispatchRoutesQuery.isLoading ? "Cargando rutas…" : "Sin ruta asignada"}</option>{dispatchRoutesQuery.data?.filter((route) => route.is_active).map((route) => <option value={route.id} key={route.id}>{route.route_code} · versión {route.version}</option>)}</select></Field>
+            <Field label="Servicio base"><select name="service_template_id" required value={dispatchServiceTemplateId} onChange={(event) => { setDispatchServiceTemplateId(event.target.value); setDispatchRouteId(""); setDispatchVehicleId(""); }}><option value="" disabled>Selecciona servicio</option>{catalogs?.templates.map((item) => <option value={item.id} key={item.id}>{item.name} · {item.service_type}</option>)}</select></Field>
+            <Field label="Ruta del servicio"><select name="route_id" value={dispatchRouteId} onChange={(event) => setDispatchRouteId(event.target.value)} required={(dispatchRoutesQuery.data?.filter((route) => route.is_active).length ?? 0) > 0} disabled={!dispatchServiceTemplateId || dispatchRoutesQuery.isLoading}><option value="">{dispatchRoutesQuery.isLoading ? "Cargando rutas…" : "Sin ruta asignada"}</option>{dispatchRoutesQuery.data?.filter((route) => route.is_active).map((route) => <option value={route.id} key={route.id}>{route.route_code} · versión {route.version}{route.planned_vehicle_type ? ` · ${route.planned_vehicle_type}` : " · tipo histórico sin informar"}</option>)}</select></Field>
+            {selectedDispatchRoute && !selectedDispatchRoute.planned_vehicle_type && <p className="atlas-ops__info-note atlas-ops__field--wide" role="status">Esta versión de ruta es histórica y no tiene tipo planificado guardado; no es posible comparar el equipo.</p>}
             <Field label="Inicio planificado"><input type="datetime-local" name="planned_start_at" required value={plannedStartLocal} onChange={(event) => setPlannedStartLocal(event.target.value)} /></Field>
             <Field label="Fin estimado"><><input type="datetime-local" name="planned_end_at" value={plannedEndLocal} readOnly /><small>{selectedDispatchRoute?.planning_duration_seconds != null ? "Calculado desde la duración vial guardada; no incluye detenciones y no se puede editar." : "Selecciona una ruta guardada con duración para calcular el término."}</small></></Field>
             <Field label="Turno"><input name="shift" placeholder="AM / PM / A / B" required /></Field>
-            <Field label="Vehículo"><select name="vehicle_id" defaultValue=""><option value="">Pendiente de asignar</option>{catalogs?.vehicles.map((item) => <option value={item.id} key={item.id}>{item.code}{item.plate ? ` · ${item.plate}` : ""}</option>)}</select></Field>
+            <Field label="Vehículo"><select name="vehicle_id" value={dispatchVehicleId} onChange={(event) => setDispatchVehicleId(event.target.value)}><option value="">Pendiente de asignar</option>{catalogs?.vehicles.map((item) => <option value={item.id} key={item.id}>{item.code}{item.plate ? ` · ${item.plate}` : ""}{item.vehicle_type ? ` · ${item.vehicle_type}` : ""}</option>)}</select></Field>
+            {assignmentTypeMismatch && <p className="atlas-ops__warning-note atlas-ops__field--wide" role="status">El tipo planificado es {selectedDispatchRoute?.planned_vehicle_type}; el equipo seleccionado es {selectedDispatchVehicle?.vehicle_type}. Puedes continuar, pero revisa la compatibilidad del recorrido.</p>}
+            {assignmentTypeUnverified && <p className="atlas-ops__info-note atlas-ops__field--wide" role="status">El equipo no tiene tipo informado en la flota; no se puede comparar con el tipo planificado.</p>}
             <PlanningDriverLookup serviceDate={day} disabled={!canOperate} />
             <Field label="Origen"><input name="origin_label" value={dispatchRouteEndpoints.origin} placeholder="Se obtiene de la primera dirección de la ruta" readOnly /></Field>
             <Field label="Destino / postura"><input name="destination_label" value={dispatchRouteEndpoints.destination} placeholder="Se obtiene de la última dirección de la ruta" readOnly /></Field>
@@ -436,15 +444,22 @@ function OperationsControlTowerApp() {
       {selectedDispatch && <div className="atlas-ops__drawer-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setSelectedDispatch(""); }}>
         <aside className="atlas-ops__drawer" aria-label="Detalle del servicio">
           <div className="atlas-ops__drawer-header"><div><span>DETALLE OPERACIONAL</span><h2>Timeline del servicio</h2></div><button onClick={() => setSelectedDispatch("")} type="button" aria-label="Cerrar">×</button></div>
-          {selectedDispatchRecord && <dl className="atlas-ops__detail-facts">
-            <div><dt>Servicio</dt><dd>{selectedDispatchRecord.service_name ?? "Sin nombre"}</dd></div>
-            <div><dt>Contrato</dt><dd>{selectedDispatchRecord.contract_code}</dd></div>
-            <div><dt>Conductor</dt><dd>{selectedDispatchRecord.driver_name_snapshot ?? "Sin asignar"}</dd></div>
-            <div><dt>Vehículo</dt><dd><VehicleDescription dispatch={selectedDispatchRecord} /></dd></div>
-            <div><dt>Jornada del conductor</dt><dd><DriverRosterBadge isWorkingDay={selectedDispatchRecord.driver_is_working_day} isRestDay={selectedDispatchRecord.driver_is_rest_day} rosterStatus={selectedDispatchRecord.driver_roster_status} /></dd></div>
-            <div><dt>Planificación</dt><dd><Status value={selectedDispatchRecord.planning_status} /></dd></div>
-            <div><dt>Riesgo</dt><dd><Risk value={selectedDispatchRecord.risk_status} /></dd></div>
-          </dl>}
+          {selectedDispatchRecord && <section className="atlas-ops__detail-summary" aria-label="Resumen del despacho">
+            <div className="atlas-ops__detail-heading-facts"><div><span>Servicio</span><strong>{selectedDispatchRecord.service_name ?? "Sin nombre"}</strong></div><div><span>Contrato</span><strong>{selectedDispatchRecord.contract_code}</strong></div></div>
+            <div className="atlas-ops__detail-driver"><div><span>Conductor</span><strong>{selectedDispatchRecord.driver_name_snapshot ?? "Sin asignar"}</strong></div><div><span>Jornada</span><DriverRosterBadge isWorkingDay={selectedDispatchRecord.driver_is_working_day} isRestDay={selectedDispatchRecord.driver_is_rest_day} rosterStatus={selectedDispatchRecord.driver_roster_status} /></div></div>
+            <div className="atlas-ops__detail-section-head"><strong>Equipo asignado</strong>{selectedDispatchRecord.vehicle_type_mismatch && <span className="atlas-ops__warning-pill">Tipo distinto al planificado</span>}</div>
+            {selectedDispatchRecord.vehicle_type_mismatch && <p className="atlas-ops__warning-note" role="status">Ruta planificada para {selectedDispatchRecord.planned_vehicle_type}; equipo asignado {selectedDispatchRecord.vehicle_type}.</p>}
+            {!selectedDispatchRecord.vehicle_type_mismatch && selectedDispatchRecord.planned_vehicle_type && selectedDispatchRecord.vehicle_id && !selectedDispatchRecord.vehicle_type && <p className="atlas-ops__info-note" role="status">No se pudo comparar el equipo con el tipo planificado porque falta el tipo en la ficha de flota.</p>}
+            <div className="atlas-ops__equipment-grid">
+              <DetailFact label="N.º equipo" value={selectedDispatchRecord.vehicle_code} />
+              <DetailFact label="Patente" value={selectedDispatchRecord.plate} />
+              <DetailFact label="Tipo de equipo" value={selectedDispatchRecord.vehicle_type} />
+              <DetailFact label="Marca" value={selectedDispatchRecord.brand} />
+              <DetailFact label="Modelo" value={selectedDispatchRecord.model} />
+              <DetailFact label="Año" value={selectedDispatchRecord.year} />
+            </div>
+            <div className="atlas-ops__detail-status-row"><div><span>Planificación</span><Status value={selectedDispatchRecord.planning_status} /></div><div><span>Riesgo</span><Risk value={selectedDispatchRecord.risk_status} /></div></div>
+          </section>}
           {canEditSelectedDispatch && selectedDispatchRecord && isReassignable(selectedDispatchRecord) && <button className="atlas-ops__button atlas-ops__button--quiet" type="button" onClick={() => setReassignDispatch(selectedDispatchRecord.id)}>Cambiar conductor o vehículo</button>}
           <h3 className="atlas-ops__timeline-title">Actividad registrada</h3>
           {eventsQuery.isLoading ? <p className="atlas-ops__timeline-state">Cargando historial…</p> : eventsQuery.isError ? <p className="atlas-ops__timeline-state" role="alert">No se pudo cargar el historial.</p> : eventsQuery.data?.length ? <ol className="atlas-ops__timeline">{eventsQuery.data.map((event) => <DispatchEvent key={String(event.id)} event={event} />)}</ol> : <p className="atlas-ops__timeline-state">Este servicio aún no registra eventos de actividad.</p>}
@@ -518,6 +533,10 @@ function Field({ label, children, wide = false }: { label: string; children: Rea
   return <label className={`atlas-ops__field${wide ? " atlas-ops__field--wide" : ""}`}><span>{label}</span>{children}</label>;
 }
 
+function DetailFact({ label, value }: { label: string; value: string | null | undefined }) {
+  return <div className="atlas-ops__equipment-fact"><span>{label}</span><strong>{value?.trim() || "Sin informar"}</strong></div>;
+}
+
 function DispatchTable({ rows, loading, onSelect, onTransition, onReassign, canOperate, isAdmin, editableContractIds, dispatchMode = false }: {
   rows: AtlasDispatch[]; loading: boolean; onSelect: (id: string) => void; onTransition: (id: string, action: string) => void; onReassign: (id: string) => void; canOperate: boolean; isAdmin: boolean; editableContractIds: number[]; dispatchMode?: boolean;
 }) {
@@ -538,7 +557,7 @@ function isReassignable(dispatch: AtlasDispatch) {
 function VehicleDescription({ dispatch }: { dispatch: AtlasDispatch }) {
   if (!dispatch.vehicle_id) return <span className="atlas-ops__muted">Sin asignar</span>;
   const detail = [dispatch.vehicle_type, dispatch.brand, dispatch.model, dispatch.year].filter(Boolean).join(" · ");
-  return <span className="atlas-ops__vehicle-description"><strong>{dispatch.vehicle_code ?? "Equipo"}</strong><small>{dispatch.plate ?? "Patente sin informar"}</small>{detail && <small>{detail}</small>}</span>;
+  return <span className="atlas-ops__vehicle-description"><strong>{dispatch.vehicle_code ?? "Equipo"}</strong><small>{dispatch.plate ?? "Patente sin informar"}</small>{detail && <small>{detail}</small>}{dispatch.vehicle_type_mismatch && <small className="atlas-ops__vehicle-warning">Tipo distinto al planificado ({dispatch.planned_vehicle_type})</small>}{!dispatch.vehicle_type_mismatch && dispatch.planned_vehicle_type && !dispatch.vehicle_type && <small className="atlas-ops__vehicle-warning">Tipo sin informar; no comparado</small>}</span>;
 }
 
 function DriverRosterBadge({ isWorkingDay, isRestDay, rosterStatus }: { isWorkingDay: boolean | null | undefined; isRestDay: boolean | null | undefined; rosterStatus?: string | null }) {
@@ -574,6 +593,9 @@ function ResourceReassignmentDialog({ dispatch, vehicles, pending, onClose, onSu
   const [vehicleId, setVehicleId] = useState("");
   const [reason, setReason] = useState("");
   const isContingency = ["in_progress", "suspended"].includes(dispatch.execution_status);
+  const replacementVehicle = vehicles.find((item) => item.id === vehicleId);
+  const replacementMismatch = vehicleTypeMismatch(dispatch.planned_vehicle_type, replacementVehicle?.vehicle_type);
+  const replacementUnverified = Boolean(dispatch.planned_vehicle_type && vehicleId && !replacementVehicle?.vehicle_type?.trim());
   return <div className="atlas-ops__modal-backdrop" role="presentation"><form className="atlas-ops__modal" aria-label="Cambiar recursos del servicio" onSubmit={(event) => {
     event.preventDefault();
     if (!driver && !vehicleId) return;
@@ -585,6 +607,8 @@ function ResourceReassignmentDialog({ dispatch, vehicles, pending, onClose, onSu
       <Field label="Reemplazar vehículo (opcional)"><select value={vehicleId} onChange={(event) => setVehicleId(event.target.value)} disabled={pending}><option value="">Sin cambio</option>{vehicles.filter((item) => item.id !== dispatch.vehicle_id).map((item) => <option value={item.id} key={item.id}>{item.code} · {item.plate ?? "Sin patente"} · {[item.vehicle_type, item.brand, item.model, item.year].filter(Boolean).join(" ")}</option>)}</select></Field>
       <Field label={isContingency ? "Motivo de contingencia" : "Motivo del cambio"} wide><textarea value={reason} onChange={(event) => setReason(event.target.value)} rows={3} minLength={5} required disabled={pending} placeholder={isContingency ? "Ej.: conductor original no llegó; se reasigna a…" : "Indica por qué se reemplazan los recursos."} /></Field>
     </div>
+    {replacementMismatch && <p className="atlas-ops__warning-note" role="status">La ruta se planificó para {dispatch.planned_vehicle_type}; el equipo de reemplazo es {replacementVehicle?.vehicle_type}. La reasignación se permite, pero conviene revisar el recorrido.</p>}
+    {replacementUnverified && <p className="atlas-ops__info-note" role="status">El reemplazo no tiene tipo informado en la flota; no se puede comparar con el tipo planificado.</p>}
     {driver && <DriverRosterBadge isWorkingDay={driver.isWorkingDay} isRestDay={driver.isRestDay} rosterStatus={driver.rosterStatus} />}
     <div className="atlas-ops__form-footer"><button className="atlas-ops__button atlas-ops__button--quiet" onClick={onClose} type="button">Cancelar</button><button className="atlas-ops__button atlas-ops__button--primary" disabled={pending || (!driver && !vehicleId) || reason.trim().length < 5}>Guardar cambio</button></div>
   </form></div>;
