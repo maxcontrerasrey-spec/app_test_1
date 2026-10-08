@@ -19,7 +19,7 @@ PASS
 
 - Errores: 0
 - Warnings: 1
-- Info: 30
+- Info: 24
 
 ## Errores
 
@@ -27,7 +27,7 @@ PASS
 
 ## Warnings
 
-- PERF-001 · `src/modules/operaciones/pages/OperationsRoutePlannerDemo.tsx` · Archivo sobre 800 lineas: 836.
+- PERF-001 · `src/modules/operaciones/pages/OperationsRoutePlannerDemo.tsx` · Archivo sobre 800 lineas: 837.
 
 ## Gates informativos
 
@@ -55,9 +55,3 @@ PASS
 - build:frontend-check: PASS
 - audit:performance-baseline: PASS
 - git diff --check: PASS
-- test:coverage: PASS
-- smoke:frontend-routes: PASS
-- check:edge:sync-buk-candidates: PASS
-- check:edge:verify-competency-certificate: PASS
-- check:edge:verify-hiring-document: PASS
-- check:edge:sync-buk-job-positions: PASS

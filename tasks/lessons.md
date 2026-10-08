@@ -4370,3 +4370,9 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - `BLOCK_MANEUVER` y `REQUEST_ALTERNATIVE` deben exigir replan aunque `requiresReplan` sea false; no aceptar la ruta por una bandera resumen inconsistente.
 - Pasar al auditor el resultado real de la búsqueda vial; sin conteos/estado de órdenes candidatos puede reportar erróneamente que no hubo comparación. Mantener el origen de selección explícito y no llamar óptimo global a una búsqueda acotada.
 - Probar la misma regla en normalizador, UI y RPC persistente; una regresión que cubre solo una capa deja un camino de guardado abierto.
+
+# 2026-10-08 - Revalidar lo que realmente se va a usar
+
+- Si una ruta guardada se vuelve a trazar al cargarla, auditar ese trazado nuevo; un run anterior de la misma lista de paradas no representa necesariamente la geometría visible actual.
+- Repetir el gate de IA en la frontera de despacho/publicación, ligado a las paradas exactas guardadas. Una ruta histórica sin vínculo se conserva para consulta, pero no puede entrar a un despacho nuevo.
+- Un U-turn trazable no prueba marcha atrás ni inviabilidad. No aceptar un recorrido más lento solo por reducir U-turns; la mejora debe aparecer en tiempo/ruta completa y quedar explicada.

@@ -529,13 +529,13 @@ export function OperationsRoutePlannerDemo() {
     }
   }
 
-  async function evaluateRouteAudit(candidate: AtlasOptimizedRoute, candidateStops: Array<{ lat: number; lng: number }>) {
+  async function evaluateRouteAudit(candidate: AtlasPlannedRoute, candidateStops: Array<{ lat: number; lng: number }>, vehicleType = plannedVehicleType, serviceRouteId: string | null = null, routeKind: "OPTIMIZED_PROPOSAL" | "SAVED_ROUTE_PREVIEW" = "OPTIMIZED_PROPOSAL", serviceTemplateId = Number(selectedServiceId) || null) {
     const requestId = ++auditSequence.current;
     setRouteAudit(null);
     setRouteAuditError("");
     setRouteAuditStatus("loading");
     try {
-      const audit = await auditAtlasRouteIntelligence(candidate, candidateStops, Number(selectedServiceId) || null, auditVehicleId || null, plannedVehicleType);
+      const audit = await auditAtlasRouteIntelligence(candidate, candidateStops, serviceTemplateId, auditVehicleId || null, vehicleType, { serviceRouteId, routeKind });
       if (auditSequence.current !== requestId) return;
       setRouteAudit(audit);
       const complete = isRouteAuditEvaluationComplete("ready", audit);
@@ -702,7 +702,8 @@ export function OperationsRoutePlannerDemo() {
       if (loadId !== routeLoadSequence.current) return;
       setPlanningRoute(preview);
       setRouteState("ready");
-      setNotice(`Ruta ${selected.route_code} · versión ${selected.version} cargada.`);
+      setNotice(`${selected.route_intelligence_run_id ? "" : "Esta versión histórica no tiene una auditoría IA vinculada; para despacharla debes proponer y guardar una versión auditada. "}Ruta ${selected.route_code} · versión ${selected.version} cargada. Se recalculó el trazado con Valhalla y se está validando con IA.`);
+      await evaluateRouteAudit(preview, loaded, routeVehicleCategory, selected.id, "SAVED_ROUTE_PREVIEW", selected.service_template_id);
     } catch (reason) {
       if (loadId !== routeLoadSequence.current) return;
       setRouteState("error");
@@ -757,7 +758,7 @@ export function OperationsRoutePlannerDemo() {
           </div>
           <label>Rutas guardadas<select value={selectedSavedRouteId} onChange={(event) => void loadSavedRoute(event.target.value)} disabled={!savedRoutes.length}>
             <option value="">{savedRoutes.length ? "Crear nueva ruta" : "Aún no hay rutas guardadas"}</option>
-            {savedRoutes.map((item) => <option key={item.id} value={item.id}>{item.route_code} · v{item.version}{item.is_active ? " · Activa" : " · Histórica"}</option>)}
+            {savedRoutes.map((item) => <option key={item.id} value={item.id}>{item.route_code} · v{item.version}{item.is_active ? " · Activa" : " · Histórica"}{item.route_intelligence_run_id ? "" : " · requiere auditoría para despacho"}</option>)}
           </select></label>
         </div>}
         <div className="ops-route-demo__view-switch" role="tablist" aria-label="Vistas de demo">

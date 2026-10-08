@@ -149,9 +149,9 @@ function routeTotals(legs: AtlasRoutePathLeg[]) {
 }
 
 function isBetterPlan(candidate: ReturnType<typeof routeTotals>, current: ReturnType<typeof routeTotals>) {
-  if (candidate.uturnCount !== current.uturnCount) return candidate.uturnCount < current.uturnCount;
   if (candidate.durationSeconds !== current.durationSeconds) return candidate.durationSeconds < current.durationSeconds;
-  return candidate.distanceMeters < current.distanceMeters;
+  if (candidate.distanceMeters !== current.distanceMeters) return candidate.distanceMeters < current.distanceMeters;
+  return candidate.uturnCount < current.uturnCount;
 }
 
 /** Selects a bounded set of per-leg Valhalla alternates and evaluates their recomposed full route. */
@@ -179,7 +179,10 @@ export function selectRoutePathAlternatives(
   const evaluate = (optionIndex: number) => {
     if (optionIndex >= eligibleIndexes.length) {
       const totals = routeTotals(selected);
-      if (totals.uturnCount >= baseTotals.uturnCount || totals.durationSeconds - baseTotals.durationSeconds > totalDurationAllowance) return;
+      // A mapped U-turn is legal unless there is evidence it requires reversing or is physically impossible.
+      // Never trade away a faster full route merely to reduce the U-turn count.
+      if (totals.uturnCount >= baseTotals.uturnCount || totals.durationSeconds > baseTotals.durationSeconds
+        || totals.durationSeconds - baseTotals.durationSeconds > totalDurationAllowance) return;
       if (isBetterPlan(totals, bestTotals)) {
         bestLegs = [...selected];
         bestTotals = totals;

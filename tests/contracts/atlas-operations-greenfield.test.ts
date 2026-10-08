@@ -20,6 +20,7 @@ const navigation = readFileSync(new URL("../../src/shared/config/navigation.ts",
 const derivedDispatchMigration = readFileSync(new URL("../../supabase/migrations/20261007191119_atlas_dispatch_route_derived_fields.sql", import.meta.url), "utf8");
 const crossContractDriversMigration = readFileSync(new URL("../../supabase/migrations/20261007201116_allow_atlas_cross_contract_drivers.sql", import.meta.url), "utf8");
 const resourceReassignmentMigration = readFileSync(new URL("../../supabase/migrations/20261008001246_atlas_dispatch_resource_reassignment_and_roster_warning.sql", import.meta.url), "utf8");
+const dispatchAuditMigration = readFileSync(new URL("../../supabase/migrations/20261008210000_atlas_dispatch_requires_audited_route.sql", import.meta.url), "utf8");
 const atlasOperationsApi = readFileSync(new URL("../../src/modules/operaciones/services/atlasOperationsApi.ts", import.meta.url), "utf8");
 
 describe("Atlas Operations greenfield replacement", () => {
@@ -98,6 +99,19 @@ describe("Atlas Operations greenfield replacement", () => {
     expect(page).toContain("dispatch.vehicle_type, dispatch.brand, dispatch.model, dispatch.year");
     expect(page).toContain("No existe un dato de mantenimiento conectado");
     expect(atlasOperationsApi).toContain("driver_roster_status: string | null");
+  });
+
+  it("requires a usable OpenAI audit tied to the exact saved stops before dispatch", () => {
+    expect(dispatchAuditMigration).toMatch(/ai\.provider = 'openai'/);
+    expect(dispatchAuditMigration).toMatch(/ai\.mode = 'SHADOW'/);
+    expect(dispatchAuditMigration).toMatch(/ai\.route_snapshot->'stops' = \([\s\S]*jsonb_agg\(jsonb_build_object\('lat', s\.latitude, 'lng', s\.longitude\) order by s\.stop_order\)/);
+    expect(dispatchAuditMigration).toMatch(/ai\.decision not in \('ERROR', 'REJECT'\)/);
+    expect(dispatchAuditMigration).toMatch(/not ai\.requires_replan/);
+    expect(dispatchAuditMigration).toMatch(/feedback_type in \('ACCEPT_AI', 'OVERRIDE_FEASIBLE'\)/);
+    expect(dispatchAuditMigration).toMatch(/maneuver->>'decision' = 'INSUFFICIENT_EVIDENCE'/);
+    expect(dispatchAuditMigration).toMatch(/maneuver->>'recommendedAction' in \('HUMAN_REVIEW', 'PENALIZE_SEGMENT'\)/);
+    expect(dispatchAuditMigration).toMatch(/atlas_ops_route_has_usable_ai_audit\(new\.route_id\)/);
+    expect(dispatchAuditMigration).toMatch(/Vuelve a planificarla y guardarla/);
   });
 
   it("keeps the operational planner free of demo data and reports actionable driver simulation errors", () => {

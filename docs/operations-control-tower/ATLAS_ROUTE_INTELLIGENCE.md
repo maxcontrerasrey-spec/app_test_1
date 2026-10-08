@@ -48,14 +48,15 @@ El modo se controla en Supabase Edge Function con `ATLAS_ROUTE_INTELLIGENCE_MODE
 
 ## Operación, feedback y recuperación
 
-La propuesta de ruta se muestra antes de esperar la auditoría. Si la auditoría falla, o si pide revisión humana y aún no hay un feedback positivo, la ruta permanece como borrador y no se puede aplicar, guardar ni simular. El panel presenta decisión, motivos, latencia, maniobras revisadas y feedback: aceptar, override viable/no viable o falta de información. Los overrides requieren motivo y quedan inmutables; el guardado valida el feedback nuevamente en PostgreSQL.
+La propuesta se muestra como provisional mientras corre la auditoría. Si falla, o si pide revisión humana y aún no hay feedback positivo, no se puede aplicar, guardar ni simular. Al cargar una ruta guardada, Valhalla vuelve a trazarla y Route Intelligence audita esa vista previa por separado; no se presenta una búsqueda de orden como si hubiera ocurrido. El panel presenta decisión, motivos, latencia, maniobras revisadas y feedback. Los overrides requieren motivo y quedan inmutables; el guardado y la creación/publicación del despacho vuelven a validar evidencia en PostgreSQL.
 
 Desactivar inmediatamente configurando `ATLAS_ROUTE_INTELLIGENCE_MODE=OFF`. Las ejecuciones, restricciones y eventos son evidencia histórica; no borrarlos para hacer rollback. Para investigar: revisar logs de `atlas-route-intelligence`, categoría de error, idempotency/candidate hashes, versiones y `estimated_cost_usd` en `atlas_ops_route_intelligence_runs`.
 
 ## Restricciones conocidas y siguiente etapa
 
-- Los U-turns continúan permitidos cuando Valhalla puede trazarlos; el sistema no los interpreta como marcha atrás ni los prohíbe globalmente. Para giros próximos a una parada, prueba un acceso alternativo cercano con la misma categoría de equipo y evidencia peatonal acotada.
-- La búsqueda del orden de paradas evalúa un conjunto acotado de hasta cuatro órdenes alternativos, los traza de nuevo con Valhalla y elige el más rápido entre los trazados válidos. No equivale a explorar todas las permutaciones ni garantiza el óptimo global. Si no hay mejora comprobada, se conserva el mejor candidato trazado y se informa cuántos se evaluaron.
+- Los U-turns continúan permitidos cuando Valhalla puede trazarlos; no se interpretan como marcha atrás ni se prohíben globalmente. Una alternativa solo reemplaza el tramo si mejora duración del recorrido completo; no se toma una ruta más lenta solo para eliminar un giro en U. Los datos del mapa no certifican radio de giro o espacio físico.
+- La búsqueda del orden de paradas evalúa un conjunto acotado de hasta ocho órdenes alternativos, más el orden base, los traza de nuevo con Valhalla y elige el más rápido entre los trazados válidos. No equivale a explorar todas las permutaciones ni garantiza el óptimo global. Si no hay mejora comprobada, se conserva el mejor candidato trazado y se informa cuántos se evaluaron.
+- Una ruta histórica que no tenga auditoría OpenAI ligada a sus paradas permanece en el catálogo para consulta, pero PostgreSQL bloquea su uso en un nuevo despacho hasta planificar y guardar una versión evaluada. La auditoría de un despacho considera también feedback positivo cuando la IA solicita revisión humana.
 - Las restricciones tienen RPC segura y audit trail. La gestión inicial se realiza por RPC con rol superadministrador; aún falta una pantalla administrativa dedicada.
 - El perfil dimensional no se llena desde patentes o tipo de flota. Debe cargarse desde una fuente técnica confiable.
 - Tráfico, señalización y restricciones de faena no están conectados salvo las restricciones Atlas validadas.

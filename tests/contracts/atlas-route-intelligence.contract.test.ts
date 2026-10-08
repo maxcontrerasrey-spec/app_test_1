@@ -77,11 +77,16 @@ describe("Atlas Route Intelligence security contract", () => {
   });
 
   it("passes bounded Valhalla route-order search evidence to AI instead of letting it claim no comparison occurred", () => {
-    expect(operationsApi).toContain("reportedRouteOrderSearch: route.routeOrderSearch");
+    expect(operationsApi).toContain("reportedRouteOrderSearch: optimizedRoute.routeOrderSearch");
     expect(edge).toContain("reportedRouteOrderSearch");
     expect(edge).toContain("no afirmar que no hubo comparación de órdenes");
     expect(edge).toContain("no llames exhaustiva ni global a una búsqueda acotada");
-    expect(edge).toContain("route-intelligence-prompt:1.4.0");
+    expect(edge).toContain("route-intelligence-prompt:1.5.0");
+    expect(edge).toContain('const routeKind = row.routeKind === undefined ? "OPTIMIZED_PROPOSAL" : row.routeKind');
+    expect(edge).toContain('routeSnapshot.routeKind es SAVED_ROUTE_PREVIEW');
+    expect(edge).toContain('service_route_id: serviceRouteId');
+    expect(operationsApi).toContain('routeKind?: "OPTIMIZED_PROPOSAL" | "SAVED_ROUTE_PREVIEW"');
+    expect(operationsApi).toContain('serviceRouteId: options.serviceRouteId ?? null');
   });
 
   it("accepts only the producer's empty restriction placeholder and reloads validated restrictions server-side", () => {

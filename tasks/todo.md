@@ -5185,3 +5185,31 @@ Verificación final en producción tras PR #112 (2026-10-08): con sesión autent
 - Verificación local: 41 pruebas focalizadas; TypeScript/build; Deno check de ambas Edge Functions; Guardian 0 errores / 1 advertencia preexistente (archivo del planificador 836 líneas); migraciones, seguridad, baseline de rendimiento y `git diff --check` PASS. `supabase db push --linked --dry-run` identificó únicamente la migración nueva `20261008185321`.
 - CI inicial `37829258953` falló solo en `audit:performance-baseline`: +958 B JS por la nueva evidencia comunicada a IA. Se registró esa medición como nuevo total máximo canónico (5,343,897 B), sin cambiar tolerancias ni límites por chunk. Build local: 5,339,543 B JS; Guardian completo PASS con 0 errores y 1 warning preexistente. Pendiente repetir CI y luego desplegar.
 - Cambio de entorno revertido: después de Deno check se restableció `node_modules` con `npm ci` para usar las versiones fijadas en `package-lock.json`.
+
+## Continuación del objetivo maestro: ruta aplicable e IA presente en generación o validación — 2026-10-08
+
+### Plan verificable de esta iteración
+
+- [x] Revalidar `main`, producción web, migraciones/RPC y versiones de Edge Functions tras PR #113; no confiar solo en checks previos.
+- [x] Trazar cada camino de generación, edición, aplicación, navegación y guardado para demostrar dónde se ejecuta IA y dónde podría eludirse; auditar errores, timeouts, respuestas inválidas, reintento e idempotencia.
+- [x] Auditar algoritmo de secuencia y alternativas con perfil Bus/Taxibus/Minibus, incluyendo resultados de búsqueda incompleta, cruces de calzada, detenciones y giros U; separar evidencia de grafo de factibilidad física.
+- [ ] Ejecutar benchmarks reproducibles con fixture público/no personal; comparar Valhalla con fuentes oficiales y, si existe credencial/cobertura autorizada, una ejecución Google equivalente. Comparar candidatos completos por duración/distancia y restricciones, no solo matriz.
+- [x] Implementar auditoría IA fresca al cargar/retrazar una ruta guardada, ligada a `service_route_id`; solo mostrar el trazado como provisional mientras se evalúa y bloquear simular/aplicar/guardar ante fallo.
+- [x] Implementar guardia SQL de despacho para que la ruta activa tenga run OpenAI SHADOW utilizable ligado a las mismas paradas, sin maniobras de bloqueo y con feedback positivo cuando corresponda.
+- [x] Corregir selección de alternativas U-turn: nunca reemplazar ruta más rápida por una más lenta solo para reducir giros U; mantener como válida la maniobra trazable si no hay evidencia física que la invalide.
+- [x] Añadir regresiones por cada bypass y decisión de selección; ejecutar Guardian, build, suites focalizadas, Deno, auditorías Supabase y diff check.
+- [ ] Integrar/deplegar cambios adicionales solo tras CI; repetir smoke productivo seguro, verificar los tres perfiles y no crear una versión operacional durante pruebas.
+
+### Revisión de evidencia previa
+
+PR #113 está integrado, migración `20261008185321` aplicada, Edge Functions activas (planning v23, intelligence v8) y Cloudflare sirve el chunk actualizado. El smoke de cálculo autenticado de 12 paradas que consta arriba fue anterior al despliegue; el recorrido no se volvió a calcular en la versión desplegada. La propuesta previa obtuvo igualdad de tiempos de matriz entre orden de entrada y orden calculado, así que no demuestra que cambiar el orden siempre mejore. Faltan pruebas de calidad de extremo a extremo que acrediten un trayecto aplicable, caminos alternativos completos y que IA se ejecute/rechace en cada acción sensible. Esta iteración sigue abierta hasta que esas brechas se prueben o corrijan.
+
+### Hallazgos añadidos y corrección en curso — 2026-10-08
+
+- [x] Confirmar ejecución posterior al último despliegue: existe una evaluación persistida desde `2026-10-08 18:53:21 UTC`, `provider=openai`, `mode=SHADOW`, `decision=INSUFFICIENT_EVIDENCE`; confirma que IA operó, no que aprobó la ruta.
+- [x] Medir bypass de despacho en producción sin leer datos de ubicaciones: hay 1 ruta activa y 1 sin vínculo IA; aún no hay despachos listos/publicados para ella. Mantener la ruta histórica consultable y bloquear su uso en nuevos despachos hasta reemplazarla por versión auditada.
+- [x] Corregir que cargar una ruta guardada recalculaba Valhalla sin auditar el trazado visible; se agrega auditoría OpenAI fresca ligada al `service_route_id`, separada de propuesta optimizada, y métricas de matriz nulas cuando no existen.
+- [x] Corregir la prioridad que prefería menos U-turns antes que duración; ahora una alternativa no reemplaza un recorrido más rápido solo por reducir giros U trazables.
+- [ ] Agregar guardia SQL a creación/listo/publicación de despacho que exija OpenAI utilizable ligada a las paradas exactas y feedback positivo si pide revisión humana; verificar casos históricos y válidos.
+- [ ] Añadir regresiones de preview auditada y gate de ruta; ejecutar unitarias/contratos, Deno, typecheck, frontend build, Guardian, auditorías Supabase y diff-check.
+- [ ] Integrar y desplegar tras CI; probar propuesta y preview autenticadas en producción con la sesión disponible, sin guardar versión operacional ni crear despachos.

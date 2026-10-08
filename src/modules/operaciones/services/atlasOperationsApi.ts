@@ -76,6 +76,7 @@ export type AtlasServiceRoute = {
   planning_distance_meters: number | null;
   planning_duration_seconds: number | null;
   planned_vehicle_type: string | null;
+  route_intelligence_run_id: string | null;
   atlas_ops_service_route_stops: Array<{
     id: string;
     stop_order: number;
@@ -90,7 +91,7 @@ export type AtlasServiceRoute = {
   }>;
 };
 
-const ATLAS_SERVICE_ROUTE_SELECT = "id, service_template_id, prefix, route_code, version, is_active, planning_distance_meters, planning_duration_seconds, planned_vehicle_type, atlas_ops_service_route_stops(id, stop_order, label, latitude, longitude, original_lat:requested_latitude, original_lng:requested_longitude, access_m:access_adjustment_meters, provider_place_id, location_source)";
+const ATLAS_SERVICE_ROUTE_SELECT = "id, service_template_id, prefix, route_code, version, is_active, planning_distance_meters, planning_duration_seconds, planned_vehicle_type, route_intelligence_run_id, atlas_ops_service_route_stops(id, stop_order, label, latitude, longitude, original_lat:requested_latitude, original_lng:requested_longitude, access_m:access_adjustment_meters, provider_place_id, location_source)";
 
 export type TomTomSuggestion = { id: string | null; type: "address" | "street" | "intersection" | null; label: string };
 export type TomTomPlaceMatch = { id: string | null; type: string | null; label: string; lat: number; lng: number };
@@ -316,7 +317,7 @@ export async function optimizeAtlasOpenRoute(stops: Array<{ lat: number; lng: nu
   return callAtlasValhalla({ action: "optimize", stops, plannedVehicleType, ...(fixedDestinationIndex === undefined ? {} : { fixedDestinationIndex }) }, signal);
 }
 
-export async function auditAtlasRouteIntelligence(route: AtlasOptimizedRoute, stops: Array<{ lat: number; lng: number }>, serviceTemplateId: number | null, vehicleId: string | null, plannedVehicleType: string, signal?: AbortSignal): Promise<AtlasRouteAuditResponse> {
+export async function auditAtlasRouteIntelligence(route: AtlasPlannedRoute, stops: Array<{ lat: number; lng: number }>, serviceTemplateId: number | null, vehicleId: string | null, plannedVehicleType: string, options: { serviceRouteId?: string | null; routeKind?: "OPTIMIZED_PROPOSAL" | "SAVED_ROUTE_PREVIEW" } = {}, signal?: AbortSignal): Promise<AtlasRouteAuditResponse> {
   const db = client();
   const { data: sessionData } = await db.auth.getSession();
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
@@ -325,17 +326,19 @@ export async function auditAtlasRouteIntelligence(route: AtlasOptimizedRoute, st
   if (!accessToken || !supabaseUrl || !anonKey) throw new Error("Inicia sesión como superadministrador para auditar la ruta.");
   if (!route.maneuvers?.length) throw new Error("Valhalla no entregó maniobras para auditar esta ruta.");
   if (stops.length < 2 || stops.length > 151) throw new Error("La auditoría requiere las paradas exactas de la propuesta.");
+  const optimizedRoute = route as Partial<AtlasOptimizedRoute>;
   const routeSnapshot = {
     stops: stops.map(({ lat, lng }) => ({ lat, lng })),
     distanceMeters: Math.round(route.distanceMeters),
     durationSeconds: Math.round(route.durationSeconds),
-    matrixDurationSeconds: Math.round(route.matrixDurationSeconds),
-    inputOrderMatrixDurationSeconds: route.inputOrderMatrixDurationSeconds === null ? null : Math.round(route.inputOrderMatrixDurationSeconds),
-    reportedRouteOrderSearch: route.routeOrderSearch ? {
-      candidatesEvaluated: route.routeOrderSearch.candidatesEvaluated,
-      failedCandidates: route.routeOrderSearch.failedCandidates,
-      alternativeApplied: route.routeOrderSearch.alternativeApplied,
-      status: route.routeOrderSearch.status,
+    matrixDurationSeconds: typeof optimizedRoute.matrixDurationSeconds === "number" ? Math.round(optimizedRoute.matrixDurationSeconds) : null,
+    inputOrderMatrixDurationSeconds: optimizedRoute.inputOrderMatrixDurationSeconds == null ? null : Math.round(optimizedRoute.inputOrderMatrixDurationSeconds),
+    routeKind: options.routeKind ?? "OPTIMIZED_PROPOSAL",
+    reportedRouteOrderSearch: optimizedRoute.routeOrderSearch ? {
+      candidatesEvaluated: optimizedRoute.routeOrderSearch.candidatesEvaluated,
+      failedCandidates: optimizedRoute.routeOrderSearch.failedCandidates,
+      alternativeApplied: optimizedRoute.routeOrderSearch.alternativeApplied,
+      status: optimizedRoute.routeOrderSearch.status,
       selectionAuthority: "VALHALLA_COMPLETE_ROUTE_DURATION"
     } : null,
     plannedVehicleType: route.plannedVehicleType ?? plannedVehicleType,
@@ -350,7 +353,7 @@ export async function auditAtlasRouteIntelligence(route: AtlasOptimizedRoute, st
   };
   const response = await fetch(`${supabaseUrl.replace(/\/$/, "")}/functions/v1/atlas-route-intelligence`, {
     method: "POST", headers: { "content-type": "application/json", apikey: anonKey, authorization: `Bearer ${accessToken}` },
-    body: JSON.stringify({ evaluationId: crypto.randomUUID(), serviceTemplateId, vehicleId, plannedVehicleType, routeSnapshot, maneuvers: route.maneuvers }), signal
+    body: JSON.stringify({ evaluationId: crypto.randomUUID(), serviceTemplateId, serviceRouteId: options.serviceRouteId ?? null, vehicleId, plannedVehicleType, routeSnapshot, maneuvers: route.maneuvers }), signal
   });
   const payload = await response.json() as AtlasRouteAuditResponse & { error?: string };
   if (!response.ok) throw new Error(payload.error === "audit_persistence_failed" ? "La auditoría no quedó guardada; la propuesta de ruta sigue disponible." : `No se pudo auditar la ruta (${payload.error ?? response.status}).`);
