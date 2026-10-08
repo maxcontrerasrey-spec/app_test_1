@@ -52,8 +52,9 @@ export function AtlasRouteAuditPanel({
   feedbackSaving,
   feedbackSaved,
   alternativeLoading,
-  alternativeAttempted,
-  onRequestAlternative,
+  alternativeAttempts,
+  alternativeSearchComplete,
+  onRetryAudit,
   onFeedbackTypeChange,
   onFeedbackReasonChange,
   onSubmitFeedback,
@@ -66,8 +67,9 @@ export function AtlasRouteAuditPanel({
   feedbackSaving: boolean;
   feedbackSaved: boolean;
   alternativeLoading: boolean;
-  alternativeAttempted: boolean;
-  onRequestAlternative: () => void;
+  alternativeAttempts: number;
+  alternativeSearchComplete: boolean;
+  onRetryAudit: () => void;
   onFeedbackTypeChange: (value: RouteAuditFeedbackType) => void;
   onFeedbackReasonChange: (value: string) => void;
   onSubmitFeedback: () => void;
@@ -75,17 +77,17 @@ export function AtlasRouteAuditPanel({
   return <section className="ops-route-demo__message ops-route-demo__route-audit" aria-live="polite">
     <strong>Route Intelligence · revisión con IA</strong>
     {status === "loading" && <p>La IA está evaluando esta ruta. No se puede aplicar ni guardar hasta completar la revisión.</p>}
-    {status === "error" && <p role="alert">{error}</p>}
+    {status === "error" && <><p role="alert">{error}</p><button type="button" className="ops-route-demo__secondary" onClick={onRetryAudit}>Reintentar evaluación IA de esta misma ruta</button></>}
     {audit && <>
       <p><b>{auditDecisionLabel(audit.decision)}</b>{audit.riskScore === null ? " · sin puntaje" : ` · indicador ${audit.riskScore}/100`}{routeAuditNeedsHumanReview(audit) ? " · requiere revisión humana" : ""}</p>
       <p>{audit.summary}</p>
       {routeAuditRequiresReplan(audit) && <>
-        <p role="alert">La IA marcó una maniobra que requiere cambiar el recorrido. Puedes buscar otra secuencia automáticamente; se mantienen las mismas direcciones y destino. El feedback no habilita esta ruta.</p>
-        {!alternativeAttempted
-          ? <button type="button" className="ops-route-demo__secondary" onClick={onRequestAlternative} disabled={alternativeLoading}>
-            {alternativeLoading ? "Buscando otra secuencia…" : "Buscar alternativa automática"}
-          </button>
-          : <p role="status">Ya se evaluó una alternativa adicional en este intento. Si la IA sigue solicitando un cambio, la propuesta permanece bloqueada porque no se verificó una secuencia utilizable.</p>}
+        <p role="alert">La IA marcó una maniobra que requiere cambiar el recorrido. El sistema busca automáticamente otras secuencias con las mismas direcciones, destino y tipo de equipo. El feedback no habilita una ruta objetada.</p>
+        {alternativeLoading
+          ? <p role="status">Buscando la alternativa {alternativeAttempts} de 2 y volviendo a evaluarla con IA…</p>
+          : alternativeSearchComplete
+            ? <p role="status">Se evaluaron {alternativeAttempts} alternativas automáticas sin encontrar una ruta aprobable; esta propuesta sigue bloqueada.</p>
+            : null}
       </>}
       {routeAuditNeedsHumanReview(audit) && !routeAuditRequiresReplan(audit) && !feedbackSaved && <p role="status">La evidencia no es suficiente para liberar la ruta automáticamente. Revisa el caso y registra una evaluación positiva para habilitar aplicar, guardar o probar la navegación.</p>}
       <small>

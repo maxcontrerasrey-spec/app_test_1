@@ -193,14 +193,16 @@ Revision 2026-10-08 despacho solo con auditoría IA: Guardian CI run 37832767235
 
 Revision 2026-10-08 búsqueda de rutas y replanteo IA Atlas: Guardian CI run 37852518394 midió 5.346.673 bytes de JS (+2.156) por la búsqueda de alternativas y la acción de replanteo automático revisada por IA. Se registra el artefacto exacto de CI; las tolerancias siguen en cero, no se cambia el límite por chunk de 520 KB y el warning del módulo Atlas continúa visible.
 
+Revision local macOS 2026-10-08 validación IA Atlas: el build mide 7.468.890 bytes totales, 5.350.030 JS y 539.686 CSS. El aumento de JavaScript agrega evaluación automática de hasta dos secuencias alternativas, reintento de IA sobre el mismo snapshot y validación del trazado exacto de Ferrostar antes de simular. Se mantiene tolerancia cero y el límite de chunk en 520 KB; los valores canónicos de CI Ubuntu/Node 24 reemplazarán esta medición local si difieren.
+
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 7470218,
-  "jsFileCount": 74,
-  "jsTotalBytes": 5346673,
+  "distTotalBytes": 7468890,
+  "jsFileCount": 71,
+  "jsTotalBytes": 5350030,
   "cssFileCount": 15,
-  "cssTotalBytes": 540940,
+  "cssTotalBytes": 539686,
   "budgetPolicy": {
     "absoluteToleranceBytes": 0,
     "warningPercent": 0,
