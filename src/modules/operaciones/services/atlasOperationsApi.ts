@@ -100,7 +100,8 @@ export type AtlasRouteAuditDecision = "APPROVE" | "WARNING" | "REJECT" | "INSUFF
 export type AtlasRouteAuditResponse = {
   decision: AtlasRouteAuditDecision; riskScore: number | null; summary: string; analyzedManeuvers: Array<Record<string, unknown>>;
   requiresReplan: boolean; requiresHumanReview: boolean; runId: string | null; mode: "OFF" | "SHADOW"; provider?: string;
-  model?: string; latencyMs?: number; candidateManeuverCount?: number; auditedManeuverCount?: number; vehicleProfileVerified?: boolean;
+  model?: string; latencyMs?: number; candidateManeuverCount?: number; auditedManeuverCount?: number; totalManeuverCount?: number;
+  evaluationScope?: "RISK_PRIORITIZED_SAMPLE" | "DISTRIBUTED_ROUTE_SAMPLE"; vehicleProfileVerified?: boolean;
   errorCategory?: string | null; status?: string;
 };
 export type AtlasPlannedRoute = { coordinates: [number, number][]; distanceMeters: number; durationSeconds: number; provider: "valhalla"; travelMode: "bus"; plannedVehicleType?: string; referenceModel?: string; referenceDimensions?: { length: number; width: number; height: number; weight: number }; dimensionEvidence?: string; referenceDimensionsSent?: boolean; uturnCount?: number; maneuvers?: AtlasRouteManeuver[]; maneuverRiskCandidates?: Array<{ maneuverId: string; score: number; reasons: string[]; requiresAiAudit: boolean }> };

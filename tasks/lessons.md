@@ -4320,3 +4320,15 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - Usar ubicaciones Valhalla `break` si la ruta debe permitir el cambio de sentido; `break_through` lo prohíbe explícitamente. El tipo de vía y la geometría del grafo no certifican el ancho libre ni el espacio de barrido de la unidad.
 - Permitir el recorrido que el motor puede trazar y exponer una advertencia de espacio/radio no verificados cuando falten mediciones de vía y perfil dimensional real. No afirmar que el giro cabe ni que requiere reversa sin evidencia.
 - Un mensaje de “sin recorrido factible” solo puede describir lo que el buscador realmente probó; no atribuir intransitabilidad cuando la causa fue un filtro heurístico del planificador.
+
+## 2026-10-08 - Reemplazar un catálogo exige conciliar también sus datos fuente
+
+- Que una tabla y su formulario tengan columnas marca/modelo/año no demuestra que el nuevo padrón haya recibido los valores del catálogo anterior; revisar migración de datos y el flujo completo desde el archivo hasta la consulta productiva.
+- Para enriquecer flota existente, reconciliar por código y patente exactos, conservar UUID e historial y abortar si cambia la población o aparecen discrepancias; no recrear filas para completar atributos.
+- Tratar `0` en una columna de año como desconocido cuando no representa un año real, y mantener nulos cuando la fuente carece de especificación.
+
+## 2026-10-08 - Productor y validador de IA deben probar el mismo payload
+
+- Si el productor incluye `validatedRestrictions: []` como placeholder, el validador debe aceptar solo ese arreglo vacío; jamás debe confiar en restricciones no vacías enviadas por el navegador, que se cargan desde el servidor.
+- Separar cobertura de rutas enviadas al modelo de porcentaje de rutas que obtienen una mejora validada; un pre-filtro sin riesgo no debe saltarse la evaluación, y una llamada exitosa no demuestra que haya una alternativa mejor.
+- Si el modelo falla, mantener disponible la ruta de Valhalla y registrar la evaluación como fallida; no contarla como cobertura exitosa ni afirmar que el modelo modificó el recorrido.

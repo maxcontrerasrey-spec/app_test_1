@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { analyzeValhallaManeuvers, attachValidatedRestrictions, parseRouteAuditOutput, preFilterRouteManeuvers } from "../../supabase/functions/atlas-tomtom-planning/routeIntelligence.ts";
+import { analyzeValhallaManeuvers, attachValidatedRestrictions, normalizeClientManeuverFeature, parseRouteAuditOutput, preFilterRouteManeuvers, selectManeuversForAiAudit } from "../../supabase/functions/atlas-tomtom-planning/routeIntelligence.ts";
 
 describe("Atlas Route Intelligence maneuver analyzer", () => {
   it("normaliza los giros cerrados de Valhalla sin fabricar datos viales", () => {
@@ -41,6 +41,30 @@ describe("Atlas Route Intelligence maneuver analyzer", () => {
     const maneuvers = analyzeValhallaManeuvers([{ type: 8, instruction: "Continúe", bearing_before: 90, bearing_after: 90, street_names: ["Calle A"] }]);
     expect(maneuvers[0]?.turnAngleDeg).toBe(0);
     expect(preFilterRouteManeuvers(maneuvers)).toEqual([]);
+  });
+
+  it("acepta el arreglo vacío de restricciones del productor y rechaza restricciones aportadas por el cliente", () => {
+    const [feature] = analyzeValhallaManeuvers([{ type: 8, instruction: "Continúe", bearing_before: 90, bearing_after: 90 }]);
+    expect(normalizeClientManeuverFeature(feature, 0)?.maneuverId).toBe("m-001");
+    expect(normalizeClientManeuverFeature({ ...feature, validatedRestrictions: [{ id: "forged" }] }, 0)).toBeNull();
+    expect(normalizeClientManeuverFeature({ ...feature, validatedRestrictions: "[]" }, 0)).toBeNull();
+  });
+
+  it("envía la ruta al auditor aunque el pre-filtro no encuentre riesgo y distribuye la muestra", () => {
+    const route = analyzeValhallaManeuvers(Array.from({ length: 51 }, (_, index) => ({
+      type: 8, instruction: `Continúe ${index}`, bearing_before: 90, bearing_after: 90
+    })));
+    const audited = selectManeuversForAiAudit(route, [], 6);
+    expect(audited).toHaveLength(6);
+    expect(audited[0]?.maneuverId).toBe("m-001");
+    expect(audited.at(-1)?.maneuverId).toBe("m-051");
+    expect(new Set(audited.map((item) => item.maneuverId)).size).toBe(6);
+  });
+
+  it("prioriza candidatas de riesgo y respeta el límite de costo", () => {
+    const route = analyzeValhallaManeuvers(Array.from({ length: 4 }, (_, index) => ({ type: index === 2 ? 13 : 8, instruction: "Siga", bearing_before: 90, bearing_after: 90 })));
+    const risks = preFilterRouteManeuvers(route);
+    expect(selectManeuversForAiAudit(route, risks, 2).map((item) => item.maneuverId)).toContain("m-003");
   });
 
   it("valida decisiones estructuradas y rechaza IDs ajenos o REJECT sin evidencia", () => {

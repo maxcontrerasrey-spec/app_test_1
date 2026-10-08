@@ -36,15 +36,17 @@ export function AtlasRouteAuditPanel({
   onSubmitFeedback: () => void;
 }) {
   return <section className="ops-route-demo__message ops-route-demo__route-audit" aria-live="polite">
-    <strong>Route Intelligence · modo sombra</strong>
-    {status === "loading" && <p>Revisando maniobras en segundo plano; la propuesta no espera este análisis.</p>}
+    <strong>Route Intelligence · revisión con IA</strong>
+    {status === "loading" && <p>La IA está evaluando esta ruta; el cálculo vial permanece disponible mientras termina.</p>}
     {status === "off" && <p>Auditoría desactivada por configuración.</p>}
     {status === "error" && <p role="alert">{error}</p>}
     {audit && status === "ready" && <>
       <p><b>{auditDecisionLabel(audit.decision)}</b>{audit.riskScore === null ? " · sin puntaje" : ` · indicador ${audit.riskScore}/100`}</p>
       <p>{audit.summary}</p>
       <small>
-        {audit.provider === "openai" ? `GPT-6 Luna · ${audit.latencyMs ?? 0} ms · ${audit.auditedManeuverCount ?? 0} maniobras revisadas` : "Pre-filtro determinístico · sin llamada al modelo"}. Esta sugerencia no cambia ni certifica la ruta. {audit.vehicleProfileVerified ? "Perfil dimensional verificado." : "Sin dimensiones verificadas; no se certifica viabilidad física."}
+        {audit.decision === "ERROR" || audit.provider !== "openai"
+          ? "No se completó la evaluación de IA."
+          : `GPT-6 Luna · ${audit.latencyMs ?? 0} ms · ${audit.auditedManeuverCount ?? 0} de ${audit.totalManeuverCount ?? 0} maniobras evaluadas (${audit.evaluationScope === "RISK_PRIORITIZED_SAMPLE" ? "priorizadas por riesgo" : "muestra distribuida en todo el recorrido"})`}. La IA revisa cada ruta propuesta, pero no cambia su trazado en modo sombra ni garantiza una mejora cuando no existe una alternativa comprobable. {audit.vehicleProfileVerified ? "Perfil dimensional verificado." : "Sin dimensiones verificadas; no se certifica viabilidad física."}
       </small>
       {audit.analyzedManeuvers.length > 0 && <ul>{audit.analyzedManeuvers.map((item, index) => {
         const maneuver = item as Record<string, unknown>;
