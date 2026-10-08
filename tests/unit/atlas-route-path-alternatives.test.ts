@@ -50,9 +50,9 @@ describe("Atlas Valhalla route path alternatives", () => {
     expect(() => extractValhallaAlternateLegs({ alternates: "invalid" })).toThrow("valhalla_alternates_invalid_response");
   });
 
-  it("prioritizes a short alternate that removes a U-turn and recomposes all route legs", () => {
+  it("accepts a faster alternate that removes a U-turn and recomposes all route legs", () => {
     const base = [leg(500, 100, 1, 0), leg(800, 120, 0, 1)];
-    const alternate = leg(740, 120, 0, 2);
+    const alternate = leg(740, 99, 0, 2);
 
     const result = selectRoutePathAlternatives(base, new Map([[0, [alternate]]]))!;
 
@@ -60,7 +60,7 @@ describe("Atlas Valhalla route path alternatives", () => {
     expect(result.uturnsBefore).toBe(1);
     expect(result.uturnsAfter).toBe(0);
     expect(result.addedDistanceMeters).toBe(240);
-    expect(result.addedDurationSeconds).toBe(20);
+    expect(result.addedDurationSeconds).toBe(-1);
     expect(result.changedLegCount).toBe(1);
   });
 
@@ -78,6 +78,13 @@ describe("Atlas Valhalla route path alternatives", () => {
     expect(selectRoutePathAlternatives(base, new Map([[0, [tooSlow]]]))).toBeNull();
   });
 
+  it("never trades a faster baseline for a slower route just to remove a legal U-turn", () => {
+    const base = [leg(500, 100, 1, 0)];
+    const slowerWithoutUturn = leg(600, 101, 0, 1);
+
+    expect(selectRoutePathAlternatives(base, new Map([[0, [slowerWithoutUturn]]]))).toBeNull();
+  });
+
   it("does not prohibit a U-turn when no better valid alternative exists", () => {
     const base = [leg(500, 100, 1, 0)];
     const sameUturnCount = leg(550, 105, 1, 1);
@@ -88,24 +95,29 @@ describe("Atlas Valhalla route path alternatives", () => {
 
   it("limits cumulative detour so it chooses a subset of individually valid legs", () => {
     const base = [leg(500, 60, 1, 0), leg(500, 60, 1, 1)];
-    const firstAlternate = leg(600, 75, 0, 2);
+    const firstAlternate = leg(600, 55, 0, 2);
     const secondAlternate = leg(600, 75, 0, 3);
 
     const result = selectRoutePathAlternatives(base, new Map([[0, [firstAlternate]], [1, [secondAlternate]]]))!;
 
     expect(result.uturnsAfter).toBe(1);
     expect(result.changedLegCount).toBe(1);
-    expect(result.addedDurationSeconds).toBe(15);
+    expect(result.addedDurationSeconds).toBe(-5);
   });
 
-  it("chooses the fastest candidate when alternatives remove the same number of U-turns", () => {
+  it("keeps the faster baseline when an alternate removes a U-turn but takes longer", () => {
     const base = [leg(500, 200, 1, 0)];
     const slower = leg(700, 240, 0, 1);
-    const faster = leg(650, 225, 0, 2);
+    const faster = leg(650, 205, 0, 2);
 
-    const result = selectRoutePathAlternatives(base, new Map([[0, [slower, faster]]]))!;
+    expect(selectRoutePathAlternatives(base, new Map([[0, [slower, faster]]]))).toBeNull();
+  });
 
-    expect(result.legs[0]).toBe(faster);
+  it("prefers a shorter equal-time path that keeps a legal mapped U-turn", () => {
+    const base = [leg(500, 200, 1, 0)];
+    const longerWithoutUturn = leg(700, 200, 0, 1);
+
+    expect(selectRoutePathAlternatives(base, new Map([[0, [longerWithoutUturn]]]))).toBeNull();
   });
 
   it("only searches up to four legs with actual U-turn evidence", () => {
