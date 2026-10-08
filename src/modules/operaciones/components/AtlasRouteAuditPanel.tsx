@@ -1,0 +1,73 @@
+import type { AtlasRouteAuditResponse } from "../services/atlasOperationsApi";
+
+export type RouteAuditFeedbackType = "ACCEPT_AI" | "OVERRIDE_FEASIBLE" | "OVERRIDE_NOT_FEASIBLE" | "INSUFFICIENT_INFORMATION";
+
+export function auditDecisionLabel(decision: AtlasRouteAuditResponse["decision"]) {
+  return ({
+    APPROVE: "Sin alertas en las maniobras revisadas",
+    WARNING: "Revisión operacional recomendada",
+    REJECT: "El auditor detectó un riesgo que requiere revisión",
+    INSUFFICIENT_EVIDENCE: "Evidencia insuficiente para evaluar viabilidad",
+    ERROR: "No se pudo completar la auditoría",
+  })[decision];
+}
+
+export function AtlasRouteAuditPanel({
+  status,
+  audit,
+  error,
+  feedbackType,
+  feedbackReason,
+  feedbackSaving,
+  feedbackSaved,
+  onFeedbackTypeChange,
+  onFeedbackReasonChange,
+  onSubmitFeedback,
+}: {
+  status: "loading" | "ready" | "off" | "error";
+  audit: AtlasRouteAuditResponse | null;
+  error: string;
+  feedbackType: RouteAuditFeedbackType;
+  feedbackReason: string;
+  feedbackSaving: boolean;
+  feedbackSaved: boolean;
+  onFeedbackTypeChange: (value: RouteAuditFeedbackType) => void;
+  onFeedbackReasonChange: (value: string) => void;
+  onSubmitFeedback: () => void;
+}) {
+  return <section className="ops-route-demo__message ops-route-demo__route-audit" aria-live="polite">
+    <strong>Route Intelligence · modo sombra</strong>
+    {status === "loading" && <p>Revisando maniobras en segundo plano; la propuesta no espera este análisis.</p>}
+    {status === "off" && <p>Auditoría desactivada por configuración.</p>}
+    {status === "error" && <p role="alert">{error}</p>}
+    {audit && status === "ready" && <>
+      <p><b>{auditDecisionLabel(audit.decision)}</b>{audit.riskScore === null ? " · sin puntaje" : ` · indicador ${audit.riskScore}/100`}</p>
+      <p>{audit.summary}</p>
+      <small>
+        {audit.provider === "openai" ? `GPT-6 Luna · ${audit.latencyMs ?? 0} ms · ${audit.auditedManeuverCount ?? 0} maniobras revisadas` : "Pre-filtro determinístico · sin llamada al modelo"}. Esta sugerencia no cambia ni certifica la ruta. {audit.vehicleProfileVerified ? "Perfil dimensional verificado." : "Sin dimensiones verificadas; no se certifica viabilidad física."}
+      </small>
+      {audit.analyzedManeuvers.length > 0 && <ul>{audit.analyzedManeuvers.map((item, index) => {
+        const maneuver = item as Record<string, unknown>;
+        const reasons = Array.isArray(maneuver.reasons) ? maneuver.reasons.join("; ") : "";
+        return <li key={`${String(maneuver.maneuverId)}-${index}`}>{String(maneuver.maneuverId)} · {String(maneuver.decision)} · {reasons}</li>;
+      })}</ul>}
+      {audit.runId && <div className="ops-route-demo__audit-feedback">
+        <label>Tu evaluación
+          <select value={feedbackType} onChange={(event) => onFeedbackTypeChange(event.target.value as RouteAuditFeedbackType)} disabled={feedbackSaving || feedbackSaved}>
+            <option value="ACCEPT_AI">Acepto la evaluación</option>
+            <option value="OVERRIDE_FEASIBLE">Override: ruta viable</option>
+            <option value="OVERRIDE_NOT_FEASIBLE">Override: ruta no viable</option>
+            <option value="INSUFFICIENT_INFORMATION">Falta información</option>
+          </select>
+        </label>
+        {feedbackType !== "ACCEPT_AI" && <label>Motivo
+          <textarea value={feedbackReason} onChange={(event) => onFeedbackReasonChange(event.target.value)} maxLength={2000} rows={2} placeholder="Describe la evidencia operacional observada." disabled={feedbackSaving || feedbackSaved} />
+        </label>}
+        <button type="button" className="ops-route-demo__secondary" onClick={onSubmitFeedback} disabled={feedbackSaving || feedbackSaved || (feedbackType !== "ACCEPT_AI" && feedbackReason.trim().length < 5)}>
+          {feedbackSaved ? "Feedback registrado" : feedbackSaving ? "Guardando..." : "Registrar feedback"}
+        </button>
+      </div>}
+    </>}
+    {error && status !== "error" && <p role="alert">{error}</p>}
+  </section>;
+}

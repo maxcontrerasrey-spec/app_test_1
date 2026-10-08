@@ -40,6 +40,7 @@ import {
   transitionAtlasDispatch,
   type AtlasDispatch,
   type AtlasDriver,
+  type AtlasVehicle,
   type AtlasVehiclePosition
 } from "../services/atlasOperationsApi";
 import "../styles/atlas-operations.css";
@@ -430,7 +431,7 @@ function OperationsControlTowerApp() {
         <DispatchTable rows={ordered} loading={dispatchQuery.isLoading} onSelect={setSelectedDispatch} onTransition={() => undefined} onReassign={() => undefined} canOperate={false} isAdmin={false} editableContractIds={[]} />
       </>}
 
-      {view === "configuracion" && <ConfigurationView contracts={editableContracts} templates={catalogs?.templates ?? []} users={adminUsersQuery.data ?? []} drivers={driverQuery.data ?? []} driverSearch={driverSearch} onDriverSearchChange={setDriverSearch} canAdmin={isAdmin} onSaveTemplate={saveTemplate} onSaveMilestone={saveMilestone} onSaveVehicle={saveVehicle} onSaveEditor={saveEditor} onBindDriver={bindDriver} pending={mutation.isPending} />}
+      {view === "configuracion" && <ConfigurationView contracts={editableContracts} templates={catalogs?.templates ?? []} vehicles={catalogs?.vehicles ?? []} users={adminUsersQuery.data ?? []} drivers={driverQuery.data ?? []} driverSearch={driverSearch} onDriverSearchChange={setDriverSearch} canAdmin={isAdmin} onSaveTemplate={saveTemplate} onSaveMilestone={saveMilestone} onSaveVehicle={saveVehicle} onSaveEditor={saveEditor} onBindDriver={bindDriver} pending={mutation.isPending} />}
 
       {selectedDispatch && <div className="atlas-ops__drawer-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setSelectedDispatch(""); }}>
         <aside className="atlas-ops__drawer" aria-label="Detalle del servicio">
@@ -612,8 +613,9 @@ function DriverView({ rows, loading, onAcknowledge, onIncident, onOpenRoute }: {
     {loading ? <p className="atlas-ops__empty">Cargando servicios…</p> : rows.length === 0 ? <div className="atlas-ops__panel atlas-ops__empty">No hay servicios publicados para esta cuenta. Si eres conductor, solicita a administración vincular tu cuenta Atlas con tu ficha BUK exacta.</div> : rows.map((row) => <article className="atlas-ops__driver-card" key={String(row.id)}><div><span className="atlas-ops__eyebrow">{String(row.shift)} · {String(row.service_date)}</span><h2>{String(row.service_name ?? "Servicio asignado")}</h2><p>{String(row.origin_label ?? "Origen pendiente")} → {String(row.destination_label ?? "Destino pendiente")}</p><div className="atlas-ops__driver-facts"><span>{row.planned_start_at ? new Date(String(row.planned_start_at)).toLocaleString("es-CL") : "Horario pendiente"}</span><span>Vehículo {String(row.vehicle_code ?? "pendiente")}{row.plate ? ` · ${String(row.plate)}` : ""}</span>{typeof row.route_code === "string" && <span>Ruta {row.route_code}</span>}</div><p>{String(row.instructions ?? "")}</p></div><div className="atlas-ops__driver-actions">{typeof row.route_id === "string" && <button className="atlas-ops__button atlas-ops__button--primary" onClick={() => onOpenRoute(row.route_id as string)} type="button">Ver ruta asignada</button>}{!row.acknowledged_at && <button className="atlas-ops__button atlas-ops__button--primary" onClick={() => onAcknowledge(String(row.id))} type="button">Confirmar recepción</button>}<button className="atlas-ops__button atlas-ops__button--quiet" onClick={() => onIncident(String(row.id))} type="button">Reportar incidencia</button></div></article>)}</section>;
 }
 
-function ConfigurationView({ contracts, templates, users, drivers, driverSearch, onDriverSearchChange, canAdmin, onSaveTemplate, onSaveMilestone, onSaveVehicle, onSaveEditor, onBindDriver, pending }: {
+function ConfigurationView({ contracts, templates, vehicles, users, drivers, driverSearch, onDriverSearchChange, canAdmin, onSaveTemplate, onSaveMilestone, onSaveVehicle, onSaveEditor, onBindDriver, pending }: {
   contracts: Array<{ id: number; code: string; contract_name: string }>; templates: Array<{ id: number; contract_id: number; name: string; service_type: string }>;
+  vehicles: AtlasVehicle[];
   users: Array<{ id: string; email: string; full_name: string }>; drivers: Array<{ buk_employee_id: string; full_name: string; display_label: string }>;
   driverSearch: string; onDriverSearchChange: (value: string) => void;
   canAdmin: boolean; onSaveTemplate: (form: FormData, operatingDays: string[], shifts: string[]) => Promise<void>; onSaveMilestone: (form: FormData) => Promise<void>;
@@ -623,6 +625,7 @@ function ConfigurationView({ contracts, templates, users, drivers, driverSearch,
   const [shifts, setShifts] = useState<string[]>([]);
   const [daysError, setDaysError] = useState(false);
   const [shiftsError, setShiftsError] = useState(false);
+  const [profileVehicleId, setProfileVehicleId] = useState("");
   const weekdays = [
     { value: "1", label: "Lunes" }, { value: "2", label: "Martes" },
     { value: "3", label: "Miércoles" }, { value: "4", label: "Jueves" },
@@ -661,8 +664,36 @@ function ConfigurationView({ contracts, templates, users, drivers, driverSearch,
       <label className="atlas-ops__check"><input type="checkbox" name="required" value="true" defaultChecked /> Hito obligatorio</label>
     </div><button className="atlas-ops__button atlas-ops__button--primary" disabled={pending || !canAdmin}>Publicar nueva versión</button></form>
     <form className="atlas-ops__panel atlas-ops__form" onSubmit={(event: FormEvent<HTMLFormElement>) => { event.preventDefault(); void onSaveVehicle(new FormData(event.currentTarget)); }}><div className="atlas-ops__panel-heading"><div><h2>Alta de vehículo</h2><p>El padrón parte vacío; registra la flota autorizada.</p></div></div><div className="atlas-ops__form-grid">
-            <Field label="Código"><input name="code" required /></Field><Field label="Patente"><input name="plate" /></Field><Field label="Tipo"><input name="vehicle_type" /></Field><Field label="Marca"><input name="brand" /></Field><Field label="Modelo"><input name="model" /></Field><Field label="Año"><input name="year" inputMode="numeric" /></Field><Field label="Cliente"><input name="client_label" /></Field>
+      <Field label="Código"><input name="code" required /></Field><Field label="Patente"><input name="plate" /></Field><Field label="Tipo"><input name="vehicle_type" /></Field><Field label="Marca"><input name="brand" /></Field><Field label="Modelo"><input name="model" /></Field><Field label="Año"><input name="year" inputMode="numeric" /></Field><Field label="Cliente"><input name="client_label" /></Field>
+      <Field label="Tipo técnico (opcional)"><select name="routing_vehicle_type" defaultValue=""><option value="">Sin clasificar</option><option value="BUS">Bus</option><option value="MINIBUS">Minibús</option><option value="VAN">Van</option><option value="OTHER">Otro</option></select></Field>
+      <Field label="Largo (m)"><input name="length_m" type="number" min="1" max="30" step="0.01" /></Field><Field label="Ancho (m)"><input name="width_m" type="number" min="0.5" max="5" step="0.01" /></Field>
+      <Field label="Alto (m)"><input name="height_m" type="number" min="0.5" max="6" step="0.01" /></Field><Field label="Distancia entre ejes (m)"><input name="wheelbase_m" type="number" min="0.5" max="20" step="0.01" /></Field>
+      <Field label="Radio de giro (m)"><input name="turning_radius_m" type="number" min="0.5" max="30" step="0.01" /></Field><Field label="Capacidad pasajeros"><input name="passenger_capacity" type="number" min="1" max="300" step="1" /></Field>
+      <Field label="Peso bruto (kg)"><input name="gross_weight_kg" type="number" min="100" max="100000" step="1" /></Field><Field label="Tolerancia a vías angostas"><select name="narrow_road_tolerance" defaultValue=""><option value="">Sin definir</option><option value="LOW">Baja</option><option value="MEDIUM">Media</option><option value="HIGH">Alta</option></select></Field>
+      <Field label="¿Permite giro en U?"><select name="allow_uturn" defaultValue=""><option value="">Sin información</option><option value="true">Sí</option><option value="false">No</option></select></Field><Field label="Fuente ficha técnica"><select name="routing_profile_source" defaultValue="admin_entry"><option value="admin_entry">Ingreso administrativo</option><option value="manufacturer_spec">Ficha del fabricante</option><option value="fleet_document">Documento de flota</option><option value="other">Otra</option></select></Field>
+      <label className="atlas-ops__check"><input type="checkbox" name="routing_profile_verified" value="true" /> Confirmo que las dimensiones críticas provienen de una ficha técnica verificada</label>
     </div><button className="atlas-ops__button atlas-ops__button--primary" disabled={pending || !canAdmin}>Agregar vehículo</button></form>
+    <form key={profileVehicleId || "empty-routing-profile"} className="atlas-ops__panel atlas-ops__form" onSubmit={(event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      const vehicle = vehicles.find((item) => item.id === profileVehicleId);
+      if (!vehicle) return;
+      const form = new FormData(event.currentTarget);
+      form.set("id", vehicle.id); form.set("code", vehicle.code); form.set("plate", vehicle.plate ?? "");
+      form.set("vehicle_type", vehicle.vehicle_type ?? ""); form.set("brand", vehicle.brand ?? ""); form.set("model", vehicle.model ?? "");
+      form.set("year", vehicle.year ?? ""); form.set("client_label", vehicle.client_label ?? ""); form.set("is_active", "true");
+      void onSaveVehicle(form);
+    }}><div className="atlas-ops__panel-heading"><div><h2>Perfil técnico de ruta</h2><p>Completa dimensiones solo desde una fuente verificable; se conservarán como desconocidas si faltan.</p></div></div>
+      <div className="atlas-ops__form-grid"><Field label="Vehículo"><select value={profileVehicleId} onChange={(event) => setProfileVehicleId(event.target.value)} required><option value="">Selecciona equipo</option>{vehicles.map((item) => <option value={item.id} key={item.id}>{item.code} · {item.plate ?? "Sin patente"}</option>)}</select></Field>
+        {(() => { const profile = vehicles.find((item) => item.id === profileVehicleId)?.routingProfile; return <>
+          <Field label="Tipo técnico"><select name="routing_vehicle_type" defaultValue={profile?.vehicle_type ?? ""}><option value="">Sin clasificar</option><option value="BUS">Bus</option><option value="MINIBUS">Minibús</option><option value="VAN">Van</option><option value="OTHER">Otro</option></select></Field>
+          <Field label="Largo (m)"><input name="length_m" type="number" min="1" max="30" step="0.01" defaultValue={profile?.length_m ?? ""} /></Field><Field label="Ancho (m)"><input name="width_m" type="number" min="0.5" max="5" step="0.01" defaultValue={profile?.width_m ?? ""} /></Field>
+          <Field label="Alto (m)"><input name="height_m" type="number" min="0.5" max="6" step="0.01" defaultValue={profile?.height_m ?? ""} /></Field><Field label="Distancia entre ejes (m)"><input name="wheelbase_m" type="number" min="0.5" max="20" step="0.01" defaultValue={profile?.wheelbase_m ?? ""} /></Field>
+          <Field label="Radio de giro (m)"><input name="turning_radius_m" type="number" min="0.5" max="30" step="0.01" defaultValue={profile?.turning_radius_m ?? ""} /></Field><Field label="Capacidad pasajeros"><input name="passenger_capacity" type="number" min="1" max="300" step="1" defaultValue={profile?.passenger_capacity ?? ""} /></Field>
+          <Field label="Peso bruto (kg)"><input name="gross_weight_kg" type="number" min="100" max="100000" step="1" defaultValue={profile?.gross_weight_kg ?? ""} /></Field><Field label="Tolerancia vías angostas"><select name="narrow_road_tolerance" defaultValue={profile?.narrow_road_tolerance ?? ""}><option value="">Sin definir</option><option value="LOW">Baja</option><option value="MEDIUM">Media</option><option value="HIGH">Alta</option></select></Field>
+          <Field label="¿Permite giro en U?"><select name="allow_uturn" defaultValue={profile?.allow_uturn == null ? "" : String(profile.allow_uturn)}><option value="">Sin información</option><option value="true">Sí</option><option value="false">No</option></select></Field><Field label="Fuente ficha técnica"><select name="routing_profile_source" defaultValue={profile?.source ?? "admin_entry"}><option value="admin_entry">Ingreso administrativo</option><option value="manufacturer_spec">Ficha del fabricante</option><option value="fleet_document">Documento de flota</option><option value="other">Otra</option></select></Field>
+          <label className="atlas-ops__check"><input type="checkbox" name="routing_profile_verified" value="true" defaultChecked={Boolean(profile?.verified_at)} /> Confirmo las dimensiones desde una fuente verificada</label>
+        </>; })()}
+      </div><button className="atlas-ops__button atlas-ops__button--primary" disabled={pending || !canAdmin || !profileVehicleId}>Guardar perfil técnico</button></form>
     <form className="atlas-ops__panel atlas-ops__form" onSubmit={(event: FormEvent<HTMLFormElement>) => { event.preventDefault(); void onSaveEditor(new FormData(event.currentTarget)); }}><div className="atlas-ops__panel-heading"><div><h2>Acceso de Operaciones</h2><p>Asigna usuarios L1/L2 a contratos; el backend valida su rol.</p></div></div><div className="atlas-ops__form-grid">
       <Field label="Usuario"><select name="user_id" required defaultValue=""><option value="" disabled>Selecciona cuenta</option>{users.map((user) => <option value={user.id} key={user.id}>{user.full_name || user.email} · {user.email}</option>)}</select></Field>
       <Field label="Contrato"><select name="contract_id" required defaultValue=""><option value="" disabled>Selecciona contrato</option>{contracts.map((item) => <option value={item.id} key={item.id}>{item.code} · {item.contract_name}</option>)}</select></Field>

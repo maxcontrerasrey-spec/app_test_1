@@ -4931,3 +4931,25 @@ Revisión local: 197 pruebas unitarias/contrato pasan; TypeScript, build fronten
 Despliegue backend: Supabase aplicó la migración y la registró como `20261008001246`; el archivo local y el test de contrato se alinean a esa versión en el seguimiento PR #92. Las tres RPC de creación, transición y reasignación siguen `SECURITY DEFINER`, `search_path=public`, con `EXECUTE` para `authenticated` y denegado a `anon`. La vista operativa ya expone metadata completa y estado de jornada; el trigger de historial sigue impidiendo `UPDATE/DELETE` de eventos. `atlas-tomtom-planning` quedó activa en v12 con `verify_jwt=true`; el endpoint sin JWT devuelve 401.
 
 Despliegue final: PR #91 integrada como `c6ee4064643b4c8f251e33a1f7c46f5ada094c93`; Guardian CI `37706528810` y Cloudflare Pages pasan. PR #92 integra la versión de migración registrada como `fdd7a3d660db6e46174c5266f2a929a0ee6b412f`; CI `37706794788` y Cloudflare Pages pasan. `https://gestion.busesjm.cl` responde HTTP 200; `OperationsControlTowerPage-DM1zS2xL.js` también responde 200 e incluye las acciones de cambio, contingencia, jornada y RPC. Se verificó el bundle publicado, pero no se ejecutó una reasignación sobre un despacho real: no hay staging Supabase y no se insertaron datos ni se alteraron asignaciones operacionales para la prueba.
+# ATLAS Route Intelligence V1 — SHADOW controlado
+
+## Plan verificable
+
+- [x] Descubrir contratos actuales de TomTom, Valhalla, optimizador, Ferrostar, OpenAI, flota, rutas y autorización/RLS; contrastar este checkout con `origin/main`.
+- [x] Revisar el plan antes de implementar: mantener la geometría y el orden actuales como autoridad; V1 audita en sombra y no bloquea, reordena ni publica rutas.
+- [x] Crear domain layer y analizador determinístico de maniobras usando únicamente evidencia real de Valhalla/route shape; faltantes quedan `UNKNOWN`, sin inferir dimensiones, tráfico ni restricciones.
+- [x] Centralizar pre-filtro/umbrales versionados y probar fixture crítico sintético, giros fuertes, U-turn y ruta normal; no afirmar replay del incidente sin la geometría real.
+- [x] Agregar persistencia append-only de runs y feedback con RPCs seguras, RLS y permisos actuales de Atlas; agregar restricciones operacionales con estados propuesta/validada y eventos inmutables.
+- [x] Agregar Edge Function separada para auditoría con `ATLAS_ROUTE_INTELLIGENCE_MODE=OFF|SHADOW`, Responses API, modelo explícito `gpt-6-luna`, JSON Schema estricto, timeout corto y fallback fail-open.
+- [x] Integrar SHADOW tras generar la propuesta: el resultado se muestra sin alterar la ruta; incorporar feedback humano auditable.
+- [x] Documentar arquitectura/ADR, evidencia disponible, capacidades no soportadas, flags, rollback y próximas fases; Psicolaboral y la integración TomTom/Valhalla/Ferrostar permanecen separados.
+- [x] Ejecutar tests focalizados, Deno check, build frontend, auditorías de migraciones/seguridad, Guardian y `git diff --check`.
+- [ ] Preparar release seguro a producción después de CI, aplicando primero DDL aditivo, luego Edge/UI y verificar bundle/flags y endpoint sin realizar una auditoría que genere costos sin confirmar previamente la configuración efectiva.
+
+## Revisión del plan
+
+Base de trabajo `origin/main` (`48c9c24c`). El auditor será la única llamada LLM de la V1 en sombra; el Planner Agent y la replanificación quedan para la fase posterior porque hoy Valhalla expone una sola ruta y no existe una API demostrada de restricciones de segmento. `@openai/agents` se excluye del runtime Edge: documentación oficial encontrada exige Deno 2.35+, mientras Supabase documenta su Edge Runtime actual como Deno 2.1; se conservará la integración server-side directa de Responses API y la salida estructurada. El nuevo flujo será aislado de Psicolaboral y mantendrá la ruta histórica intacta incluso ante timeout/error. Las dimensiones, ancho vial, carriles y tráfico se reportarán como desconocidos hasta que exista fuente verificada.
+
+Revisión de implementación: añadir perfiles dimensionales opcionales, knowledge base con validación humana y eventos inmutables, auditoría acotada a maniobras de riesgo y feedback. El `APPROVE` del modelo se degrada a `INSUFFICIENT_EVIDENCE` si no hay perfil verificado. El registro de auditoría conserva snapshots pequeños y versionados. No se crea interfaz de mantenimiento de restricciones en esta entrega; el RPC seguro queda disponible para la siguiente pantalla operativa.
+
+Resultado local (2026-10-08): TypeScript y ambos `deno check` pasan; unit 193/193, contracts 151/151; `audit:migrations`, `audit:destructive-migrations`, `audit:enterprise-docs`, `audit:supabase-security` y `git diff --check` pasan. Guardian final 0 errores/0 warnings. `build:frontend-check` pasa con advertencia de chunk existente del planificador (1,084.96 kB sin minificar, gzip 295.79 kB); no se elevó el umbral. No hay Docker local ni ambiente Supabase de staging; los advisors actuales son baseline pre-cambio. Falta PR/CI y verificación del despliegue productivo antes de cerrar.

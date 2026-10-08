@@ -43,6 +43,9 @@ verify_jwt = false
 [functions.atlas-tomtom-planning]
 verify_jwt = true
 
+[functions.atlas-route-intelligence]
+verify_jwt = true
+
 [functions.psycholaboral-assessment]
 verify_jwt = false
 

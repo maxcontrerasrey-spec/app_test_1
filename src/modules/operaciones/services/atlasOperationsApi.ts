@@ -55,7 +55,13 @@ export type AtlasTemplate = {
   schedule_label: string | null;
 };
 
-export type AtlasVehicle = { id: string; code: string; plate: string | null; vehicle_type: string | null; brand: string | null; model: string | null; year: string | null };
+export type AtlasVehicle = { id: string; code: string; plate: string | null; vehicle_type: string | null; brand: string | null; model: string | null; year: string | null; client_label?: string | null; routingProfile?: AtlasVehicleRoutingProfile | null };
+export type AtlasVehicleRoutingProfile = {
+  vehicle_id: string; vehicle_type: "BUS" | "MINIBUS" | "VAN" | "OTHER" | null; passenger_capacity: number | null;
+  length_m: number | null; width_m: number | null; height_m: number | null; wheelbase_m: number | null;
+  turning_radius_m: number | null; gross_weight_kg: number | null; allow_uturn: boolean | null;
+  narrow_road_tolerance: "LOW" | "MEDIUM" | "HIGH" | null; source: string; verified_at: string | null;
+};
 export type AtlasContract = { id: number; code: string; contract_name: string };
 export type AtlasDriver = { buk_employee_id: string; full_name: string; document_number: string | null; display_label: string; contract_code: string | null; roster_effective_status: string; is_working_day: boolean; is_rest_day: boolean };
 export type AtlasServiceRoute = {
@@ -80,23 +86,38 @@ export type AtlasServiceRoute = {
 
 export type TomTomSuggestion = { id: string | null; type: "address" | "street" | "intersection" | null; label: string };
 export type TomTomPlaceMatch = { id: string | null; type: string | null; label: string; lat: number; lng: number };
-export type AtlasPlannedRoute = { coordinates: [number, number][]; distanceMeters: number; durationSeconds: number; provider: "valhalla"; travelMode: "auto" };
+export type AtlasRouteManeuver = {
+  maneuverId: string; latitude: number | null; longitude: number | null;
+  maneuverType: "LEFT" | "RIGHT" | "UTURN" | "STRAIGHT" | "ROUNDABOUT" | "MERGE" | "EXIT" | "OTHER";
+  instruction: string; roadNames: string[]; turnAngleDeg: number | null; inboundHeading: number | null; outboundHeading: number | null;
+  roadClassFrom: null; roadClassTo: null; lanesFrom: null; lanesTo: null; oneWay: null; estimatedRoadWidthM: null;
+  trafficLevel: "UNKNOWN"; knownRestrictionCount: null; geometryConfidence: number; sourceEvidence: string[];
+};
+export type AtlasRouteAuditDecision = "APPROVE" | "WARNING" | "REJECT" | "INSUFFICIENT_EVIDENCE" | "ERROR";
+export type AtlasRouteAuditResponse = {
+  decision: AtlasRouteAuditDecision; riskScore: number | null; summary: string; analyzedManeuvers: Array<Record<string, unknown>>;
+  requiresReplan: boolean; requiresHumanReview: boolean; runId: string | null; mode: "OFF" | "SHADOW"; provider?: string;
+  model?: string; latencyMs?: number; candidateManeuverCount?: number; auditedManeuverCount?: number; vehicleProfileVerified?: boolean;
+  errorCategory?: string | null; status?: string;
+};
+export type AtlasPlannedRoute = { coordinates: [number, number][]; distanceMeters: number; durationSeconds: number; provider: "valhalla"; travelMode: "auto"; maneuvers?: AtlasRouteManeuver[]; maneuverRiskCandidates?: Array<{ maneuverId: string; score: number; reasons: string[]; requiresAiAudit: boolean }> };
 export type AtlasOptimizedRoute = AtlasPlannedRoute & { order: number[]; matrixDurationSeconds: number; inputOrderMatrixDurationSeconds: number | null; optimizationMethod: "valhalla_matrix_open_path_v1" };
 
 export async function getAtlasOperationsCatalogs() {
   const db = client();
-  const [templates, vehicles, contracts, editors] = await Promise.all([
+  const [templates, vehicles, profiles, contracts, editors] = await Promise.all([
     db.from("atlas_ops_service_templates").select("id, contract_id, name, service_type, contractual_name, schedule_label").eq("is_active", true).order("name"),
-    db.from("atlas_ops_vehicles").select("id, code, plate, vehicle_type, brand, model, year").eq("is_active", true).order("code"),
+    db.from("atlas_ops_vehicles").select("id, code, plate, vehicle_type, brand, model, year, client_label").eq("is_active", true).order("code"),
+    db.from("atlas_ops_vehicle_routing_profiles").select("vehicle_id, vehicle_type, passenger_capacity, length_m, width_m, height_m, wheelbase_m, turning_radius_m, gross_weight_kg, allow_uturn, narrow_road_tolerance, source, verified_at"),
     db.from("contracts").select("id, code, contract_name").eq("is_active", true).order("contract_name"),
     db.from("atlas_ops_contract_editors").select("contract_id").eq("is_active", true)
   ]);
-  for (const result of [templates, vehicles, contracts, editors]) {
+  for (const result of [templates, vehicles, profiles, contracts, editors]) {
     if (result.error) throw new Error(getSupabaseErrorMessage(result.error, "No fue posible cargar los catálogos operacionales.", "message"));
   }
   return {
     templates: asArray<AtlasTemplate>(templates.data),
-    vehicles: asArray<AtlasVehicle>(vehicles.data),
+    vehicles: asArray<AtlasVehicle>(vehicles.data).map((vehicle) => ({ ...vehicle, routingProfile: asArray<AtlasVehicleRoutingProfile>(profiles.data).find((profile) => profile.vehicle_id === vehicle.id) ?? null })),
     contracts: asArray<AtlasContract>(contracts.data),
     editableContractIds: asArray<{ contract_id: number }>(editors.data).map((row) => Number(row.contract_id))
   };
@@ -268,6 +289,27 @@ export async function calculateAtlasValhallaRoute(stops: Array<{ lat: number; ln
 
 export async function optimizeAtlasOpenRoute(stops: Array<{ lat: number; lng: number }>, fixedDestinationIndex?: number, signal?: AbortSignal): Promise<AtlasOptimizedRoute> {
   return callAtlasValhalla({ action: "optimize", stops, ...(fixedDestinationIndex === undefined ? {} : { fixedDestinationIndex }) }, signal);
+}
+
+export async function auditAtlasRouteIntelligence(route: AtlasOptimizedRoute, serviceTemplateId: number | null, vehicleId: string | null, signal?: AbortSignal): Promise<AtlasRouteAuditResponse> {
+  const db = client();
+  const { data: sessionData } = await db.auth.getSession();
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+  const accessToken = sessionData.session?.access_token;
+  const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+  if (!accessToken || !supabaseUrl || !anonKey) throw new Error("Inicia sesión como superadministrador para auditar la ruta.");
+  if (!route.maneuvers?.length) throw new Error("Valhalla no entregó maniobras para auditar esta ruta.");
+  const response = await fetch(`${supabaseUrl.replace(/\/$/, "")}/functions/v1/atlas-route-intelligence`, {
+    method: "POST", headers: { "content-type": "application/json", apikey: anonKey, authorization: `Bearer ${accessToken}` },
+    body: JSON.stringify({ serviceTemplateId, vehicleId, maneuvers: route.maneuvers }), signal
+  });
+  const payload = await response.json() as AtlasRouteAuditResponse & { error?: string };
+  if (!response.ok) throw new Error(payload.error === "audit_persistence_failed" ? "La auditoría no quedó guardada; la propuesta de ruta sigue disponible." : `No se pudo auditar la ruta (${payload.error ?? response.status}).`);
+  return payload;
+}
+
+export async function recordAtlasRouteIntelligenceFeedback(runId: string, feedbackType: string, reason: string) {
+  await unwrap<string>(client().rpc("atlas_ops_record_route_intelligence_feedback", { p_run_id: runId, p_feedback_type: feedbackType, p_reason: reason }), "No fue posible guardar el feedback de la auditoría.");
 }
 
 async function callAtlasValhalla<T extends AtlasPlannedRoute>(body: Record<string, unknown>, signal?: AbortSignal): Promise<T> {

@@ -3,6 +3,7 @@ import { optimizeOpenRoute } from "./openRouteOptimizer.ts";
 import { buildMatrixBlocks } from "./matrixBlocks.ts";
 import { buildRouteSegments } from "./routeSegments.ts";
 import { hasUTurn, hasUTurnAtSegmentJoin, routeLocationType, type RouteManeuver } from "./routeQuality.ts";
+import { analyzeValhallaManeuvers, preFilterRouteManeuvers } from "./routeIntelligence.ts";
 
 const ALLOWED_ORIGINS = new Set([
   "https://gestion.busesjm.cl",
@@ -117,12 +118,18 @@ async function valhallaRouteSegment(sites: Point[]) {
   if (!routeResponse.ok) throw new Error(`valhalla_route_http_${routeResponse.status}`);
   const payload = await routeResponse.json() as { trip?: { status?: number; summary?: { length?: number; time?: number }; legs?: Array<{ shape?: string; maneuvers?: RouteManeuver[] }> } };
   const summary = payload.trip?.summary;
-  const coordinates = (payload.trip?.legs ?? []).flatMap((leg) => typeof leg.shape === "string" ? decodePolyline6(leg.shape) : []);
+  const legs = payload.trip?.legs ?? [];
+  const legCoordinates = legs.map((leg) => typeof leg.shape === "string" ? decodePolyline6(leg.shape) : []);
+  const coordinates = legCoordinates.flat();
   const deduplicated = coordinates.filter((coordinate, index) => index === 0 || coordinate[0] !== coordinates[index - 1]![0] || coordinate[1] !== coordinates[index - 1]![1]);
   if (payload.trip?.status !== 0 || typeof summary?.length !== "number" || typeof summary.time !== "number" || deduplicated.length < 2 || !Number.isFinite(summary.length) || !Number.isFinite(summary.time)) {
     throw new Error("valhalla_route_not_returned");
   }
-  const maneuvers = (payload.trip?.legs ?? []).flatMap((leg) => leg.maneuvers ?? []);
+  const maneuvers = legs.flatMap((leg, legIndex) => (leg.maneuvers ?? []).map((maneuver) => {
+    const shapeIndex = typeof maneuver.begin_shape_index === "number" ? maneuver.begin_shape_index : -1;
+    const location = shapeIndex >= 0 ? legCoordinates[legIndex]?.[shapeIndex] : undefined;
+    return location ? { ...maneuver, longitude: location[0], latitude: location[1] } : maneuver;
+  }));
   if (hasUTurn(maneuvers)) throw new Error("valhalla_route_uturn_detected");
   return { coordinates: deduplicated, distanceMeters: Math.round(summary.length * 1000), durationSeconds: Math.round(summary.time), maneuvers, provider: "valhalla" as const, travelMode: "auto" as const };
 }
@@ -140,10 +147,14 @@ async function valhallaRoute(sites: Point[]) {
     throw new Error("valhalla_route_uturn_detected");
   }
   const coordinates = complete.flatMap((result, index) => index === 0 ? result.coordinates : result.coordinates.slice(1));
+  const maneuvers = complete.flatMap((result) => result.maneuvers);
+  const maneuverFeatures = analyzeValhallaManeuvers(maneuvers);
   return {
     coordinates,
     distanceMeters: complete.reduce((total, result) => total + result.distanceMeters, 0),
     durationSeconds: complete.reduce((total, result) => total + result.durationSeconds, 0),
+    maneuvers: maneuverFeatures,
+    maneuverRiskCandidates: preFilterRouteManeuvers(maneuverFeatures),
     provider: "valhalla" as const,
     travelMode: "auto" as const
   };

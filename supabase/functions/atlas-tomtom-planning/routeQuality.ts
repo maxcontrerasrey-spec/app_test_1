@@ -1,4 +1,13 @@
-export type RouteManeuver = { type?: number; instruction?: string };
+export type RouteManeuver = {
+  type?: number;
+  instruction?: string;
+  begin_shape_index?: number;
+  bearing_before?: number;
+  bearing_after?: number;
+  street_names?: string[];
+  latitude?: number;
+  longitude?: number;
+};
 export type RouteShapePoint = [number, number];
 
 /** Keep stop arrival/departure guidance while forbidding U-turns at intermediate stops. */
