@@ -8,6 +8,7 @@ import type { FerrostarCore, FerrostarMap, SimulatedLocationProvider } from "@st
 import type { Route, TripState, UserLocation, Waypoint } from "@stadiamaps/ferrostar";
 import { auditAtlasRouteIntelligence, calculateAtlasValhallaRoute, getAtlasOperationsCatalogs, getAtlasServiceRoute, getAtlasServiceRoutes, optimizeAtlasOpenRoute, recordAtlasRouteIntelligenceFeedback, resolveAtlasTomTomSuggestion, saveAtlasServiceRoute, searchAtlasTomTom, type AtlasOptimizedRoute, type AtlasPlannedRoute, type AtlasRouteAuditResponse, type AtlasServiceRoute, type TomTomSuggestion } from "../services/atlasOperationsApi";
 import { appendRouteStop, moveRouteStop, normalizeRouteStops, setFixedDestination } from "../lib/routeStopOrder";
+import { applyRouteAccessAdjustments } from "../lib/applyRouteAccessAdjustments";
 import { matchRouteDestinationPresets, type RouteDestinationPreset } from "../lib/routeDestinationCatalog";
 import { formatDriverSimulationError, mergeFerrostarRouteSegments, splitRouteStops } from "../lib/routeSimulation";
 import { atlasVehicleTypesMatch, getAvailableAtlasRouteVehicleCategories, resolveAtlasRouteVehicleCategory } from "../lib/vehicleRoutingCosting";
@@ -32,7 +33,7 @@ const MAP_STYLE = {
   layers: [{ id: "osm", type: "raster" as const, source: "osm" }]
 };
 
-type Stop = { id: string; label: string; lat: number; lng: number; kind: "origin" | "stop" | "destination"; providerPlaceId: string | null; source: "tomtom" | "map_pin" | "preset"; fixedDestination?: boolean };
+type Stop = { id: string; label: string; lat: number; lng: number; kind: "origin" | "stop" | "destination"; providerPlaceId: string | null; source: "tomtom" | "map_pin" | "preset"; fixedDestination?: boolean; accessAdjustment?: { original: { lat: number; lng: number }; displacementMeters: number } };
 type RouteProposal = { stops: Stop[]; route: AtlasOptimizedRoute };
 type SearchState = { id: string; query: string; sessionId: string; revision?: number; results: TomTomSuggestion[]; status: "idle" | "loading" | "ready" | "error"; error?: string };
 type SuggestionAnchor = { top: number; left: number; width: number; maxHeight: number };
@@ -219,12 +220,19 @@ export function OperationsRoutePlannerDemo() {
     markersRef.current.forEach((marker) => marker.remove());
     const visibleStops = proposal?.stops ?? stops;
     const locatedStops = visibleStops.filter((stop) => stop.label.trim().length > 0);
-    markersRef.current = locatedStops.map((stop) => {
+    markersRef.current = [];
+    locatedStops.forEach((stop) => {
       const index = visibleStops.findIndex((item) => item.id === stop.id);
+      if (stop.accessAdjustment) {
+        const originalNode = document.createElement("div");
+        originalNode.className = "ops-route-demo__map-marker ops-route-demo__map-marker--access-origin";
+        originalNode.title = `Original · +${stop.accessAdjustment.displacementMeters} m`;
+        markersRef.current.push(new maplibregl.Marker({ element: originalNode }).setLngLat([stop.accessAdjustment.original.lng, stop.accessAdjustment.original.lat]).addTo(map));
+      }
       const node = document.createElement("div");
       node.className = `ops-route-demo__map-marker ops-route-demo__map-marker--${stop.kind}`;
       node.textContent = stop.kind === "origin" ? "A" : stop.kind === "destination" ? "B" : String(index + 1);
-      return new maplibregl.Marker({ element: node }).setLngLat([stop.lng, stop.lat]).addTo(map);
+      markersRef.current.push(new maplibregl.Marker({ element: node }).setLngLat([stop.lng, stop.lat]).addTo(map));
     });
     if (!mapReady) return;
     const planningCoordinates = proposal?.route.coordinates ?? planningRoute?.coordinates ?? [];
@@ -238,7 +246,10 @@ export function OperationsRoutePlannerDemo() {
     source.setData(geo ?? { type: "FeatureCollection", features: [] });
     if (activeView === "planning" && (locatedStops.length > 0 || planningCoordinates.length > 0)) {
       const bounds = new maplibregl.LngLatBounds();
-      locatedStops.forEach((stop) => bounds.extend([stop.lng, stop.lat]));
+      locatedStops.forEach((stop) => {
+        bounds.extend([stop.lng, stop.lat]);
+        if (stop.accessAdjustment) bounds.extend([stop.accessAdjustment.original.lng, stop.accessAdjustment.original.lat]);
+      });
       planningCoordinates.forEach(([lng, lat]) => bounds.extend([lng, lat]));
       if (!bounds.isEmpty()) {
         map.fitBounds(bounds, { padding: { top: 80, bottom: 80, left: 65, right: 65 }, maxZoom: 15, duration: 500 });
@@ -332,7 +343,7 @@ export function OperationsRoutePlannerDemo() {
     setStops((current) => {
       const found = current.some((stop) => stop.id === stopId);
       const updated = found
-        ? current.map((stop) => stop.id === stopId ? { ...stop, ...location } : stop)
+        ? current.map((stop) => stop.id === stopId ? { ...stop, ...location, accessAdjustment: undefined } : stop)
         : [...current, { id: stopId, ...location, kind: "stop" as const }];
       return normalizeRouteStops(updated);
     });
@@ -468,7 +479,7 @@ export function OperationsRoutePlannerDemo() {
     try {
       const fixedDestinationIndex = stops.findIndex((stop) => stop.fixedDestination);
       const result = await optimizeAtlasOpenRoute(stops.map(({ lat, lng }) => ({ lat, lng })), plannedVehicleType, fixedDestinationIndex < 0 ? undefined : fixedDestinationIndex);
-      const proposedStops = normalizeRouteStops(result.order.map((index) => stops[index]!));
+      const proposedStops = normalizeRouteStops(applyRouteAccessAdjustments(stops, result.order, result.stopAccessAdjustments));
       setProposal({ stops: proposedStops, route: result });
       setPlanningRoute(null);
       setRoute(null);
@@ -583,7 +594,7 @@ export function OperationsRoutePlannerDemo() {
       const id = await saveAtlasServiceRoute({
         serviceTemplateId: Number(selectedServiceId),
         prefix: routePrefix,
-        stops: stops.map((stop) => ({ label: stop.label, lat: stop.lat, lng: stop.lng, providerPlaceId: stop.providerPlaceId, source: stop.source })),
+        stops: stops.map((stop) => ({ label: stop.label, lat: stop.lat, lng: stop.lng, ...(stop.accessAdjustment ? { requestedLat: stop.accessAdjustment.original.lat, requestedLng: stop.accessAdjustment.original.lng, accessAdjustmentMeters: stop.accessAdjustment.displacementMeters } : {}), providerPlaceId: stop.providerPlaceId, source: stop.source })),
         distanceMeters: planningRoute.distanceMeters,
         durationSeconds: planningRoute.durationSeconds,
         matrixDurationSeconds: planningRoute.matrixDurationSeconds,
@@ -626,7 +637,10 @@ export function OperationsRoutePlannerDemo() {
       id: uid(), label: stop.label, lat: stop.latitude, lng: stop.longitude,
       kind: "stop" as const,
       fixedDestination: index === orderedStops.length - 1,
-      providerPlaceId: stop.provider_place_id, source: stop.location_source
+      providerPlaceId: stop.provider_place_id, source: stop.location_source,
+      ...(stop.original_lat !== null && stop.original_lng !== null && stop.access_m !== null
+        ? { accessAdjustment: { original: { lat: stop.original_lat, lng: stop.original_lng }, displacementMeters: stop.access_m } }
+        : {})
     })));
     setStops(loaded);
     setRoutePrefix(selected.prefix);
@@ -728,7 +742,7 @@ export function OperationsRoutePlannerDemo() {
           <div className="ops-route-demo__panel-divider" />
           {(proposal || planningRoute) && routeState === "ready" && <div className="ops-route-demo__summary"><div><span>Distancia · Valhalla</span><strong>{formatDistance((proposal?.route ?? planningRoute!).distanceMeters)}</strong></div><div><span>Tiempo estimado</span><strong>{formatDuration((proposal?.route ?? planningRoute!).durationSeconds)}</strong></div></div>}
           <div className="ops-route-demo__actions"><button type="button" className="ops-route-demo__primary" disabled={!allStopsPresent || !plannedVehicleType || routeState === "loading"} onClick={() => void generateRoute()}>{routeState === "loading" ? "Buscando mejor orden…" : "Proponer recorrido optimizado"}</button></div>
-          {proposal && <div className="ops-route-demo__message" role="status"><strong>Propuesta de recorrido abierto</strong><p>Inicio: {proposal.stops[0]?.label}</p><p>Destino: {proposal.stops[proposal.stops.length - 1]?.label}</p><details><summary>Ver las {proposal.stops.length} direcciones en orden</summary><ol>{proposal.stops.map((stop) => <li key={stop.id}>{stop.label}</li>)}</ol></details>{proposal.route.inputOrderMatrixDurationSeconds !== null && <small>{proposal.route.inputOrderMatrixDurationSeconds > proposal.route.matrixDurationSeconds ? `Ahorro estimado: ${formatDuration(proposal.route.inputOrderMatrixDurationSeconds - proposal.route.matrixDurationSeconds)} frente al orden ingresado.` : "El orden ingresado ya es equivalente o más rápido según la matriz."}</small>}<div className="ops-route-demo__actions"><button type="button" className="ops-route-demo__primary" onClick={applyProposal}>Aplicar este orden</button><button type="button" className="ops-route-demo__secondary" onClick={() => { setProposal(null); setRouteState("idle"); }}>Descartar propuesta</button></div></div>}
+          {proposal && <div className="ops-route-demo__message" role="status"><strong>Propuesta de recorrido abierto</strong><p>Inicio: {proposal.stops[0]?.label}</p><p>Destino: {proposal.stops[proposal.stops.length - 1]?.label}</p><details><summary>Ver las {proposal.stops.length} direcciones en orden</summary><ol>{proposal.stops.map((stop) => <li key={stop.id}>{stop.label}{stop.accessAdjustment && <small className="ops-route-demo__access-note">+{stop.accessAdjustment.displacementMeters} m · original en gris</small>}</li>)}</ol></details>{proposal.route.inputOrderMatrixDurationSeconds !== null && <small>{proposal.route.inputOrderMatrixDurationSeconds > proposal.route.matrixDurationSeconds ? `Ahorro estimado: ${formatDuration(proposal.route.inputOrderMatrixDurationSeconds - proposal.route.matrixDurationSeconds)} frente al orden ingresado.` : "El orden ingresado ya es equivalente o más rápido según la matriz."}</small>}<div className="ops-route-demo__actions"><button type="button" className="ops-route-demo__primary" onClick={applyProposal}>Aplicar este orden</button><button type="button" className="ops-route-demo__secondary" onClick={() => { setProposal(null); setRouteState("idle"); }}>Descartar propuesta</button></div></div>}
           {routeAuditStatus !== "idle" && <AtlasRouteAuditPanel
             status={routeAuditStatus}
             audit={routeAudit}

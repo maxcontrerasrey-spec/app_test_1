@@ -4,6 +4,7 @@ import { buildMatrixBlocks } from "./matrixBlocks.ts";
 import { buildRouteSegments } from "./routeSegments.ts";
 import { countUTurns, routeLocationType, type RouteManeuver } from "./routeQuality.ts";
 import { analyzeValhallaManeuvers, preFilterRouteManeuvers } from "./routeIntelligence.ts";
+import { collectStopAccessAdjustments, findStopsNearUTurns, isStopAccessRouteImproved, MAX_STOP_ACCESS_RADIUS_METERS, MAX_STOP_ACCESS_WALK_METERS, type StopAccessAdjustment } from "./routeStopAccess.ts";
 import { resolveAtlasVehicleRoutingModel } from "../../../src/modules/operaciones/lib/vehicleRoutingCosting.ts";
 
 const ALLOWED_ORIGINS = new Set([
@@ -121,8 +122,13 @@ function decodePolyline6(value: string): [number, number][] {
   return coordinates;
 }
 
-async function valhallaRouteSegment(sites: Point[], model: ReturnType<typeof resolveAtlasVehicleRoutingModel>) {
-  const locations = sites.map(({ lat, lng }, index) => ({ lat, lon: lng, type: routeLocationType(index, sites.length) }));
+async function valhallaRouteSegment(sites: Point[], model: ReturnType<typeof resolveAtlasVehicleRoutingModel>, allowNearbyAccess: boolean[] = []) {
+  const locations = sites.map(({ lat, lng }, index) => ({
+    lat,
+    lon: lng,
+    type: routeLocationType(index, sites.length),
+    ...(allowNearbyAccess[index] ? { radius: MAX_STOP_ACCESS_RADIUS_METERS, rank_candidates: false } : {})
+  }));
   const routeResponse = await fetch(`${VALHALLA}/route`, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -144,24 +150,33 @@ async function valhallaRouteSegment(sites: Point[], model: ReturnType<typeof res
     const location = shapeIndex >= 0 ? legCoordinates[legIndex]?.[shapeIndex] : undefined;
     return location ? { ...maneuver, longitude: location[0], latitude: location[1] } : maneuver;
   }));
-  return { coordinates: deduplicated, distanceMeters: Math.round(summary.length * 1000), durationSeconds: Math.round(summary.time), maneuvers, provider: "valhalla" as const, travelMode: model.costing };
+  const stopAccessPoints = legCoordinates.length > 0
+    ? [legCoordinates[0]?.[0], ...legCoordinates.map((coordinates) => coordinates.at(-1))]
+      .filter((coordinate): coordinate is [number, number] => Boolean(coordinate))
+      .map(([lng, lat]) => ({ lat, lng }))
+    : [];
+  return { coordinates: deduplicated, stopAccessPoints, distanceMeters: Math.round(summary.length * 1000), durationSeconds: Math.round(summary.time), maneuvers, provider: "valhalla" as const, travelMode: model.costing };
 }
 
-async function valhallaRoute(sites: Point[], model: ReturnType<typeof resolveAtlasVehicleRoutingModel>) {
+async function valhallaRoute(sites: Point[], model: ReturnType<typeof resolveAtlasVehicleRoutingModel>, accessStopIndexes = new Set<number>()) {
   const segments = buildRouteSegments(sites.length, ROUTE_MAX_LOCATIONS);
   const results: Array<Awaited<ReturnType<typeof valhallaRouteSegment>>> = Array(segments.length);
   for (let offset = 0; offset < segments.length; offset += 3) {
-    await Promise.all(segments.slice(offset, offset + 3).map(async (segment, segmentOffset) => {
-      results[offset + segmentOffset] = await valhallaRouteSegment(sites.slice(segment.start, segment.end), model);
+    await Promise.all(segments.slice(offset, offset + 3).map(async (segment, resultOffset) => {
+      const segmentStops = sites.slice(segment.start, segment.end);
+      const allowNearbyAccess = segmentStops.map((_, index) => accessStopIndexes.has(segment.start + index));
+      results[offset + resultOffset] = await valhallaRouteSegment(segmentStops, model, allowNearbyAccess);
     }));
   }
   const complete = results.filter((result): result is Awaited<ReturnType<typeof valhallaRouteSegment>> => Boolean(result));
   const coordinates = complete.flatMap((result, index) => index === 0 ? result.coordinates : result.coordinates.slice(1));
+  const stopAccessPoints = complete.flatMap((result, index) => index === 0 ? result.stopAccessPoints : result.stopAccessPoints.slice(1));
   const maneuvers = complete.flatMap((result) => result.maneuvers);
   const maneuverFeatures = analyzeValhallaManeuvers(maneuvers);
   const uturnCount = countUTurns(maneuvers);
   return {
     coordinates,
+    stopAccessPoints,
     distanceMeters: complete.reduce((total, result) => total + result.distanceMeters, 0),
     durationSeconds: complete.reduce((total, result) => total + result.durationSeconds, 0),
     maneuvers: maneuverFeatures,
@@ -170,6 +185,79 @@ async function valhallaRoute(sites: Point[], model: ReturnType<typeof resolveAtl
     provider: "valhalla" as const,
     travelMode: model.costing
   };
+}
+
+async function pedestrianAccessDistanceMeters(from: Point, to: Point): Promise<number | null> {
+  const routeResponse = await fetch(`${VALHALLA}/route`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      locations: [{ lat: from.lat, lon: from.lng, type: "break" }, { lat: to.lat, lon: to.lng, type: "break" }],
+      costing: "pedestrian",
+      units: "kilometers"
+    }),
+    signal: AbortSignal.timeout(6_000)
+  }).catch(() => null);
+  if (!routeResponse?.ok) return null;
+  const payload = await routeResponse.json().catch(() => null) as { trip?: { status?: number; summary?: { length?: number } } } | null;
+  const distanceKm = payload?.trip?.summary?.length;
+  return payload?.trip?.status === 0 && typeof distanceKm === "number" && Number.isFinite(distanceKm) && distanceKm >= 0
+    ? Math.round(distanceKm * 1000)
+    : null;
+}
+
+async function tryNearbyStopAccessAdjustment(
+  stops: Point[],
+  baseOrder: number[],
+  fixedDestinationIndex: number | undefined,
+  baseRoute: Awaited<ReturnType<typeof valhallaRoute>>,
+  model: ReturnType<typeof resolveAtlasVehicleRoutingModel>
+) {
+  const orderedStops = baseOrder.map((index) => stops[index]!);
+  const eligible = findStopsNearUTurns(orderedStops, baseRoute.maneuvers.map(({ maneuverType, latitude, longitude }) => ({ type: maneuverType, latitude: latitude ?? undefined, longitude: longitude ?? undefined })));
+  if (!eligible.length) return null;
+
+  try {
+    let accessRoute = await valhallaRoute(orderedStops, model, new Set(eligible));
+    let adjustments = collectStopAccessAdjustments(orderedStops, accessRoute.stopAccessPoints, eligible);
+    if (!adjustments.length) return null;
+
+    const accessChecks = await Promise.all(adjustments.map(async (adjustment) => ({
+      stopIndex: adjustment.stopIndex,
+      accessible: await pedestrianAccessDistanceMeters(adjustment.original, adjustment.adjusted)
+    })));
+    const verifiedIndexes = new Set(accessChecks
+      .filter((check) => check.accessible !== null && check.accessible <= MAX_STOP_ACCESS_WALK_METERS)
+      .map((check) => check.stopIndex));
+    if (verifiedIndexes.size !== adjustments.length) {
+      if (!verifiedIndexes.size) return null;
+      // Remove unverified cross-street candidates and retrace only the access points with a short mapped walking path.
+      accessRoute = await valhallaRoute(orderedStops, model, verifiedIndexes);
+      adjustments = collectStopAccessAdjustments(orderedStops, accessRoute.stopAccessPoints, [...verifiedIndexes]);
+      if (!adjustments.length) return null;
+      const verifiedAgain = await Promise.all(adjustments.map(async (adjustment) => {
+        const distance = await pedestrianAccessDistanceMeters(adjustment.original, adjustment.adjusted);
+        return distance !== null && distance <= MAX_STOP_ACCESS_WALK_METERS;
+      }));
+      if (verifiedAgain.some((isAccessible) => !isAccessible)) return null;
+    }
+
+    const adjustedStops = stops.map((stop) => ({ ...stop }));
+    const stopAccessAdjustments: StopAccessAdjustment[] = adjustments.map((adjustment) => {
+      const originalIndex = baseOrder[adjustment.stopIndex]!;
+      adjustedStops[originalIndex] = { ...adjustedStops[originalIndex]!, ...adjustment.adjusted };
+      return { ...adjustment, stopIndex: originalIndex };
+    });
+
+    const adjustedMatrix = await valhallaMatrix(adjustedStops, model);
+    const adjustedOptimization = optimizeOpenRoute(adjustedMatrix, undefined, fixedDestinationIndex);
+    const route = await valhallaRoute(adjustedOptimization.order.map((index) => adjustedStops[index]!), model);
+    if (!isStopAccessRouteImproved(baseRoute, route)) return null;
+    return { adjustedStops, adjustedOptimization, route, stopAccessAdjustments };
+  } catch {
+    // Access adjustment is opportunistic: a Valhalla or pedestrian lookup error must not discard the base route.
+    return null;
+  }
 }
 
 async function isActiveSuperAdmin(accessToken: string, apiKey: string | null) {
@@ -348,8 +436,24 @@ Deno.serve(async (request) => {
       const matrix = await valhallaMatrix(stops, vehicleRoutingModel);
       const optimized = optimizeOpenRoute(matrix, undefined, fixedDestinationIndex as number | undefined);
       const selectedOrder = optimized.order;
-      const route = await valhallaRoute(selectedOrder.map((index) => stops[index]!), vehicleRoutingModel);
-      return response({ ...route, order: selectedOrder, matrixDurationSeconds: optimized.durationSeconds, inputOrderMatrixDurationSeconds: optimized.inputOrderDurationSeconds, optimizationMethod: "valhalla_matrix_open_path_v1", plannedVehicleType: vehicleRoutingModel.category, referenceModel: vehicleRoutingModel.model, referenceDimensions: vehicleRoutingModel.dimensions, dimensionEvidence: vehicleRoutingModel.dimensionEvidence, referenceDimensionsSent: true }, 200, origin);
+      const baseRoute = await valhallaRoute(selectedOrder.map((index) => stops[index]!), vehicleRoutingModel);
+      const accessAdjustment = await tryNearbyStopAccessAdjustment(stops, selectedOrder, fixedDestinationIndex as number | undefined, baseRoute, vehicleRoutingModel);
+      if (accessAdjustment) {
+        return response({
+          ...accessAdjustment.route,
+          order: accessAdjustment.adjustedOptimization.order,
+          matrixDurationSeconds: accessAdjustment.adjustedOptimization.durationSeconds,
+          inputOrderMatrixDurationSeconds: accessAdjustment.adjustedOptimization.inputOrderDurationSeconds,
+          stopAccessAdjustments: accessAdjustment.stopAccessAdjustments,
+          optimizationMethod: "valhalla_matrix_open_path_v1",
+          plannedVehicleType: vehicleRoutingModel.category,
+          referenceModel: vehicleRoutingModel.model,
+          referenceDimensions: vehicleRoutingModel.dimensions,
+          dimensionEvidence: vehicleRoutingModel.dimensionEvidence,
+          referenceDimensionsSent: true
+        }, 200, origin);
+      }
+      return response({ ...baseRoute, order: selectedOrder, matrixDurationSeconds: optimized.durationSeconds, inputOrderMatrixDurationSeconds: optimized.inputOrderDurationSeconds, stopAccessAdjustments: [], optimizationMethod: "valhalla_matrix_open_path_v1", plannedVehicleType: vehicleRoutingModel.category, referenceModel: vehicleRoutingModel.model, referenceDimensions: vehicleRoutingModel.dimensions, dimensionEvidence: vehicleRoutingModel.dimensionEvidence, referenceDimensionsSent: true }, 200, origin);
     }
     if (action === "route") {
       if (!Array.isArray(payload.stops) || payload.stops.length < 2 || payload.stops.length > MAX_STOPS) {

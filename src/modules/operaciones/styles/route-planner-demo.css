@@ -142,6 +142,8 @@
 .ops-route-demo__map-marker--origin { background: #008e9b; }
 .ops-route-demo__map-marker--destination { border-radius: 50% 50% 50% 4px; background: #d44e54; transform: rotate(-45deg); }
 .ops-route-demo__map-marker--destination::first-letter { transform: rotate(45deg); }
+.ops-route-demo__map-marker--access-origin { width: 17px; height: 17px; border: 2px solid #fff; background: #555969; box-shadow: 0 0 0 2px #fff, 0 2px 7px rgb(30 25 60 / 28%); font-size: 12px; }
+.ops-route-demo__access-note { display: block; margin-top: 3px; color: #5d5874; font-size: 11px; }
 @media (max-width: 980px) {
   .ops-route-demo__workspace { grid-template-columns: minmax(320px, 390px) minmax(0, 1fr); }
   .ops-route-demo__map-legend { display: none; }

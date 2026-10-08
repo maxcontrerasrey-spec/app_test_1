@@ -5039,3 +5039,21 @@ Resultado productivo del backfill: 756/756 códigos y patentes conciliados exact
 Valhalla documenta `break` como punto donde permite U-turns y `break_through` como punto donde los impide. Los datos de maniobra que recibe Atlas incluyen tipo, forma y bearings, pero no garantizan ancho libre de vía ni espacio de barrido de la unidad; un U-turn no prueba que se necesite reversa. Permitir el trazado, mantener la optimización automática y advertir honestamente cuando la maniobrabilidad física no puede verificarse. No bloquear ni asegurar espacio suficiente sin evidencia vial y perfil dimensional verificados.
 
 Validación local: pruebas focalizadas 11/11; Deno check, auditoría de migraciones y `git diff --check` pasan. `npm run build:frontend-check` y Guardian pasan; Guardian termina con 0 errores y 0 advertencias. La auditoría de seguridad estática muestra 88 advertencias históricas en migraciones anteriores, sin cambios SQL en esta corrección. El build conserva el warning existente del chunk `OperationsRoutePlannerDemo` (1.086,57 kB minificado); no se alteró el umbral. No se ejecutó un cálculo autenticado contra el proveedor productivo durante esta validación local.
+
+# Atlas: ajustar automáticamente el acceso de una parada cercana — 2026-10-08
+
+## Plan verificable
+
+- [x] Revisar las capacidades actuales de Valhalla para correlacionar paradas a segmentos viales dentro de un radio acotado y cómo recuperar la coordenada vial elegida desde su geometría.
+- [x] Implementar ajuste candidato de hasta 20 metros para paradas asociadas a un U-turn/maniobra ineficiente; comparar ruta base y alternativa con el mismo tipo de equipo y un criterio determinista de mejora.
+- [x] Mantener cada parada, ID, texto de dirección y destino fijado; nunca sustituir el punto original sin registrarlo como ajuste visible en la propuesta.
+- [x] Exponer coordenada original, ubicación vial propuesta, desplazamiento y efecto medido; permitir que al aplicar la propuesta se use el punto ajustado y que el usuario pueda descartarlo.
+- [x] Añadir regresiones de radio máximo, accesibilidad/punto no enrutable, sin mejora, múltiples paradas y destino fijado; asegurar límites de llamadas al proveedor.
+- [x] Actualizar documentación/lecciones, correr pruebas focalizadas, Deno check, TypeScript, build, Guardian y `git diff --check`.
+- [ ] Integrar por CI y publicar en producción; verificar bundle, versión de Edge Function y flujo de propuesta con una ruta controlada, sin tocar despachos reales.
+
+## Revisión del plan
+
+Se reutiliza el snapping de candidatos viales que Valhalla ofrece por parada, limitado a 20 m, y se leen coordenadas efectivas desde los extremos de la geometría de cada tramo. Los candidatos se limitan a cuatro paradas cercanas a maniobras U-turn, requieren un recorrido peatonal mapeado de hasta 30 m y solo se presentan si reducen giros U-turn con hasta 5% de tiempo adicional o mantienen la cantidad y ahorran al menos 10 segundos. Todas las paradas y el destino fijado se conservan. La proximidad y el grafo peatonal no certifican cruce peatonal seguro. El original se marca en el mapa y su coordenada/desplazamiento se persiste al guardar la ruta. La búsqueda es acotada y oportunista; un error externo conserva la ruta base.
+
+Validación local: 209 pruebas unitarias pasan; Deno check pasa; frontend TypeScript/build pasa; Guardian termina con 0 errores y 0 advertencias; migraciones y `git diff --check` pasan. El audit de rendimiento vuelve a pasar sin alterar el baseline (JS total 5.336.507 bytes); se mantiene el warning previo del chunk de planificación de 1.088,46 kB minificado. `supabase db push --dry-run` identifica solo esta migración pendiente. `supabase db lint` remoto informa errores históricos en funciones ajenas al módulo (incluyendo renta y sincronización de roster), por eso no se atribuyen a este cambio ni se modifican aquí.
