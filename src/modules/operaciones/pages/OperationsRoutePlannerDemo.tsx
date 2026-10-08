@@ -227,7 +227,7 @@ export function OperationsRoutePlannerDemo() {
         const originalNode = document.createElement("div");
         originalNode.className = "ops-route-demo__map-marker ops-route-demo__map-marker--access-origin";
         originalNode.textContent = "•";
-        originalNode.title = `Punto ingresado originalmente; acceso vial ajustado ${stop.accessAdjustment.displacementMeters} m`;
+        originalNode.title = `Punto original · acceso +${stop.accessAdjustment.displacementMeters} m`;
         markersRef.current.push(new maplibregl.Marker({ element: originalNode }).setLngLat([stop.accessAdjustment.original.lng, stop.accessAdjustment.original.lat]).addTo(map));
       }
       const node = document.createElement("div");
@@ -490,7 +490,7 @@ export function OperationsRoutePlannerDemo() {
       if ((result.uturnCount ?? 0) > 0) {
         routeNotices.push(`La ruta incluye ${result.uturnCount} giro(s) en U que la red vial permite trazar. Los datos disponibles no permiten confirmar si el espacio alcanza para ejecutarlos hacia delante con esta unidad; no se asumió que requieran marcha atrás ni se descartó la ruta por ese código.`);
       }
-      if (result.stopAccessAdjustments?.length) routeNotices.push(`Ajusté automáticamente ${result.stopAccessAdjustments.length} punto(s) de acceso hasta 20 m para mejorar la ruta; revisa el punto original y el acceso vial propuesto antes de aplicar.`);
+      if (result.stopAccessAdjustments?.length) routeNotices.push(`${result.stopAccessAdjustments.length} acceso(s) vial(es) ajustado(s) hasta 20 m; el punto original aparece en gris.`);
       setNotice(routeNotices.join(" "));
       const auditRequest = ++auditSequence.current;
       setRouteAuditStatus("loading");
@@ -532,7 +532,7 @@ export function OperationsRoutePlannerDemo() {
     setRoute(null);
     setRouteState("ready");
     const adjustedCount = proposal.route.stopAccessAdjustments?.length ?? 0;
-    setNotice(`Orden propuesto aplicado. ${adjustedCount ? `${adjustedCount} punto(s) conservan el acceso vial ajustado; el punto original se muestra en el mapa.` : "No fue necesario ajustar accesos."} El primer punto es el inicio y el último es el destino; el recorrido termina allí.`);
+    setNotice(`Propuesta aplicada${adjustedCount ? ` · ${adjustedCount} acceso(s) ajustado(s); original en gris en el mapa` : ""}. El primer punto es el inicio y el último el destino.`);
   }
 
   async function startSimulation() {
@@ -745,7 +745,7 @@ export function OperationsRoutePlannerDemo() {
           <div className="ops-route-demo__panel-divider" />
           {(proposal || planningRoute) && routeState === "ready" && <div className="ops-route-demo__summary"><div><span>Distancia · Valhalla</span><strong>{formatDistance((proposal?.route ?? planningRoute!).distanceMeters)}</strong></div><div><span>Tiempo estimado</span><strong>{formatDuration((proposal?.route ?? planningRoute!).durationSeconds)}</strong></div></div>}
           <div className="ops-route-demo__actions"><button type="button" className="ops-route-demo__primary" disabled={!allStopsPresent || !plannedVehicleType || routeState === "loading"} onClick={() => void generateRoute()}>{routeState === "loading" ? "Buscando mejor orden…" : "Proponer recorrido optimizado"}</button></div>
-          {proposal && <div className="ops-route-demo__message" role="status"><strong>Propuesta de recorrido abierto</strong><p>Inicio: {proposal.stops[0]?.label}</p><p>Destino: {proposal.stops[proposal.stops.length - 1]?.label}</p><details><summary>Ver las {proposal.stops.length} direcciones en orden</summary><ol>{proposal.stops.map((stop) => <li key={stop.id}>{stop.label}{stop.accessAdjustment && <small className="ops-route-demo__access-note">Acceso vial ajustado {stop.accessAdjustment.displacementMeters} m; punto ingresado marcado en gris en el mapa.</small>}</li>)}</ol></details>{proposal.route.inputOrderMatrixDurationSeconds !== null && <small>{proposal.route.inputOrderMatrixDurationSeconds > proposal.route.matrixDurationSeconds ? `Ahorro estimado: ${formatDuration(proposal.route.inputOrderMatrixDurationSeconds - proposal.route.matrixDurationSeconds)} frente al orden ingresado.` : "El orden ingresado ya es equivalente o más rápido según la matriz."}</small>}{Boolean(proposal.route.stopAccessAdjustments?.length) && <small>Se conservan todas las direcciones. El ajuste busca acercar el punto al acceso vial; no certifica que cruzar la calle sea seguro.</small>}<div className="ops-route-demo__actions"><button type="button" className="ops-route-demo__primary" onClick={applyProposal}>Aplicar este orden</button><button type="button" className="ops-route-demo__secondary" onClick={() => { setProposal(null); setRouteState("idle"); }}>Descartar propuesta</button></div></div>}
+          {proposal && <div className="ops-route-demo__message" role="status"><strong>Propuesta de recorrido abierto</strong><p>Inicio: {proposal.stops[0]?.label}</p><p>Destino: {proposal.stops[proposal.stops.length - 1]?.label}</p><details><summary>Ver las {proposal.stops.length} direcciones en orden</summary><ol>{proposal.stops.map((stop) => <li key={stop.id}>{stop.label}{stop.accessAdjustment && <small className="ops-route-demo__access-note">Acceso +{stop.accessAdjustment.displacementMeters} m · original en gris</small>}</li>)}</ol></details>{proposal.route.inputOrderMatrixDurationSeconds !== null && <small>{proposal.route.inputOrderMatrixDurationSeconds > proposal.route.matrixDurationSeconds ? `Ahorro estimado: ${formatDuration(proposal.route.inputOrderMatrixDurationSeconds - proposal.route.matrixDurationSeconds)} frente al orden ingresado.` : "El orden ingresado ya es equivalente o más rápido según la matriz."}</small>}<div className="ops-route-demo__actions"><button type="button" className="ops-route-demo__primary" onClick={applyProposal}>Aplicar este orden</button><button type="button" className="ops-route-demo__secondary" onClick={() => { setProposal(null); setRouteState("idle"); }}>Descartar propuesta</button></div></div>}
           {routeAuditStatus !== "idle" && <AtlasRouteAuditPanel
             status={routeAuditStatus}
             audit={routeAudit}
