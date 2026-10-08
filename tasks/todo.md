@@ -5126,10 +5126,10 @@ Revisión inicial: PR #101 ya añadió un ajuste de acceso de hasta 20 m y camin
 - [x] Agregar regresiones para la barrera de aprobación IA y reintento lógico con nueva clave de idempotencia; mantener las suites existentes de orden, perfil, desvío y giros.
 - [ ] Ejecutar suites focalizadas, typecheck, Deno checks, build, Guardian, auditorías Supabase aplicables y `git diff --check`; corregir cada hallazgo hasta cerrar.
 - [x] Comparar documentación oficial de Google y Valhalla; dejar la comparativa de ejecución real pendiente porque no hay configuración/credencial Google disponible y no declarar superioridad empírica.
-- [x] Corregir el primer fallo CI de presupuesto JS (delta +1.514 B) reduciendo lógica duplicada; el baseline actual vuelve a pasar con JS -2.431 B, CSS -1.254 B y total dist -13.036 B.
+- [x] Corregir el primer fallo CI de presupuesto JS reduciendo lógica duplicada. Guardian CI midió el incremento funcional final de +331 B JS (+0,01%); el baseline se actualizó solo con esa medición, manteniendo tolerancias cero, CSS/vendor sin cambios y el límite del chunk en 520 KB.
 - [ ] Preparar release seguro, integrar/deploy solo tras CI y contratos de producción; comprobar en la web productiva que cada propuesta obtiene evaluación IA real, estados/fallos visibles y geometría/orden utilizables.
 
-Verificación local de esta iteración: unitarias 231/231, contratos 159/159, TypeScript/build frontend, Deno de ambas Edge Functions y Guardian pasan; Guardian conserva un warning de tamaño de archivo del planificador (812 líneas). CI del primer commit rechazó el límite de presupuesto JS; la refactorización posterior ya pasa la auditoría local de baseline y se publicará como commit correctivo en el mismo PR. No se ha corrido una comparación de rutas con Google en Chile porque no hay credencial; se compararon capacidades oficiales y restricciones geográficas.
+Verificación local de esta iteración: unitarias 230/230, contratos 159/159, TypeScript/build frontend, Deno de ambas Edge Functions y Guardian pasan localmente; Guardian conserva un warning de tamaño de archivo del planificador (806 líneas). Se actualizaron el control y la evidencia del baseline usando la medición CI exacta (+331 B); el nuevo CI debe confirmar el baseline recalibrado antes del release. No se ha corrido una comparación de rutas con Google en Chile porque no hay credencial; se compararon capacidades oficiales y restricciones geográficas.
 
 ### Revisión inicial
 
