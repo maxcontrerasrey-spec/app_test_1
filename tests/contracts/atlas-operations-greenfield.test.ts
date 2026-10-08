@@ -20,7 +20,7 @@ const navigation = readFileSync(new URL("../../src/shared/config/navigation.ts",
 const derivedDispatchMigration = readFileSync(new URL("../../supabase/migrations/20261007191119_atlas_dispatch_route_derived_fields.sql", import.meta.url), "utf8");
 const crossContractDriversMigration = readFileSync(new URL("../../supabase/migrations/20261007201116_allow_atlas_cross_contract_drivers.sql", import.meta.url), "utf8");
 const resourceReassignmentMigration = readFileSync(new URL("../../supabase/migrations/20261008001246_atlas_dispatch_resource_reassignment_and_roster_warning.sql", import.meta.url), "utf8");
-const dispatchAuditMigration = readFileSync(new URL("../../supabase/migrations/20261008210000_atlas_dispatch_requires_audited_route.sql", import.meta.url), "utf8");
+const dispatchAuditMigration = readFileSync(new URL("../../supabase/migrations/20261008194036_atlas_dispatch_requires_audited_route.sql", import.meta.url), "utf8");
 const atlasOperationsApi = readFileSync(new URL("../../src/modules/operaciones/services/atlasOperationsApi.ts", import.meta.url), "utf8");
 
 describe("Atlas Operations greenfield replacement", () => {

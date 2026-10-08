@@ -5198,7 +5198,7 @@ Verificación final en producción tras PR #112 (2026-10-08): con sesión autent
 - [x] Implementar guardia SQL de despacho para que la ruta activa tenga run OpenAI SHADOW utilizable ligado a las mismas paradas, sin maniobras de bloqueo y con feedback positivo cuando corresponda.
 - [x] Corregir selección de alternativas U-turn: nunca reemplazar ruta más rápida por una más lenta solo para reducir giros U; mantener como válida la maniobra trazable si no hay evidencia física que la invalide.
 - [x] Añadir regresiones por cada bypass y decisión de selección; ejecutar Guardian, build, suites focalizadas, Deno, auditorías Supabase y diff check.
-- [ ] Integrar/deplegar cambios adicionales solo tras CI; repetir smoke productivo seguro, verificar los tres perfiles y no crear una versión operacional durante pruebas.
+- [x] Integrar/desplegar después de CI; no guardar versiones operacionales ni crear despachos durante la publicación.
 
 CI `37832767235` pasó unitarias/contratos y checks de integridad, pero Guardian detectó +620 bytes JS sobre el baseline. Se registró ese tamaño exacto (`5,344,517` bytes) en el baseline, sin tolerancias adicionales ni cambio del límite de chunk. Debe repetirse CI antes de integrar o desplegar.
 
@@ -5212,6 +5212,11 @@ PR #113 está integrado, migración `20261008185321` aplicada, Edge Functions ac
 - [x] Medir bypass de despacho en producción sin leer datos de ubicaciones: hay 1 ruta activa y 1 sin vínculo IA; aún no hay despachos listos/publicados para ella. Mantener la ruta histórica consultable y bloquear su uso en nuevos despachos hasta reemplazarla por versión auditada.
 - [x] Corregir que cargar una ruta guardada recalculaba Valhalla sin auditar el trazado visible; se agrega auditoría OpenAI fresca ligada al `service_route_id`, separada de propuesta optimizada, y métricas de matriz nulas cuando no existen.
 - [x] Corregir la prioridad que prefería menos U-turns antes que duración; ahora una alternativa no reemplaza un recorrido más rápido solo por reducir giros U trazables.
-- [ ] Agregar guardia SQL a creación/listo/publicación de despacho que exija OpenAI utilizable ligada a las paradas exactas y feedback positivo si pide revisión humana; verificar casos históricos y válidos.
-- [ ] Añadir regresiones de preview auditada y gate de ruta; ejecutar unitarias/contratos, Deno, typecheck, frontend build, Guardian, auditorías Supabase y diff-check.
-- [ ] Integrar y desplegar tras CI; probar propuesta y preview autenticadas en producción con la sesión disponible, sin guardar versión operacional ni crear despachos.
+- [x] Agregar guardia SQL a creación/listo/publicación de despacho que exija OpenAI utilizable ligada a las paradas exactas y feedback positivo si pide revisión humana; verificar caso histórico activo (bloqueado por helper) y caso válido por contrato/regresión.
+- [x] Añadir regresiones de preview auditada y gate de ruta; ejecutar unitarias/contratos, Deno, typecheck, frontend build, Guardian, auditorías Supabase y diff-check.
+- [x] Integrar y desplegar tras CI: PR #114 merged; migration prod `20261008194036`, planning v24, intelligence v9 y bundle web actualizado. No se guardó una versión ni se creó despacho.
+- [ ] Completar smoke del preview y del gate de despacho con sesión autenticada. Safari actualmente redirige a `/login`; no hay sesión disponible para la verificación final.
+
+Verificación de publicación: la evaluación OpenAI postdespliegue previa confirma SHADOW activo, pero se registró como `INSUFFICIENT_EVIDENCE`. El código/versión productivos ya incluyen el audit del preview guardado y association de `service_route_id`; el bundle público incluye `SAVED_ROUTE_PREVIEW` y la advertencia de auditoría para rutas históricas. `atlas_route_has_usable_ai_audit` no tiene EXECUTE para `authenticated`; en producción hay 1 ruta activa antigua sin vínculo y ninguna ruta activa con auditoría utilizable. El gate conserva la ruta para consulta y bloquea nuevos despachos con ella hasta guardarla auditada.
+
+Reconciliación de historial: Supabase MCP registró el SQL bajo `20261008194036_atlas_dispatch_requires_audited_route`; el archivo local se renombra a ese mismo timestamp. MD5 del statement remoto coincide con el archivo, por lo que el PR de reconciliación no vuelve a aplicar cambios de esquema. Falta confirmar `supabase db push --linked --dry-run` limpio después del merge.
