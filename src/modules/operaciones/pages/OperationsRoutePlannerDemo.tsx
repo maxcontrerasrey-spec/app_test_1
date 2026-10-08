@@ -489,6 +489,16 @@ export function OperationsRoutePlannerDemo() {
       if ((result.uturnCount ?? 0) > 0) {
         routeNotices.push(`${result.uturnCount} giro(s) en U trazables; la red no confirma espacio físico ni necesidad de reversa.`);
       }
+      const pathOptimization = result.routePathOptimization;
+      if (pathOptimization?.status === "APPLIED") {
+        const addedTime = pathOptimization.addedDurationSeconds > 0 ? ` (+${formatDuration(pathOptimization.addedDurationSeconds)})` : "";
+        routeNotices.push(`Busqué alternativas viales cortas (hasta 500 m extra por tramo) y reduje los giros en U de ${pathOptimization.uturnsBefore} a ${pathOptimization.uturnsAfter}${addedTime}, manteniendo las mismas direcciones y su orden.`);
+        if (!pathOptimization.searchComplete) routeNotices.push("Una consulta de alternativas no respondió; conservé el mejor resultado validado por Valhalla.");
+      } else if (pathOptimization?.status === "NO_IMPROVEMENT") {
+        routeNotices.push(`Evalué alternativas en ${pathOptimization.searchedLegCount} tramo(s) con giro en U; ninguna redujo los giros dentro del margen de recorrido, así que mantuve la ruta base.`);
+      } else if (pathOptimization?.status === "SEARCH_INCOMPLETE") {
+        routeNotices.push("No se completó la búsqueda de alternativas viales; mantuve disponible la ruta calculada por Valhalla.");
+      }
       if (result.stopAccessAdjustments?.length) {
         const longestAdjustment = Math.max(...result.stopAccessAdjustments.map(({ displacementMeters }) => displacementMeters));
         routeNotices.push(`${result.stopAccessAdjustments.length} parada(s) ajustadas hasta ${longestAdjustment} m; acceso peatonal mapeado ≤30 m. Revisa el mapa.`);
