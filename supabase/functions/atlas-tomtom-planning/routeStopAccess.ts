@@ -5,6 +5,7 @@ export type StopAccessAdjustment = {
   original: RouteStopPoint;
   adjusted: RouteStopPoint;
   displacementMeters: number;
+  pedestrianAccessMeters?: number;
 };
 
 export const MAX_STOP_ACCESS_RADIUS_METERS = 20;
@@ -25,8 +26,10 @@ export function distanceBetweenPointsMeters(a: RouteStopPoint, b: RouteStopPoint
   return 6_371_000 * 2 * Math.asin(Math.sqrt(Math.min(1, haversine)));
 }
 
-/** Nearby stops are eligible for a small access-point search only when Valhalla places a U-turn close to them. */
-export function findStopsNearUTurns(
+const TURNING_MANEUVER_TYPES = new Set([9, 10, 11, 12, 13, 14, 15, 16]);
+
+/** Check nearby stop access when Valhalla places a real turn close to the pickup/dropoff. */
+export function findStopsNearTurningManeuvers(
   stops: RouteStopPoint[],
   maneuvers: RouteManeuverEvidence[],
   radiusMeters = 25,
@@ -34,7 +37,7 @@ export function findStopsNearUTurns(
 ): number[] {
   const eligible = new Map<number, number>();
   for (const maneuver of maneuvers) {
-    if ((maneuver.type !== 12 && maneuver.type !== 13 && maneuver.type !== "UTURN") || !Number.isFinite(maneuver.latitude) || !Number.isFinite(maneuver.longitude)) continue;
+    if (!(typeof maneuver.type === "number" ? TURNING_MANEUVER_TYPES.has(maneuver.type) : maneuver.type === "LEFT" || maneuver.type === "RIGHT" || maneuver.type === "UTURN") || !Number.isFinite(maneuver.latitude) || !Number.isFinite(maneuver.longitude)) continue;
     const location = { lat: maneuver.latitude!, lng: maneuver.longitude! };
     stops.forEach((stop, index) => {
       const distance = distanceBetweenPointsMeters(stop, location);
@@ -64,13 +67,13 @@ export function collectStopAccessAdjustments(
   });
 }
 
-/** A move counts as an improvement only if it saves time or removes a U-turn without a material time penalty. */
+/** A stop move counts only if it removes a turn without a material time penalty, or makes the whole route faster. */
 export function isStopAccessRouteImproved(
-  baseline: { durationSeconds: number; uturnCount: number },
-  candidate: { durationSeconds: number; uturnCount: number }
+  baseline: { durationSeconds: number; uturnCount: number; turnCount?: number },
+  candidate: { durationSeconds: number; uturnCount: number; turnCount?: number }
 ): boolean {
   if (!Number.isFinite(baseline.durationSeconds) || !Number.isFinite(candidate.durationSeconds)) return false;
-  if (candidate.uturnCount < baseline.uturnCount) {
+  if (candidate.uturnCount < baseline.uturnCount || (baseline.turnCount !== undefined && candidate.turnCount !== undefined && candidate.turnCount < baseline.turnCount)) {
     return candidate.durationSeconds <= baseline.durationSeconds * (1 + MAX_ACCEPTABLE_DETOUR_FOR_UTURN_SECONDS);
   }
   return candidate.uturnCount <= baseline.uturnCount

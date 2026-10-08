@@ -4321,6 +4321,13 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - Permitir el recorrido que el motor puede trazar y exponer una advertencia de espacio/radio no verificados cuando falten mediciones de vía y perfil dimensional real. No afirmar que el giro cabe ni que requiere reversa sin evidencia.
 - Un mensaje de “sin recorrido factible” solo puede describir lo que el buscador realmente probó; no atribuir intransitabilidad cuando la causa fue un filtro heurístico del planificador.
 
+## 2026-10-08 - Una mejora de acceso no debe activarse solo ante un U-turn
+
+- Evaluar también giros normales próximos a una parada: mover el punto unos metros al lado vial conveniente puede quitar una maniobra completa aunque no exista U-turn.
+- Mantener el trazado bajo autoridad del proveedor vial y aceptar un cambio de parada solo con una caminata corta en la red peatonal, mejora medida con el mismo perfil de vehículo y punto original visible para revisión.
+- La IA puede analizar y explicar evidencia de rutas candidatas, pero no debe inventar coordenadas ni sustituir el cálculo vial; las alternativas de trazado por una o dos cuadras requieren una búsqueda separada por tramo y comparación global.
+- Al consumir Responses API por HTTP directo, leer `output[].content[].text` de tipo `output_text`; la propiedad superior `output_text` es una comodidad del SDK y no debe asumirse en el JSON REST.
+
 ## 2026-10-08 - Reemplazar un catálogo exige conciliar también sus datos fuente
 
 - Que una tabla y su formulario tengan columnas marca/modelo/año no demuestra que el nuevo padrón haya recibido los valores del catálogo anterior; revisar migración de datos y el flujo completo desde el archivo hasta la consulta productiva.

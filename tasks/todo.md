@@ -5057,3 +5057,17 @@ Validación local: pruebas focalizadas 11/11; Deno check, auditoría de migracio
 Se reutiliza el snapping de candidatos viales que Valhalla ofrece por parada, limitado a 20 m, y se leen coordenadas efectivas desde los extremos de la geometría de cada tramo. Los candidatos se limitan a cuatro paradas cercanas a maniobras U-turn, requieren un recorrido peatonal mapeado de hasta 30 m y solo se presentan si reducen giros U-turn con hasta 5% de tiempo adicional o mantienen la cantidad y ahorran al menos 10 segundos. Todas las paradas y el destino fijado se conservan. La proximidad y el grafo peatonal no certifican cruce peatonal seguro. El original se marca en el mapa y su coordenada/desplazamiento se persiste al guardar la ruta. La búsqueda es acotada y oportunista; un error externo conserva la ruta base.
 
 Validación local: 209 pruebas unitarias pasan; Deno check pasa; frontend TypeScript/build pasa; Guardian termina con 0 errores y 0 advertencias; migraciones y `git diff --check` pasan. El audit de rendimiento vuelve a pasar sin alterar el baseline (JS total 5.336.507 bytes); se mantiene el warning previo del chunk de planificación de 1.088,46 kB minificado. `supabase db push --dry-run` identifica solo esta migración pendiente. `supabase db lint` remoto informa errores históricos en funciones ajenas al módulo (incluyendo renta y sincronización de roster), por eso no se atribuyen a este cambio ni se modifican aquí.
+# Atlas: Optimización de accesos a paradas y alternativas ante giros — 2026-10-08
+
+## Plan verificable
+
+- [x] Confirmar el estado productivo posterior a PR #101, los límites actuales de ajuste peatonal, el payload real de Route Intelligence y los contratos vigentes de Valhalla; conservar como baseline la ruta más rápida.
+- [x] Corregir el parseo de la respuesta REST de OpenAI con regresión del payload real; no registrar PII ni secretos.
+- [x] Extender la búsqueda de acceso cercano para considerar giros normales junto a una parada, sin prohibir U-turns; conservar la misma categoría de vehículo y la ruta base como fallback.
+- [x] Aceptar el punto alternativo solo con conexión peatonal mapeada de hasta 30 m, mejora de maniobras o tiempo dentro de los límites, conservar destino/identidad y mostrar los metros de acceso.
+- [x] Probar reglas de giro cercano, no mejora, desvío fuera del margen y payload REST de OpenAI. El screenshot no incluye coordenadas ni las demás paradas, así que no permite reproducir exactamente ese recorrido.
+- [ ] Diseñar y validar en una iteración separada alternativas de trazado de una o dos cuadras por tramo, comparándolas en el recorrido completo; no afirmar que este cambio ya implementa esa búsqueda.
+- [ ] Ejecutar pruebas focalizadas, Deno, TypeScript, build, auditorías Supabase y Guardian; revisar diff y CI, desplegar backend/UI en el orden correcto, y verificar la ruta real productiva sin modificar despachos.
+- [x] Registrar límites físicos y de alternativas por tramo; actualizar lecciones a partir del comportamiento verificado.
+
+Revisión inicial: PR #101 ya añadió un ajuste de acceso de hasta 20 m y caminata mapeada de hasta 30 m, solo para una parada muy cercana a un U-turn. Esto no implementa todavía la preferencia explícita por seguir 1–2 cuadras para evitar maniobras. Se mantiene la ruta base si la red vial no prueba una alternativa mejor; ningún U-turn queda prohibido. La IA no generará coordenadas: las alternativas deben surgir de Valhalla y de reglas determinísticas, y la auditoría IA debe seguir siendo auxiliar/fail-open.
