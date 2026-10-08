@@ -45,7 +45,7 @@ const formatDuration = (seconds: number) => {
 };
 
 function isOptimizedRoute(route: AtlasPlannedRoute): route is AtlasOptimizedRoute {
-  return "optimizationMethod" in route && route.optimizationMethod === "valhalla_matrix_open_path_v1";
+  return "optimizationMethod" in route && (route.optimizationMethod === "valhalla_matrix_open_path_v1" || route.optimizationMethod === "valhalla_matrix_open_path_v2");
 }
 
 function locationAt(stop: Stop): UserLocation {
@@ -341,6 +341,7 @@ export function OperationsRoutePlannerDemo() {
   function chooseResult(stopId: string, result: { id?: string | null; label: string; lat: number; lng: number; source?: "tomtom" | "map_pin" | "preset" }) {
     const { id: placeId, ...coordinates } = result;
     const location = { ...coordinates, providerPlaceId: placeId ?? null, source: result.source ?? "tomtom" as const };
+    invalidateRouteAudit();
     setStops((current) => {
       const found = current.some((stop) => stop.id === stopId);
       const updated = found
@@ -382,6 +383,7 @@ export function OperationsRoutePlannerDemo() {
     setPlanningRoute(null);
     setProposal(null);
     setRoute(null);
+    invalidateRouteAudit();
     setRouteState("idle");
     setMapPickingStopId(stop.id);
     if (stop.label && map) map.flyTo({ center: [stop.lng, stop.lat], zoom: Math.max(map.getZoom(), 16), duration: 450 });
@@ -413,6 +415,7 @@ export function OperationsRoutePlannerDemo() {
       id: uid(), label: "", lat: center?.lat ?? CALAMA.lat, lng: center?.lng ?? CALAMA.lng,
       kind: "stop", providerPlaceId: null, source: "tomtom"
     };
+    invalidateRouteAudit();
     setStops((current) => appendRouteStop(current, stop));
     setPlanningRoute(null);
     setProposal(null);
@@ -423,6 +426,7 @@ export function OperationsRoutePlannerDemo() {
   }
 
   function removeStop(id: string) {
+    invalidateRouteAudit();
     setStops((current) => normalizeRouteStops(current.filter((stop) => stop.id !== id)));
     if (search?.id === id) {
       setSearch(null);
@@ -435,6 +439,7 @@ export function OperationsRoutePlannerDemo() {
   }
 
   function moveStop(id: string, direction: -1 | 1) {
+    invalidateRouteAudit();
     setStops((current) => moveRouteStop(current, id, direction));
     setPlanningRoute(null);
     setRoute(null);
@@ -445,6 +450,7 @@ export function OperationsRoutePlannerDemo() {
   function toggleDestination(stopId: string) {
     const selected = stops.find((stop) => stop.id === stopId);
     if (!selected || stops[0]?.id === stopId) return;
+    invalidateRouteAudit();
     const shouldOpenDestinationSearch = !selected.fixedDestination;
     setStops((current) => setFixedDestination(current, stopId));
     setPlanningRoute(null);
@@ -456,6 +462,13 @@ export function OperationsRoutePlannerDemo() {
     setSearch(shouldOpenDestinationSearch
       ? { id: stopId, query: "", sessionId: crypto.randomUUID(), results: [], status: "idle" }
       : (search?.id === stopId ? null : search));
+  }
+
+  function invalidateRouteAudit() {
+    auditSequence.current += 1;
+    setRouteAudit(null);
+    setRouteAuditStatus("idle");
+    setRouteAuditError("");
   }
 
   async function generateRoute() {
@@ -495,20 +508,27 @@ export function OperationsRoutePlannerDemo() {
         routeNotices.push(`${result.stopAccessAdjustments.length} parada(s) ajustadas hasta ${longestAdjustment} m; acceso peatonal mapeado ≤30 m. Revisa el mapa.`);
       }
       setNotice(routeNotices.join(" "));
-      void evaluateRouteAudit(result);
+      if (result.routeOrderSearch?.alternativeApplied) {
+        setNotice((current) => `${current} Se contrastó el orden inicial con alternativas calculadas por Valhalla y se eligió el trazado más rápido comprobado.`);
+      } else if (result.routeOrderSearch?.status === "SEARCH_INCOMPLETE") {
+        setNotice((current) => `${current} Valhalla no completó todas las alternativas de orden; se conserva la ruta base calculada.`);
+      } else if (result.routeOrderSearch?.status === "SKIPPED_ROUTE_SIZE") {
+        setNotice((current) => `${current} Por el tamaño del recorrido no se evaluaron órdenes alternativos adicionales.`);
+      }
+      void evaluateRouteAudit(result, proposedStops);
     } catch (reason) {
       setRouteState("error");
       setError(reason instanceof Error ? reason.message : "No fue posible calcular la ruta.");
     }
   }
 
-  async function evaluateRouteAudit(candidate: AtlasOptimizedRoute) {
+  async function evaluateRouteAudit(candidate: AtlasOptimizedRoute, candidateStops: Array<{ lat: number; lng: number }>) {
     const requestId = ++auditSequence.current;
     setRouteAudit(null);
     setRouteAuditError("");
     setRouteAuditStatus("loading");
     try {
-      const audit = await auditAtlasRouteIntelligence(candidate, Number(selectedServiceId) || null, auditVehicleId || null, plannedVehicleType);
+      const audit = await auditAtlasRouteIntelligence(candidate, candidateStops, Number(selectedServiceId) || null, auditVehicleId || null, plannedVehicleType);
       if (auditSequence.current !== requestId) return;
       setRouteAudit(audit);
       const complete = isRouteAuditOperationallyComplete("ready", audit);
@@ -545,7 +565,7 @@ export function OperationsRoutePlannerDemo() {
   }
 
   async function startSimulation() {
-    if (!planningRoute || stops.length < 2) return;
+    if (!planningRoute || stops.length < 2 || !canUseAuditedRoute) return;
     setError("");
     if (simulationLoading) return;
     setSimulationLoading(true);
@@ -599,7 +619,7 @@ export function OperationsRoutePlannerDemo() {
   }
 
   async function saveRoute() {
-    if (!selectedServiceId || !routePrefix.trim() || !plannedVehicleType || !planningRoute || !isOptimizedRoute(planningRoute)) return;
+    if (!selectedServiceId || !routePrefix.trim() || !plannedVehicleType || !planningRoute || !isOptimizedRoute(planningRoute) || !canUseAuditedRoute || !routeAudit?.runId) return;
     setSaving(true);
     setError("");
     try {
@@ -611,7 +631,8 @@ export function OperationsRoutePlannerDemo() {
         durationSeconds: planningRoute.durationSeconds,
         matrixDurationSeconds: planningRoute.matrixDurationSeconds,
         inputOrderMatrixDurationSeconds: planningRoute.inputOrderMatrixDurationSeconds,
-        plannedVehicleType
+        plannedVehicleType,
+        routeIntelligenceRunId: routeAudit.runId
       });
       const routes = await getAtlasServiceRoutes(Number(selectedServiceId));
       setSavedRoutes(routes);
@@ -625,6 +646,7 @@ export function OperationsRoutePlannerDemo() {
   }
 
   async function loadSavedRoute(routeOrId: string | AtlasServiceRoute) {
+    invalidateRouteAudit();
     if (routeOrId === "") {
       routeLoadSequence.current += 1;
       setSelectedSavedRouteId("");
@@ -698,7 +720,7 @@ export function OperationsRoutePlannerDemo() {
       <section className="ops-route-demo__panel" aria-label="Planificador de recorrido">
         <div className="ops-route-demo__panel-head"><div><h2>{activeView === "planning" ? "Recorrido del servicio" : "Vista del conductor"}</h2><p>{activeView === "planning" ? "Agrega direcciones en cualquier orden; sugeriremos el recorrido." : "Simulación de avance por instrucciones."}</p></div><span className="ops-route-demo__counter">{stops.length} direcciones</span></div>
         {activeView === "planning" && <div className="ops-route-demo__route-config">
-          <label>Servicio base<select value={selectedServiceId} onChange={(event) => { setSelectedServiceId(event.target.value); setStops([]); setPlanningRoute(null); setProposal(null); setRoute(null); setRoutePrefix(""); setError(""); }}>
+          <label>Servicio base<select value={selectedServiceId} onChange={(event) => { invalidateRouteAudit(); setSelectedServiceId(event.target.value); setStops([]); setPlanningRoute(null); setProposal(null); setRoute(null); setRoutePrefix(""); setError(""); }}>
             <option value="">Selecciona servicio base</option>
             {catalog?.templates.map((item) => {
               const contract = catalog.contracts.find((candidate) => candidate.id === item.contract_id);
@@ -706,6 +728,7 @@ export function OperationsRoutePlannerDemo() {
             })}
           </select></label>
           <label>Tipo de vehículo para la ruta<select value={plannedVehicleType} onChange={(event) => {
+            invalidateRouteAudit();
             setPlannedVehicleType(event.target.value);
             setAuditVehicleId("");
             setPlanningRoute(null);
@@ -717,7 +740,7 @@ export function OperationsRoutePlannerDemo() {
             <option value="">Selecciona el tipo de equipo</option>
             {availableVehicleTypes.map((type) => <option key={type} value={type}>{type}</option>)}
           </select><small>Modelo de referencia: {plannedVehicleType === "Bus" ? "Mercedes-Benz O 500 RS" : plannedVehicleType === "Taxibus" ? "Mercedes-Benz LO 916" : plannedVehicleType === "Minibus" ? "Mercedes-Benz Sprinter 517" : "selecciona una categoría"}. Se guarda en la ruta y se compara por categoría con el equipo asignado.</small></label>
-          <label>Equipo de referencia para la auditoría<select value={auditVehicleId} onChange={(event) => setAuditVehicleId(event.target.value)} disabled={!plannedVehicleType || auditVehicles.length === 0}>
+          <label>Equipo de referencia para la auditoría<select value={auditVehicleId} onChange={(event) => { invalidateRouteAudit(); setAuditVehicleId(event.target.value); }} disabled={!plannedVehicleType || auditVehicles.length === 0}>
             <option value="">Sin ficha técnica individual</option>
             {auditVehicles.map((vehicle) => <option key={vehicle.id} value={vehicle.id}>{vehicle.code} · {vehicle.plate ?? "Sin patente"} · {vehicle.routingProfile?.verified_at ? "ficha técnica verificada" : "dimensiones sin verificar"}</option>)}
           </select><small>Opcional. Solo aporta dimensiones a la auditoría; no asigna el equipo al despacho.</small></label>

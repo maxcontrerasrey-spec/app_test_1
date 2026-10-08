@@ -1,6 +1,7 @@
 type Candidate = { order: number[]; matrixDurationSeconds: number };
 
 export type FeasibleCandidate<T> = Candidate & { route: T };
+export type RoutedOrder<T> = Candidate & { route: T; alternativeApplied: boolean; alternativesEvaluated: number; alternativesFailed: number };
 
 /**
  * Produces a small, deterministic set of nearby orders for road-engine validation.
@@ -78,6 +79,26 @@ export async function selectFastestFeasibleAlternative<T extends { durationSecon
     if (!route) continue;
     if (!best || route.durationSeconds < best.route.durationSeconds || (route.durationSeconds === best.route.durationSeconds && candidate.matrixDurationSeconds < best.matrixDurationSeconds)) {
       best = { ...candidate, route };
+    }
+  }
+  return best;
+}
+
+/** Compares the matrix seed with road-engine-calculated alternatives using actual route metrics. */
+export async function selectFastestRoutedOrder<T extends { durationSeconds: number; distanceMeters: number }>(
+  seed: Candidate,
+  seedRoute: T,
+  candidates: Candidate[],
+  evaluate: (order: number[]) => Promise<T | null>
+): Promise<RoutedOrder<T>> {
+  let best: RoutedOrder<T> = { ...seed, route: seedRoute, alternativeApplied: false, alternativesEvaluated: 0, alternativesFailed: 0 };
+  for (const candidate of candidates) {
+    const route = await evaluate(candidate.order);
+    best.alternativesEvaluated += 1;
+    if (!route) { best.alternativesFailed += 1; continue; }
+    if (route.durationSeconds < best.route.durationSeconds
+      || route.durationSeconds === best.route.durationSeconds && route.distanceMeters < best.route.distanceMeters) {
+      best = { ...candidate, route, alternativeApplied: true, alternativesEvaluated: best.alternativesEvaluated, alternativesFailed: best.alternativesFailed };
     }
   }
   return best;

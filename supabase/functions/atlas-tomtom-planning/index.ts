@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { optimizeOpenRoute } from "./openRouteOptimizer.ts";
+import { buildRouteOrderAlternatives, selectFastestRoutedOrder } from "./routeOrderAlternatives.ts";
 import { buildMatrixBlocks } from "./matrixBlocks.ts";
 import { buildRouteSegments } from "./routeSegments.ts";
 import { countUTurns, routeLocationType, type RouteManeuver } from "./routeQuality.ts";
@@ -502,26 +503,51 @@ Deno.serve(async (request) => {
       const vehicleRoutingModel = resolveAtlasVehicleRoutingModel(plannedVehicleType);
       const matrix = await valhallaMatrix(stops, vehicleRoutingModel);
       const optimized = optimizeOpenRoute(matrix, undefined, fixedDestinationIndex as number | undefined);
-      const selectedOrder = optimized.order;
-      const baseRoute = await valhallaRoute(selectedOrder.map((index) => stops[index]!), vehicleRoutingModel);
-      const accessAdjustment = await tryNearbyStopAccessAdjustment(stops, selectedOrder, fixedDestinationIndex as number | undefined, baseRoute, vehicleRoutingModel);
+      const seedOrder = optimized.order;
+      const baseRoute = await valhallaRoute(seedOrder.map((index) => stops[index]!), vehicleRoutingModel);
+      // The directed matrix is an estimate. For ordinary-sized routes, validate
+      // the two best neighboring orders with the road engine and choose by its
+      // full-route duration. Keep the search bounded for long routes.
+      const orderCandidates = stops.length <= 20
+        ? buildRouteOrderAlternatives(matrix, seedOrder, fixedDestinationIndex as number | undefined, 2)
+        : [];
+      let routeAlternativeFailures = 0;
+      const routedOrder = await selectFastestRoutedOrder(
+        { order: seedOrder, matrixDurationSeconds: optimized.durationSeconds },
+        baseRoute,
+        orderCandidates,
+        async (order) => {
+          try { return await valhallaRoute(order.map((index) => stops[index]!), vehicleRoutingModel); }
+          catch { routeAlternativeFailures += 1; return null; }
+        }
+      );
+      const selectedOrder = routedOrder.order;
+      const selectedRoute = routedOrder.route;
+      const selectedMatrixDurationSeconds = routedOrder.matrixDurationSeconds;
+      const accessAdjustment = await tryNearbyStopAccessAdjustment(stops, selectedOrder, fixedDestinationIndex as number | undefined, selectedRoute, vehicleRoutingModel);
       const selectedStops = accessAdjustment
         ? accessAdjustment.adjustedOptimization.order.map((index) => accessAdjustment.adjustedStops[index]!)
         : selectedOrder.map((index) => stops[index]!);
-      const routeBeforePathAlternatives = accessAdjustment?.route ?? baseRoute;
+      const routeBeforePathAlternatives = accessAdjustment?.route ?? selectedRoute;
       const pathAlternatives = await tryRoutePathAlternatives(selectedStops, routeBeforePathAlternatives, vehicleRoutingModel);
       const finalRoute = pathAlternatives?.route ?? routeBeforePathAlternatives;
       const finalOrder = accessAdjustment?.adjustedOptimization.order ?? selectedOrder;
       return response({
         ...publicRoute(finalRoute),
         order: finalOrder,
-        matrixDurationSeconds: accessAdjustment?.adjustedOptimization.durationSeconds ?? optimized.durationSeconds,
+        matrixDurationSeconds: accessAdjustment?.adjustedOptimization.durationSeconds ?? selectedMatrixDurationSeconds,
         inputOrderMatrixDurationSeconds: accessAdjustment
           ? accessAdjustment.adjustedOptimization.inputOrderDurationSeconds
           : optimized.inputOrderDurationSeconds,
+        routeOrderSearch: {
+          candidatesEvaluated: routedOrder.alternativesEvaluated + 1,
+          failedCandidates: routeAlternativeFailures,
+          alternativeApplied: routedOrder.alternativeApplied,
+          status: stops.length > 20 ? "SKIPPED_ROUTE_SIZE" : routeAlternativeFailures ? "SEARCH_INCOMPLETE" : "COMPLETE"
+        },
         stopAccessAdjustments: accessAdjustment?.stopAccessAdjustments ?? [],
         routePathOptimization: pathAlternatives?.routePathOptimization ?? null,
-        optimizationMethod: "valhalla_matrix_open_path_v1",
+        optimizationMethod: "valhalla_matrix_open_path_v2",
         plannedVehicleType: vehicleRoutingModel.category,
         referenceModel: vehicleRoutingModel.model,
         referenceDimensions: vehicleRoutingModel.dimensions,

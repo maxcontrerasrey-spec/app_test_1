@@ -20,6 +20,8 @@ describe("Atlas mandatory route audit gate", () => {
     ["ready", { ...successfulAudit, provider: "none" }],
     ["ready", { ...successfulAudit, runId: null }],
     ["ready", { ...successfulAudit, decision: "ERROR" }],
+    ["ready", { ...successfulAudit, decision: "REJECT" }],
+    ["ready", { ...successfulAudit, requiresReplan: true }],
     ["ready", { ...successfulAudit, auditedManeuverCount: 0 }]
   ] as const)("keeps an unverified route unavailable (%s)", (status, audit) => {
     expect(isRouteAuditOperationallyComplete(status, audit)).toBe(false);

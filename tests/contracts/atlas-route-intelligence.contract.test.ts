@@ -27,7 +27,22 @@ describe("Atlas Route Intelligence security contract", () => {
     expect(edge).toContain('const MODEL = "gpt-6-luna"');
     expect(edge).toContain('Deno.env.get("OPENAI_API_KEY")');
     expect(edge).toContain("store: false");
-    expect(edge).not.toContain("service_role");
+    expect(edge).toContain('Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")');
+  });
+
+  it("binds saved route stops and metrics to a persisted OpenAI audit", () => {
+    const binding = readFileSync(new URL("../../supabase/migrations/20261008172634_atlas_route_audit_bound_to_saved_route.sql", import.meta.url), "utf8");
+    expect(binding).toContain("p_route_intelligence_run_id uuid");
+    expect(binding).toContain("audit_row.actor_user_id <> actor");
+    expect(binding).toContain("audit_row.provider <> 'openai'");
+    expect(binding).toContain("audit_row.decision in ('ERROR','REJECT')");
+    expect(binding).toContain("audit_row.requires_replan");
+    expect(binding).toContain("submitted_stops is distinct from audit_row.route_snapshot->'stops'");
+    expect(binding).toContain("from public, anon, authenticated");
+    expect(binding).toContain("to service_role");
+    expect(binding).toContain("coalesce(auth.role(),'') <> 'service_role'");
+    expect(edge).toContain("actor_user_id: actorUserId");
+    expect(binding).toMatch(/revoke all on function public\.atlas_ops_save_optimized_service_route\([^;]+authenticated/);
   });
 
   it("defaults to OFF, calls the model for every valid route, keeps risk triage bounded, and leaves failed routes as blocked drafts", () => {

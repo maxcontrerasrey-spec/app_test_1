@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildRouteOrderAlternatives } from "../../supabase/functions/atlas-tomtom-planning/routeOrderAlternatives";
+import { buildRouteOrderAlternatives, selectFastestRoutedOrder } from "../../supabase/functions/atlas-tomtom-planning/routeOrderAlternatives";
 
 describe("Atlas automatic route-feasibility alternatives", () => {
   it("generates distinct nearby orders ranked by directed road duration", () => {
@@ -35,5 +35,33 @@ describe("Atlas automatic route-feasibility alternatives", () => {
 
   it("returns no alternative when a two-point route has an immutable destination", () => {
     expect(buildRouteOrderAlternatives([[0, 1], [1, 0]], [0, 1], 1, 5)).toEqual([]);
+  });
+
+  it("chooses the fastest complete Valhalla route rather than trusting matrix ranking", async () => {
+    const durations = [
+      [0, 2, 3, 8],
+      [3, 0, 2, 3],
+      [2, 3, 0, 2],
+      [3, 3, 3, 0]
+    ];
+    const seed = { order: [0, 1, 2, 3], matrixDurationSeconds: 6 };
+    const candidates = buildRouteOrderAlternatives(durations, seed.order, 3, 2);
+    const result = await selectFastestRoutedOrder(seed, { durationSeconds: 600, distanceMeters: 6000 }, candidates, async (order) => {
+      if (order[1] === 2) return { durationSeconds: 700, distanceMeters: 7000 };
+      return { durationSeconds: 500, distanceMeters: 5200 };
+    });
+
+    expect(result.alternativeApplied).toBe(true);
+    expect(result.route.durationSeconds).toBe(500);
+    expect(result.order.at(-1)).toBe(3);
+    expect(new Set(result.order).size).toBe(4);
+  });
+
+  it("keeps the Valhalla seed when every alternative fails or is slower", async () => {
+    const seed = { order: [0, 1, 2], matrixDurationSeconds: 5 };
+    const candidates = buildRouteOrderAlternatives([[0, 2, 3], [3, 0, 2], [2, 3, 0]], seed.order, undefined, 2);
+    const result = await selectFastestRoutedOrder(seed, { durationSeconds: 400, distanceMeters: 4000 }, candidates, async () => null);
+    expect(result.alternativeApplied).toBe(false);
+    expect(result.order).toEqual(seed.order);
   });
 });
