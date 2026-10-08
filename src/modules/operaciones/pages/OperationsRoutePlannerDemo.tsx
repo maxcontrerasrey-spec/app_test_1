@@ -491,11 +491,7 @@ export function OperationsRoutePlannerDemo() {
       }
       const pathOptimization = result.routePathOptimization;
       if (pathOptimization?.status === "APPLIED") {
-        routeNotices.push(`Ruta refinada: ${pathOptimization.uturnsBefore}→${pathOptimization.uturnsAfter} giros en U.`);
-      } else if (pathOptimization?.status === "NO_IMPROVEMENT") {
-        routeNotices.push("Ruta base conservada: sin alternativa vial mejor dentro del margen.");
-      } else if (pathOptimization?.status === "SEARCH_INCOMPLETE") {
-        routeNotices.push("Búsqueda vial incompleta; se conserva la ruta base.");
+        routeNotices.push(`Mejora vial: U-turns ${pathOptimization.uturnsBefore}→${pathOptimization.uturnsAfter}.`);
       }
       if (result.stopAccessAdjustments?.length) {
         const longestAdjustment = Math.max(...result.stopAccessAdjustments.map(({ displacementMeters }) => displacementMeters));
