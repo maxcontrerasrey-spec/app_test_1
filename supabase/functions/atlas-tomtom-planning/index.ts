@@ -18,6 +18,7 @@ const MAX_BODY_BYTES = 64 * 1024;
 const MAX_STOPS = 151;
 const MATRIX_BLOCK_SIZE = 10;
 const ROUTE_MAX_LOCATIONS = 10;
+const MAX_ROUTED_ORDER_ALTERNATIVES = 4;
 const VALHALLA = "https://valhalla1.openstreetmap.de";
 const CALAMA = { longitude: -68.9294, latitude: -22.4544 };
 
@@ -112,7 +113,12 @@ async function valhallaMatrix(sites: Point[], model: ReturnType<typeof resolveAt
 function combineValhallaLegs(routeLegs: AtlasRoutePathLeg[], model: ReturnType<typeof resolveAtlasVehicleRoutingModel>) {
   const coordinates = routeLegs.flatMap((leg, index) => index === 0 ? leg.coordinates : leg.coordinates.slice(1));
   const deduplicated = coordinates.filter((coordinate, index) => index === 0 || coordinate[0] !== coordinates[index - 1]![0] || coordinate[1] !== coordinates[index - 1]![1]);
-  const maneuvers = routeLegs.flatMap(({ maneuvers: legManeuvers }) => legManeuvers);
+  const maneuvers = routeLegs.flatMap(({ maneuvers: legManeuvers }, routeLegIndex) => legManeuvers.map((maneuver) => ({
+    ...maneuver,
+    routeLegIndex,
+    legDestinationStopIndex: routeLegIndex + 1,
+    legDestinationIsFinal: routeLegIndex === routeLegs.length - 1
+  })));
   const maneuverFeatures = analyzeValhallaManeuvers(maneuvers);
   const stopAccessPoints = routeLegs.length
     ? [routeLegs[0]?.coordinates[0], ...routeLegs.map((leg) => leg.coordinates.at(-1))]
@@ -509,7 +515,7 @@ Deno.serve(async (request) => {
       // the two best neighboring orders with the road engine and choose by its
       // full-route duration. Keep the search bounded for long routes.
       const orderCandidates = stops.length <= 20
-        ? buildRouteOrderAlternatives(matrix, seedOrder, fixedDestinationIndex as number | undefined, 2)
+        ? buildRouteOrderAlternatives(matrix, seedOrder, fixedDestinationIndex as number | undefined, MAX_ROUTED_ORDER_ALTERNATIVES)
         : [];
       let routeAlternativeFailures = 0;
       const routedOrder = await selectFastestRoutedOrder(

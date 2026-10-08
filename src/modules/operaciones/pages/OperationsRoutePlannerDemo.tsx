@@ -13,7 +13,7 @@ import { matchRouteDestinationPresets, type RouteDestinationPreset } from "../li
 import { formatDriverSimulationError, mergeFerrostarRouteSegments, splitRouteStops } from "../lib/routeSimulation";
 import { atlasVehicleTypesMatch, getAvailableAtlasRouteVehicleCategories, resolveAtlasRouteVehicleCategory } from "../lib/vehicleRoutingCosting";
 import { ensurePlannedRouteLayers } from "../lib/plannedRouteMapLayers";
-import { AtlasRouteAuditPanel, isRouteAuditOperationallyComplete, type RouteAuditFeedbackType } from "../components/AtlasRouteAuditPanel";
+import { AtlasRouteAuditPanel, isRouteAuditEvaluationComplete, isRouteAuditOperationallyComplete, type RouteAuditFeedbackType } from "../components/AtlasRouteAuditPanel";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "../styles/route-planner-demo.css";
 
@@ -125,13 +125,17 @@ export function OperationsRoutePlannerDemo() {
   const [auditVehicleId, setAuditVehicleId] = useState("");
   const [routeAudit, setRouteAudit] = useState<AtlasRouteAuditResponse | null>(null);
   const [routeAuditStatus, setRouteAuditStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
-  const canUseAuditedRoute = isRouteAuditOperationallyComplete(routeAuditStatus, routeAudit);
   const [routeAuditError, setRouteAuditError] = useState("");
   const preserveAuditOnProposalApply = useRef(false);
   const [auditFeedbackType, setAuditFeedbackType] = useState<RouteAuditFeedbackType>("ACCEPT_AI");
   const [auditFeedbackReason, setAuditFeedbackReason] = useState("");
   const [auditFeedbackSaved, setAuditFeedbackSaved] = useState(false);
   const [auditFeedbackSaving, setAuditFeedbackSaving] = useState(false);
+  const canUseAuditedRoute = isRouteAuditOperationallyComplete(
+    routeAuditStatus,
+    routeAudit,
+    auditFeedbackSaved && (auditFeedbackType === "ACCEPT_AI" || auditFeedbackType === "OVERRIDE_FEASIBLE"),
+  );
   const [saving, setSaving] = useState(false);
   const routeLoadSequence = useRef(0);
   const auditSequence = useRef(0);
@@ -508,8 +512,11 @@ export function OperationsRoutePlannerDemo() {
         routeNotices.push(`${result.stopAccessAdjustments.length} parada(s) ajustadas hasta ${longestAdjustment} m; acceso peatonal mapeado ≤30 m. Revisa el mapa.`);
       }
       setNotice(routeNotices.join(" "));
+      const orderCandidatesEvaluated = result.routeOrderSearch?.candidatesEvaluated ?? 0;
       if (result.routeOrderSearch?.alternativeApplied) {
-        setNotice((current) => `${current} Se contrastó el orden inicial con alternativas calculadas por Valhalla y se eligió el trazado más rápido comprobado.`);
+        setNotice((current) => `${current} Se trazaron y compararon ${orderCandidatesEvaluated} órdenes candidatos; se eligió el más rápido entre los trazados válidos revisados.`);
+      } else if (result.routeOrderSearch?.status === "COMPLETE" && orderCandidatesEvaluated > 1) {
+        setNotice((current) => `${current} Se evaluaron ${orderCandidatesEvaluated} órdenes candidatos trazados; se conserva el más rápido entre las alternativas revisadas.`);
       } else if (result.routeOrderSearch?.status === "SEARCH_INCOMPLETE") {
         setNotice((current) => `${current} Valhalla no completó todas las alternativas de orden; se conserva la ruta base calculada.`);
       } else if (result.routeOrderSearch?.status === "SKIPPED_ROUTE_SIZE") {
@@ -531,7 +538,7 @@ export function OperationsRoutePlannerDemo() {
       const audit = await auditAtlasRouteIntelligence(candidate, candidateStops, Number(selectedServiceId) || null, auditVehicleId || null, plannedVehicleType);
       if (auditSequence.current !== requestId) return;
       setRouteAudit(audit);
-      const complete = isRouteAuditOperationallyComplete("ready", audit);
+      const complete = isRouteAuditEvaluationComplete("ready", audit);
       setRouteAuditStatus(complete ? "ready" : "error");
       if (!complete) setRouteAuditError(audit.summary || "La auditoría IA está desactivada; vuelve a proponer el recorrido para intentarlo otra vez.");
     } catch (reason) {

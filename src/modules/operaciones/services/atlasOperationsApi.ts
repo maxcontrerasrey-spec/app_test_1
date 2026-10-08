@@ -100,6 +100,7 @@ export type AtlasRouteManeuver = {
   instruction: string; roadNames: string[]; turnAngleDeg: number | null; inboundHeading: number | null; outboundHeading: number | null;
   roadClassFrom: null; roadClassTo: null; lanesFrom: null; lanesTo: null; oneWay: null; estimatedRoadWidthM: null;
   trafficLevel: "UNKNOWN"; knownRestrictionCount: null; geometryConfidence: number; sourceEvidence: string[];
+  routeLegIndex: number | null; legDestinationStopIndex: number | null; legDestinationIsFinal: boolean | null;
 };
 export type AtlasRouteAuditDecision = "APPROVE" | "WARNING" | "REJECT" | "INSUFFICIENT_EVIDENCE" | "ERROR";
 export type AtlasRouteAuditResponse = {

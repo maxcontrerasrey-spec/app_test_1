@@ -20,6 +20,10 @@ export type RouteManeuverFeature = {
   validatedRestrictions: Array<{ id: string; level: "INFO" | "CAUTION" | "BLOCKED"; reason: string; source: string }>;
   geometryConfidence: number;
   sourceEvidence: string[];
+  /** Zero-based Valhalla leg metadata; a multi-stop route can have intermediate arrivals. */
+  routeLegIndex: number | null;
+  legDestinationStopIndex: number | null;
+  legDestinationIsFinal: boolean | null;
 };
 
 export type RawValhallaManeuver = {
@@ -31,6 +35,9 @@ export type RawValhallaManeuver = {
   street_names?: unknown;
   latitude?: unknown;
   longitude?: unknown;
+  routeLegIndex?: unknown;
+  legDestinationStopIndex?: unknown;
+  legDestinationIsFinal?: unknown;
 };
 
 export type ManeuverRiskCandidate = { maneuverId: string; score: number; reasons: string[]; requiresAiAudit: boolean };
@@ -115,6 +122,9 @@ export function analyzeValhallaManeuvers(maneuvers: RawValhallaManeuver[]): Rout
       validatedRestrictions: [],
       geometryConfidence,
       sourceEvidence,
+      routeLegIndex: Number.isInteger(maneuver.routeLegIndex) && Number(maneuver.routeLegIndex) >= 0 ? Number(maneuver.routeLegIndex) : null,
+      legDestinationStopIndex: Number.isInteger(maneuver.legDestinationStopIndex) && Number(maneuver.legDestinationStopIndex) >= 1 ? Number(maneuver.legDestinationStopIndex) : null,
+      legDestinationIsFinal: typeof maneuver.legDestinationIsFinal === "boolean" ? maneuver.legDestinationIsFinal : null,
     };
   });
 }
@@ -142,13 +152,41 @@ export function normalizeClientManeuverFeature(value: unknown, index: number): R
   const inbound = row.inboundHeading === null ? null : boundedNumber(row.inboundHeading, 0, 360);
   const outbound = row.outboundHeading === null ? null : boundedNumber(row.outboundHeading, 0, 360);
   const confidence = boundedNumber(row.geometryConfidence, 0, 1);
+  const routeLegIndex = row.routeLegIndex === null ? null : boundedNumber(row.routeLegIndex, 0, 149);
+  const legDestinationStopIndex = row.legDestinationStopIndex === null ? null : boundedNumber(row.legDestinationStopIndex, 1, 150);
+  const legDestinationIsFinal = row.legDestinationIsFinal === null ? null : typeof row.legDestinationIsFinal === "boolean" ? row.legDestinationIsFinal : undefined;
   if ((row.latitude !== null && latitude === null) || (row.longitude !== null && longitude === null) || (row.turnAngleDeg !== null && angle === null) || (row.inboundHeading !== null && inbound === null) || (row.outboundHeading !== null && outbound === null) || confidence === null) return null;
+  if ((row.routeLegIndex !== null && (!Number.isInteger(routeLegIndex) || routeLegIndex === null))
+    || (row.legDestinationStopIndex !== null && (!Number.isInteger(legDestinationStopIndex) || legDestinationStopIndex === null))
+    || legDestinationIsFinal === undefined
+    || (routeLegIndex === null) !== (legDestinationStopIndex === null)
+    || (routeLegIndex === null) !== (legDestinationIsFinal === null)
+    || routeLegIndex !== null && legDestinationStopIndex !== routeLegIndex + 1) return null;
   return {
     maneuverId: row.maneuverId as string, latitude, longitude, maneuverType: row.maneuverType as ManeuverType,
     instruction: row.instruction, roadNames: row.roadNames as string[], turnAngleDeg: angle, inboundHeading: inbound, outboundHeading: outbound,
     roadClassFrom: null, roadClassTo: null, lanesFrom: null, lanesTo: null, oneWay: null, estimatedRoadWidthM: null,
-    trafficLevel: "UNKNOWN", knownRestrictionCount: null, validatedRestrictions: [], geometryConfidence: confidence, sourceEvidence: row.sourceEvidence as string[]
+    trafficLevel: "UNKNOWN", knownRestrictionCount: null, validatedRestrictions: [], geometryConfidence: confidence, sourceEvidence: row.sourceEvidence as string[],
+    routeLegIndex, legDestinationStopIndex, legDestinationIsFinal
   };
+}
+
+/** Confirms each maneuver's leg/destination metadata agrees with the exact ordered stop snapshot. */
+export function hasValidManeuverLegContext(maneuvers: RouteManeuverFeature[], stopCount: number) {
+  if (!Number.isInteger(stopCount) || stopCount < 2 || maneuvers.length === 0) return false;
+  const valid = maneuvers.every((maneuver) =>
+    maneuver.routeLegIndex !== null
+    && maneuver.legDestinationStopIndex !== null
+    && maneuver.legDestinationIsFinal !== null
+    && maneuver.routeLegIndex >= 0
+    && maneuver.routeLegIndex < stopCount - 1
+    && maneuver.legDestinationStopIndex === maneuver.routeLegIndex + 1
+    && maneuver.legDestinationStopIndex < stopCount
+    && maneuver.legDestinationIsFinal === (maneuver.legDestinationStopIndex === stopCount - 1)
+  );
+  if (!valid) return false;
+  const legsWithEvidence = new Set(maneuvers.map((maneuver) => maneuver.routeLegIndex));
+  return Array.from({ length: stopCount - 1 }, (_, index) => index).every((legIndex) => legsWithEvidence.has(legIndex));
 }
 
 /** Uses high-risk maneuvers when present; otherwise samples the full route so every route still reaches AI review. */

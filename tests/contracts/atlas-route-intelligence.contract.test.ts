@@ -2,8 +2,10 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const migration = readFileSync(new URL("../../supabase/migrations/20261008004912_atlas_route_intelligence_shadow.sql", import.meta.url), "utf8");
+const humanReviewMigration = readFileSync(new URL("../../supabase/migrations/20261008182601_atlas_route_human_review_gate.sql", import.meta.url), "utf8");
 const edge = readFileSync(new URL("../../supabase/functions/atlas-route-intelligence/index.ts", import.meta.url), "utf8");
 const config = readFileSync(new URL("../../supabase/config.toml", import.meta.url), "utf8");
+const planner = readFileSync(new URL("../../supabase/functions/atlas-tomtom-planning/index.ts", import.meta.url), "utf8");
 
 describe("Atlas Route Intelligence security contract", () => {
   it("requires JWT and server-verified superadmin before reading or persisting route evidence", () => {
@@ -45,6 +47,13 @@ describe("Atlas Route Intelligence security contract", () => {
     expect(binding).toMatch(/revoke all on function public\.atlas_ops_save_optimized_service_route\([^;]+authenticated/);
   });
 
+  it("requires positive human feedback before saving an audit that requests human review", () => {
+    expect(humanReviewMigration).toContain("if audit_row.requires_human_review and not exists (");
+    expect(humanReviewMigration).toContain("f.feedback_type in ('ACCEPT_AI','OVERRIDE_FEASIBLE')");
+    expect(humanReviewMigration).toContain("from public, anon");
+    expect(humanReviewMigration).toContain("to authenticated");
+  });
+
   it("defaults to OFF, calls the model for every valid route, keeps risk triage bounded, and leaves failed routes as blocked drafts", () => {
     expect(edge).toContain('|| "OFF"');
     expect(edge).toContain('mode !== "SHADOW"');
@@ -58,5 +67,13 @@ describe("Atlas Route Intelligence security contract", () => {
   it("accepts only the producer's empty restriction placeholder and reloads validated restrictions server-side", () => {
     expect(edge).toContain("normalizeClientManeuverFeature");
     expect(edge).toContain("getValidatedRestrictions(templateId, token, apiKey)");
+  });
+
+  it("validates leg metadata against the exact stop snapshot before asking AI", () => {
+    expect(edge).toContain("hasValidManeuverLegContext(normalizedManeuvers, routeSnapshot.stops.length)");
+    expect(edge).toContain("invalid_maneuver_leg_context");
+    expect(edge).toContain("routeLegIndex");
+    expect(edge).toContain("legDestinationIsFinal");
+    expect(planner).toContain("const MAX_ROUTED_ORDER_ALTERNATIVES = 4");
   });
 });
