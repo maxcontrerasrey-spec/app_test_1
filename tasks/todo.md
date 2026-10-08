@@ -5143,7 +5143,9 @@ La Edge Function productiva `atlas-tomtom-planning` está ACTIVE v19 y coincide 
 - [x] Mejorar tolerancia a fallos/transitorios de OpenAI con límites y telemetría no sensible; conservar estados de fallo y reintento explícitos.
 - [x] Añadir regresiones a selección de orden, gate UI/RPC y persistencia; ejecutar suites focalizadas, Deno, typecheck/build, Guardian, auditorías SQL/seguridad y diff check.
 - [x] Publicar migration → Edge Functions → frontend tras gates; verificar schema/RPC, versiones Edge, gateway y bundle público.
-- [ ] Ejecutar una propuesta real autenticada en producción para confirmar respuesta OpenAI, guardado vinculado y experiencia completa; falta una sesión activa de superadministrador en el navegador.
+- [x] Ejecutar una propuesta real autenticada en producción para confirmar respuesta OpenAI y persistencia del resultado; no guardar una ruta operacional durante el smoke.
+
+Evidencia de smoke productivo (2026-10-08): sesión de superadministrador en `gestion.busesjm.cl`; se calculó una propuesta para 12 paradas del servicio Operativo Mina 4 usando categoría Taxibus. Valhalla trazó 10.7 km / 2.130 s; la matriz indicó 2.127 s tanto para la propuesta de orden como para el orden de entrada, sin mejora de reordenamiento. Route Intelligence respondió con OpenAI (`gpt-6-luna`) en 13.343 ms, persistió `WARNING` con revisión humana requerida, auditó 20 de 62 maniobras y registró snapshot de 12 paradas sin error; lectura posterior de Supabase confirmó la fila y que no está vinculada a ruta guardada. La UI mantuvo «Aplicar este orden» bloqueado hasta terminar la auditoría y luego habilitó la propuesta. La revisión reportó datos insuficientes para accesibilidad/rotonda y falta de dimensiones verificadas; no certifica viabilidad física. No se guardó una versión de ruta ni se probó el RPC final de guardado en este smoke. Google no se midió empíricamente; Valhalla + búsqueda acotada de alternativas trazadas + revisión IA es la mejor opción verificada actualmente para Chile, no una demostración de óptimo global ni superioridad frente a Google.
 
 ### Criterios de selección
 
