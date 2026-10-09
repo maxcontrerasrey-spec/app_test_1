@@ -7,8 +7,10 @@ import { buildRouteSegments } from "./routeSegments.ts";
 import { countUTurns, routeLocationType, type RouteManeuver } from "./routeQuality.ts";
 import { analyzeValhallaManeuvers, preFilterRouteManeuvers } from "./routeIntelligence.ts";
 import { collectStopAccessAdjustments, distanceBetweenPointsMeters, findStopsNearTurningManeuvers, isStopAccessRouteImproved, MAX_STOP_ACCESS_RADIUS_METERS, MAX_STOP_ACCESS_WALK_METERS, type StopAccessAdjustment } from "./routeStopAccess.ts";
+import { verifyPedestrianStopAccess } from "./pedestrianStopAccess.ts";
 import { ALTERNATIVE_REQUEST_TIMEOUT_MS, MAX_ALTERNATES_PER_LEG, MAX_ALTERNATIVE_CONCURRENCY, extractValhallaAlternateLegs, findUturnLegIndexes, parseValhallaRouteLeg, selectRoutePathAlternatives, type AtlasRoutePathLeg } from "./routePathAlternatives.ts";
 import { resolveAtlasVehicleRoutingModel } from "../../../src/modules/operaciones/lib/vehicleRoutingCosting.ts";
+import { orderRouteStopsByIndex } from "./orderedRouteStops.ts";
 
 const ALLOWED_ORIGINS = new Set([
   "https://gestion.busesjm.cl",
@@ -220,27 +222,20 @@ async function tryNearbyStopAccessAdjustment(
     let adjustments = collectStopAccessAdjustments(orderedStops, accessRoute.stopAccessPoints, eligible);
     if (!adjustments.length) return null;
 
-    const accessChecks = await Promise.all(adjustments.map(async (adjustment) => ({
-      stopIndex: adjustment.stopIndex,
-      accessible: await pedestrianAccessDistanceMeters(adjustment.original, adjustment.adjusted)
-    })));
-    let verifiedWalkDistances = new Map(accessChecks
-      .filter((check): check is typeof check & { accessible: number } => check.accessible !== null && check.accessible <= MAX_STOP_ACCESS_WALK_METERS)
-      .map((check) => [check.stopIndex, check.accessible]));
-    const verifiedIndexes = new Set(verifiedWalkDistances.keys());
-    if (verifiedIndexes.size !== adjustments.length) {
-      if (!verifiedIndexes.size) return null;
-      // Remove unverified cross-street candidates and retrace only the access points with a short mapped walking path.
-      accessRoute = await valhallaRoute(orderedStops, model, verifiedIndexes);
-      adjustments = collectStopAccessAdjustments(orderedStops, accessRoute.stopAccessPoints, [...verifiedIndexes]);
-      if (!adjustments.length) return null;
-      const verifiedAgain = await Promise.all(adjustments.map(async (adjustment) => {
-        const distance = await pedestrianAccessDistanceMeters(adjustment.original, adjustment.adjusted);
-        return { stopIndex: adjustment.stopIndex, distance };
-      }));
-      if (verifiedAgain.some(({ distance }) => distance === null || distance > MAX_STOP_ACCESS_WALK_METERS)) return null;
-      verifiedWalkDistances = new Map(verifiedAgain.map(({ stopIndex, distance }) => [stopIndex, distance!]));
-    }
+    const verifiedAccess = await verifyPedestrianStopAccess(
+      adjustments,
+      (adjustment) => pedestrianAccessDistanceMeters(adjustment.original, adjustment.adjusted),
+      async (verifiedIndexes) => {
+        // Remove unverified cross-street candidates and retrace only accesses with a short mapped walk.
+        accessRoute = await valhallaRoute(orderedStops, model, new Set(verifiedIndexes));
+        adjustments = collectStopAccessAdjustments(orderedStops, accessRoute.stopAccessPoints, [...verifiedIndexes]);
+        return adjustments;
+      },
+      MAX_STOP_ACCESS_WALK_METERS
+    );
+    if (!verifiedAccess?.length) return null;
+    adjustments = verifiedAccess.map(({ pedestrianAccessMeters: _distance, ...adjustment }) => adjustment);
+    const verifiedWalkDistances = new Map(verifiedAccess.map(({ stopIndex, pedestrianAccessMeters }) => [stopIndex, pedestrianAccessMeters]));
 
     const adjustedStops = stops.map((stop) => ({ ...stop }));
     const stopAccessAdjustments: StopAccessAdjustment[] = adjustments.map((adjustment) => {
@@ -621,13 +616,12 @@ Deno.serve(async (request) => {
       const selectedRoute = routedOrder.route;
       const selectedMatrixDurationSeconds = routedOrder.matrixDurationSeconds;
       const accessAdjustment = await tryNearbyStopAccessAdjustment(stops, selectedOrder, fixedDestinationIndex as number | undefined, selectedRoute, vehicleRoutingModel);
-      const selectedStops = accessAdjustment
-        ? accessAdjustment.adjustedOptimization.order.map((index) => accessAdjustment.adjustedStops[index]!)
-        : selectedOrder.map((index) => stops[index]!);
-      const routeBeforePathAlternatives = accessAdjustment?.route ?? selectedRoute;
-      const pathAlternatives = await tryRoutePathAlternatives(selectedStops, routeBeforePathAlternatives, vehicleRoutingModel);
-      const finalRoute = pathAlternatives?.route ?? routeBeforePathAlternatives;
+      const stopsByInputIndex = accessAdjustment?.adjustedStops ?? stops;
       const finalOrder = accessAdjustment?.adjustedOptimization.order ?? selectedOrder;
+      const orderedStops = orderRouteStopsByIndex(stopsByInputIndex, finalOrder);
+      const routeBeforePathAlternatives = accessAdjustment?.route ?? selectedRoute;
+      const pathAlternatives = await tryRoutePathAlternatives(orderedStops, routeBeforePathAlternatives, vehicleRoutingModel);
+      const finalRoute = pathAlternatives?.route ?? routeBeforePathAlternatives;
       const routeResult = {
         ...publicRoute(finalRoute),
         order: finalOrder,
@@ -653,7 +647,6 @@ Deno.serve(async (request) => {
         dimensionEvidence: vehicleRoutingModel.dimensionEvidence,
         referenceDimensionsSent: true
       };
-      const orderedStops = finalOrder.map((index) => selectedStops[index]!);
       const actorUserId = await getAuthenticatedUserId(token, request.headers.get("apikey"));
       return response(await attachServerEvidence(routeResult, orderedStops, actorUserId, "OPTIMIZED_PROPOSAL"), 200, origin);
     }

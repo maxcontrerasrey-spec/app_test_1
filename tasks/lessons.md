@@ -4400,3 +4400,8 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - Cuando el usuario define que el recorrido completo dura menos de 50 minutos y es totalmente viable, los rechazos y recomendaciones de calidad de maniobra IA quedan registrados/visibles, pero no exigen aprobación manual ni cambios de puntos para habilitar el recorrido.
 - Mantener separados esos hallazgos de los requisitos técnicos: Valhalla debe devolver un recorrido completo; OpenAI debe ejecutarse y persistir su auditoría; la firma server-side y la coincidencia exacta de vehículo, paradas y métricas deben validarse en servidor.
 - Un fallo técnico, ausencia de auditoría o atestación inválida siempre bloquea; “viable” describe el criterio operativo de duración, no certifica seguridad vial, maniobra física ni radio de giro.
+
+# 2026-10-09 - Aplicar la secuencia optimizada una sola vez
+
+- Mantener las paradas indexadas por orden de entrada hasta aplicar la permutación del optimizador; no aplicar índices de origen sobre una lista que ya está ordenada.
+- Usar la misma secuencia final para trazar, firmar evidencia y enviar al auditor IA. Probar una permutación no identidad y accesos ajustados, porque el orden identidad oculta esta clase de discrepancia.

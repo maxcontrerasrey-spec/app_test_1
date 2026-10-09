@@ -130,6 +130,8 @@ describe("Atlas Route Intelligence security contract", () => {
     const evidence = readFileSync(new URL("../../supabase/functions/_shared/atlasRouteEvidence.ts", import.meta.url), "utf8");
     const attestationMigration = readFileSync(new URL("../../supabase/migrations/20261009010200_atlas_route_evidence_attestation.sql", import.meta.url), "utf8");
     expect(planner).toContain("attachServerEvidence(routeResult, orderedStops, actorUserId, \"OPTIMIZED_PROPOSAL\")");
+    expect(planner).toContain("const orderedStops = orderRouteStopsByIndex(stopsByInputIndex, finalOrder)");
+    expect(planner).not.toContain("finalOrder.map((index) => selectedStops[index]!)");
     expect(planner).toContain("attachServerEvidence(routeResult, stops, actorUserId, routeKind)");
     expect(edge).toContain("verifyAtlasRouteEvidence(claims, proof.signature, secret, actorUserId)");
     expect(edge).toContain("normalizeRouteSnapshot(proof.routeSnapshot)");
