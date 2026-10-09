@@ -4,7 +4,7 @@ import type { AtlasRouteAuditResponse } from "../../src/modules/operaciones/serv
 
 const successfulAudit: AtlasRouteAuditResponse = {
   decision: "WARNING", riskScore: 25, summary: "Revisión operacional recomendada", analyzedManeuvers: [],
-  requiresReplan: false, requiresHumanReview: true, runId: "run-1", mode: "SHADOW", provider: "openai", auditedManeuverCount: 2
+  requiresReplan: false, requiresHumanReview: true, routeDurationSeconds: 1_000, runId: "run-1", mode: "SHADOW", provider: "openai", auditedManeuverCount: 2
 };
 
 describe("Atlas mandatory route audit gate", () => {
@@ -35,9 +35,14 @@ describe("Atlas mandatory route audit gate", () => {
     expect(isRouteAuditEvaluationComplete("ready", alternative)).toBe(false);
     expect(isRouteAuditOperationallyComplete("ready", alternative, true)).toBe(false);
 
-    const penalizedSegment = { ...successfulAudit, requiresHumanReview: false, requiresReplan: false, analyzedManeuvers: [{ maneuverId: "m-2", decision: "CAUTION", riskScore: 73, reasons: ["Tramo mejorable"], evidence: ["Valhalla"], recommendedAction: "PENALIZE_SEGMENT" }] };
+    const penalizedSegment = { ...successfulAudit, requiresHumanReview: true, requiresReplan: false, analyzedManeuvers: [{ maneuverId: "m-2", decision: "CAUTION", riskScore: 73, reasons: ["Tramo mejorable"], evidence: ["Valhalla"], recommendedAction: "PENALIZE_SEGMENT" }] };
     expect(isRouteAuditEvaluationComplete("ready", penalizedSegment)).toBe(true);
-    expect(isRouteAuditOperationallyComplete("ready", penalizedSegment, true)).toBe(true);
+    expect(isRouteAuditOperationallyComplete("ready", penalizedSegment)).toBe(true);
+    expect(isRouteAuditOperationallyComplete("ready", { ...penalizedSegment, routeDurationSeconds: 2_999 })).toBe(true);
+    expect(isRouteAuditOperationallyComplete("ready", { ...penalizedSegment, routeDurationSeconds: 3_000 })).toBe(false);
+    expect(isRouteAuditOperationallyComplete("ready", { ...penalizedSegment, routeDurationSeconds: 3_001 })).toBe(false);
+    const explicitReview = { ...penalizedSegment, analyzedManeuvers: [...penalizedSegment.analyzedManeuvers, { maneuverId: "m-3", decision: "CAUTION", riskScore: 75, reasons: ["Revisar"], evidence: ["IA"], recommendedAction: "HUMAN_REVIEW" }] };
+    expect(isRouteAuditOperationallyComplete("ready", explicitReview)).toBe(false);
   });
 
   it.each([

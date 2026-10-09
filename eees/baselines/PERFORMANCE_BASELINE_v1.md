@@ -197,12 +197,14 @@ Revision local macOS 2026-10-08 validación IA Atlas: el build mide 7.468.890 by
 
 Revision 2026-10-08 Atlas replanteo auditado, CI Ubuntu/Node 24: Guardian run 37856817367 midió +4.813 bytes en `dist` y JS respecto de la medición local anterior, sin aumento de CSS. El incremento corresponde a probar alternativas de orden con auditoría IA, reintentar la misma ruta y auditar el recorrido del simulador antes de ejecutarlo. Se registra el artefacto canónico reportado por CI; tolerancia cero y presupuesto por chunk de 520 KB se conservan.
 
+Revision 2026-10-09 viabilidad bajo 50 minutos: Guardian CI run 37865964890 midió +326 bytes en `dist` y JS para derivar el gate de penalización suave desde la duración validada del snapshot y aplicarlo consistentemente en la auditoría, guardado y despacho. CSS, vendors y assets trackeados no cambian; se actualiza el baseline exactamente a la medición CI, manteniendo tolerancia cero y el límite de chunk de 520 KB.
+
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 7473703,
+  "distTotalBytes": 7474029,
   "jsFileCount": 71,
-  "jsTotalBytes": 5354843,
+  "jsTotalBytes": 5355169,
   "cssFileCount": 15,
   "cssTotalBytes": 539686,
   "budgetPolicy": {
