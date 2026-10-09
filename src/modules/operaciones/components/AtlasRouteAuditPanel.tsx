@@ -100,7 +100,7 @@ export function AtlasRouteAuditPanel({
     {audit && <>
       <p><b>{auditDecisionLabel(audit.decision, routeIsUnderOperationalThreshold(audit))}</b>{audit.riskScore === null ? " · sin puntaje" : ` · indicador ${audit.riskScore}/100`}{routeAuditNeedsHumanReview(audit) ? " · requiere revisión humana" : ""}</p>
       <p>{audit.summary}</p>
-      {routeIsUnderOperationalThreshold(audit) && <p role="status">Viable: menos de 50 min. La IA registra observaciones sin bloquear el recorrido.</p>}
+      {routeIsUnderOperationalThreshold(audit) && <p role="status">Viable: &lt;50 min.</p>}
       {routeAuditSuggestsAlternative(audit) && <>
         <p role={routeIsUnderOperationalThreshold(audit) ? "status" : "alert"}>{routeIsUnderOperationalThreshold(audit)
           ? "La IA sugiere una mejora; el sistema probará alternativas automáticamente. No necesitas cambiar el orden."
