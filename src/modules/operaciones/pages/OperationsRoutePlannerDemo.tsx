@@ -10,7 +10,7 @@ import { calculateAtlasValhallaRoute, getAtlasOperationsCatalogs, getAtlasServic
 import { appendRouteStop, moveRouteStop, normalizeRouteStops, setFixedDestination } from "../lib/routeStopOrder";
 import { applyRouteAccessAdjustments } from "../lib/applyRouteAccessAdjustments";
 import { matchRouteDestinationPresets, type RouteDestinationPreset } from "../lib/routeDestinationCatalog";
-import { formatDriverSimulationError, mergeFerrostarRouteSegments, splitRouteStops, toAtlasPlannedRoute } from "../lib/routeSimulation";
+import { formatDriverSimulationError, mergeFerrostarRouteSegments, routeGeometriesMatch, splitRouteStops } from "../lib/routeSimulation";
 import { searchAuditedRoute } from "../lib/auditedRouteSearch";
 import { useAtlasRouteAudit } from "../hooks/useAtlasRouteAudit";
 import { atlasVehicleTypesMatch, getAvailableAtlasRouteVehicleCategories, resolveAtlasRouteVehicleCategory } from "../lib/vehicleRoutingCosting";
@@ -134,7 +134,6 @@ export function OperationsRoutePlannerDemo() {
   const preserveAuditOnProposalApply = useRef(false);
   const [saving, setSaving] = useState(false);
   const routeLoadSequence = useRef(0);
-  const driverRouteForSimulation = useRef<Route | null>(null);
 
   useEffect(() => {
     const routeId = searchParams.get("routeId");
@@ -178,7 +177,6 @@ export function OperationsRoutePlannerDemo() {
       return;
     }
     resetRouteAudit();
-    driverRouteForSimulation.current = null;
   }, [stops, selectedServiceId, auditVehicleId, plannedVehicleType, resetRouteAudit]);
 
   const hasEnteredDirection = (proposal?.stops ?? stops).some((stop) => stop.label.trim().length > 0);
@@ -463,7 +461,6 @@ export function OperationsRoutePlannerDemo() {
 
   function invalidateRouteAudit() {
     resetRouteAudit();
-    driverRouteForSimulation.current = null;
   }
 
   async function generateRoute(excludedOrders: number[][] = [], replanReason = "") {
@@ -482,7 +479,6 @@ export function OperationsRoutePlannerDemo() {
     setProposal(null);
     setRoute(null);
     resetRouteAudit();
-    driverRouteForSimulation.current = null;
     setAuditFeedbackSaved(false);
     setAlternativeAttempts(0);
     setAlternativeSearchComplete(false);
@@ -587,20 +583,6 @@ export function OperationsRoutePlannerDemo() {
       }, plannedVehicleType);
       runtime.configureFerrostarCore(core, plannedVehicleType);
       coreRef.current = core;
-      const cachedDriverRoute = driverRouteForSimulation.current;
-      if (cachedDriverRoute) {
-        setRoute(cachedDriverRoute);
-        phase = "iniciar Ferrostar";
-        await core.stopNavigation();
-        const provider = runtime.createSimulatedLocationProvider();
-        core.locationProvider = provider;
-        locationProviderRef.current = provider;
-        core.startNavigation(cachedDriverRoute, navigationConfig());
-        provider.setSimulatedRoute(cachedDriverRoute);
-        setActiveView("driver");
-        setError("");
-        return;
-      }
       phase = "consultar Valhalla";
       const routeCore = runtime.createFerrostarCore(() => {}, plannedVehicleType);
       const routeSegments: Route[] = [];
@@ -617,22 +599,24 @@ export function OperationsRoutePlannerDemo() {
         routeSegments.push(routes[0]!);
       }
       const driverRoute = mergeFerrostarRouteSegments(routeSegments);
-      driverRouteForSimulation.current = driverRoute;
-      const driverAuditRoute = toAtlasPlannedRoute(driverRoute, planningRoute, stops.length);
+      const driverAuditRoute = await calculateAtlasValhallaRoute(stops.map(({ lat, lng }) => ({ lat, lng })), plannedVehicleType, undefined, "DRIVER_SIMULATION");
+      if (!routeGeometriesMatch(driverAuditRoute.coordinates, driverRoute.geometry)) {
+        setError("El trazado del simulador difiere de la ruta firmada por el planificador. Se detuvo la navegación; vuelve a calcular la ruta antes de intentarlo nuevamente.");
+        return;
+      }
       setAuditFeedbackSaved(false);
       const driverAudit = await evaluateRouteAudit(
         driverAuditRoute,
         stops.map(({ lat, lng }) => ({ lat, lng })),
         plannedVehicleType,
         null,
-        "OPTIMIZED_PROPOSAL",
+        "DRIVER_SIMULATION",
         Number(selectedServiceId) || null,
         auditVehicleId || null,
         false
       );
       if (!driverAudit || !isRouteAuditEvaluationComplete("ready", driverAudit)) {
         if (driverAudit && routeAuditRequiresReplan(driverAudit)) {
-          driverRouteForSimulation.current = null;
           const currentOrder = stops.map((_, index) => index);
           await generateRoute([currentOrder], "Route Intelligence encontró una maniobra que requiere revisar el trazado del simulador.");
           return;

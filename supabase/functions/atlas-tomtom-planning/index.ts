@@ -1,4 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { ATLAS_ROUTE_EVIDENCE_VERSION, getAtlasRouteEvidenceSecret, hashAtlasRouteGeometry, signAtlasRouteEvidence, type AtlasRouteEvidenceClaims, type AtlasRouteKind } from "../_shared/atlasRouteEvidence.ts";
 import { optimizeOpenRoute } from "./openRouteOptimizer.ts";
 import { buildRouteOrderAlternatives, routeOrderAlternativeBudget, selectFastestRoutedOrder } from "./routeOrderAlternatives.ts";
 import { buildMatrixBlocks } from "./matrixBlocks.ts";
@@ -339,6 +340,66 @@ function publicRoute(route: Awaited<ReturnType<typeof valhallaRoute>>) {
   return result;
 }
 
+async function attachServerEvidence<T extends {
+  coordinates: Array<[number, number]>;
+  distanceMeters: number;
+  durationSeconds: number;
+  plannedVehicleType: string;
+  referenceModel: string;
+  referenceDimensions: { length: number; width: number; height: number; weight: number };
+  dimensionEvidence: string;
+  maneuvers: unknown[];
+  matrixDurationSeconds?: number;
+  inputOrderMatrixDurationSeconds?: number | null;
+  routeOrderSearch?: Record<string, unknown>;
+}>(result: T, stops: Point[], actorUserId: string, routeKind: AtlasRouteKind) {
+  const secret = getAtlasRouteEvidenceSecret((name) => Deno.env.get(name));
+  if (!secret) throw new Error("route_evidence_signing_key_unavailable");
+  const routeSnapshot: Record<string, unknown> = {
+    stops,
+    distanceMeters: Math.round(result.distanceMeters),
+    durationSeconds: Math.round(result.durationSeconds),
+    matrixDurationSeconds: typeof result.matrixDurationSeconds === "number" ? Math.round(result.matrixDurationSeconds) : null,
+    inputOrderMatrixDurationSeconds: typeof result.inputOrderMatrixDurationSeconds === "number" ? Math.round(result.inputOrderMatrixDurationSeconds) : null,
+    plannedVehicleType: result.plannedVehicleType,
+    referenceModel: result.referenceModel,
+    referenceDimensions: {
+      lengthM: result.referenceDimensions.length,
+      widthM: result.referenceDimensions.width,
+      heightM: result.referenceDimensions.height,
+      weightTons: result.referenceDimensions.weight
+    },
+    dimensionEvidence: result.dimensionEvidence,
+    reportedRouteOrderSearch: result.routeOrderSearch ?? null,
+    routeKind
+  };
+  const claims: AtlasRouteEvidenceClaims = {
+    evidenceVersion: ATLAS_ROUTE_EVIDENCE_VERSION,
+    actorUserId,
+    issuedAtMs: Date.now(),
+    geometryHash: await hashAtlasRouteGeometry(result.coordinates),
+    routeSnapshot,
+    maneuvers: result.maneuvers
+  };
+  const signature = await signAtlasRouteEvidence(claims, secret);
+  const { maneuvers: _maneuvers, ...proof } = claims;
+  return { ...result, serverEvidence: { ...proof, signature } };
+}
+
+async function getAuthenticatedUserId(accessToken: string, apiKey: string | null) {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  if (!supabaseUrl || !apiKey) throw new Error("auth_config_missing");
+  const response = await fetch(`${supabaseUrl}/auth/v1/user`, {
+    headers: { apikey: apiKey, Authorization: `Bearer ${accessToken}`, accept: "application/json" },
+    signal: AbortSignal.timeout(5000)
+  });
+  if (!response.ok) throw new Error("superadmin_user_lookup_failed");
+  const user = await response.json() as { id?: unknown };
+  return typeof user.id === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(user.id)
+    ? user.id
+    : (() => { throw new Error("superadmin_user_lookup_invalid"); })();
+}
+
 async function isActiveSuperAdmin(accessToken: string, apiKey: string | null) {
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   if (!supabaseUrl || !apiKey) throw new Error("auth_config_missing");
@@ -567,7 +628,7 @@ Deno.serve(async (request) => {
       const pathAlternatives = await tryRoutePathAlternatives(selectedStops, routeBeforePathAlternatives, vehicleRoutingModel);
       const finalRoute = pathAlternatives?.route ?? routeBeforePathAlternatives;
       const finalOrder = accessAdjustment?.adjustedOptimization.order ?? selectedOrder;
-      return response({
+      const routeResult = {
         ...publicRoute(finalRoute),
         order: finalOrder,
         matrixDurationSeconds: accessAdjustment?.adjustedOptimization.durationSeconds ?? selectedMatrixDurationSeconds,
@@ -591,7 +652,10 @@ Deno.serve(async (request) => {
         referenceDimensions: vehicleRoutingModel.dimensions,
         dimensionEvidence: vehicleRoutingModel.dimensionEvidence,
         referenceDimensionsSent: true
-      }, 200, origin);
+      };
+      const orderedStops = finalOrder.map((index) => selectedStops[index]!);
+      const actorUserId = await getAuthenticatedUserId(token, request.headers.get("apikey"));
+      return response(await attachServerEvidence(routeResult, orderedStops, actorUserId, "OPTIMIZED_PROPOSAL"), 200, origin);
     }
     if (action === "route") {
       if (!Array.isArray(payload.stops) || payload.stops.length < 2 || payload.stops.length > MAX_STOPS) {
@@ -602,7 +666,11 @@ Deno.serve(async (request) => {
       const vehicleRoutingModel = resolveAtlasVehicleRoutingModel(vehicleType);
       const stops = payload.stops.map(point);
       const baseRoute = await valhallaRoute(stops, vehicleRoutingModel);
-      return response({ ...publicRoute(baseRoute), plannedVehicleType: vehicleRoutingModel.category, referenceModel: vehicleRoutingModel.model, referenceDimensions: vehicleRoutingModel.dimensions, dimensionEvidence: vehicleRoutingModel.dimensionEvidence, referenceDimensionsSent: true }, 200, origin);
+      const routeKind = payload.evidencePurpose === undefined ? "SAVED_ROUTE_PREVIEW" : payload.evidencePurpose;
+      if (routeKind !== "SAVED_ROUTE_PREVIEW" && routeKind !== "DRIVER_SIMULATION") return response({ error: "invalid_evidence_purpose" }, 400, origin);
+      const routeResult = { ...publicRoute(baseRoute), plannedVehicleType: vehicleRoutingModel.category, referenceModel: vehicleRoutingModel.model, referenceDimensions: vehicleRoutingModel.dimensions, dimensionEvidence: vehicleRoutingModel.dimensionEvidence, referenceDimensionsSent: true };
+      const actorUserId = await getAuthenticatedUserId(token, request.headers.get("apikey"));
+      return response(await attachServerEvidence(routeResult, stops, actorUserId, routeKind), 200, origin);
     }
     return response({ error: "unsupported_action" }, 400, origin);
   } catch (error) {

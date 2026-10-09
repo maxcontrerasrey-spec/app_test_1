@@ -87,7 +87,7 @@ describe("Atlas Route Intelligence security contract", () => {
   });
 
   it("passes bounded Valhalla route-order search evidence to AI instead of letting it claim no comparison occurred", () => {
-    expect(operationsApi).toContain("reportedRouteOrderSearch: optimizedRoute.routeOrderSearch");
+    expect(planner).toContain("reportedRouteOrderSearch: result.routeOrderSearch ?? null");
     expect(edge).toContain("reportedRouteOrderSearch");
     expect(edge).toContain("no afirmar que no hubo comparación de órdenes");
     expect(edge).toContain("di que se evaluó una búsqueda acotada, nunca exhaustiva ni global");
@@ -98,7 +98,6 @@ describe("Atlas Route Intelligence security contract", () => {
     expect(edge).toContain('service_route_id: serviceRouteId');
     expect(operationsApi).toContain('routeKind?: "OPTIMIZED_PROPOSAL" | "SAVED_ROUTE_PREVIEW"');
     expect(operationsApi).toContain('serviceRouteId: options.serviceRouteId ?? null');
-    expect(operationsApi).toContain('searchScope: optimizedRoute.routeOrderSearch.searchScope ?? "BOUNDED"');
     expect(planner).toContain('searchScope: "BOUNDED"');
     expect(planner).toContain('optimized.candidateOrders.slice(1, 9)');
     expect(planner).toContain('routeOrderAlternativeBudget(stops.length)');
@@ -117,5 +116,22 @@ describe("Atlas Route Intelligence security contract", () => {
     expect(edge).toContain("routeLegIndex");
     expect(edge).toContain("legDestinationIsFinal");
     expect(edge).toContain("const MAX_AUDITED_MANEUVERS = 20");
+  });
+
+  it("accepts only planner-signed route evidence and persists its verified provenance", () => {
+    const evidence = readFileSync(new URL("../../supabase/functions/_shared/atlasRouteEvidence.ts", import.meta.url), "utf8");
+    const attestationMigration = readFileSync(new URL("../../supabase/migrations/20261009010200_atlas_route_evidence_attestation.sql", import.meta.url), "utf8");
+    expect(planner).toContain("attachServerEvidence(routeResult, orderedStops, actorUserId, \"OPTIMIZED_PROPOSAL\")");
+    expect(planner).toContain("attachServerEvidence(routeResult, stops, actorUserId, routeKind)");
+    expect(edge).toContain("verifyAtlasRouteEvidence(claims, proof.signature, secret, actorUserId)");
+    expect(edge).toContain("normalizeRouteSnapshot(proof.routeSnapshot)");
+    expect(edge).not.toContain("normalizeRouteSnapshot(body.routeSnapshot)");
+    expect(edge).toContain("route_evidence_version: proof.evidenceVersion");
+    expect(attestationMigration).toContain("route_evidence_version = 1");
+    expect(attestationMigration).toContain("route_evidence_version smallint not null default 0");
+    expect(attestationMigration).toContain("atlas_ops_route_evidence_link_guard");
+    expect(attestationMigration).toContain("atlas_ops_dispatch_attested_route_guard");
+    expect(evidence).toContain("ATLAS_ROUTE_EVIDENCE_MAX_AGE_MS");
+    expect(readFileSync(new URL("../../src/modules/operaciones/pages/OperationsRoutePlannerDemo.tsx", import.meta.url), "utf8")).toContain("routeGeometriesMatch(driverAuditRoute.coordinates, driverRoute.geometry)");
   });
 });

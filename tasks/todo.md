@@ -5299,9 +5299,11 @@ Revisión del plan antes de implementar: la IA solo priorizará una maniobra ya 
 - [x] Llevar la duración validada del snapshot a la normalización UI y repetir la misma regla en las RPC/trigger persistentes de guardado y despacho.
 - [x] Agregar regresiones justo bajo, igual y sobre 50 minutos, incluida combinación PENALIZE + HUMAN_REVIEW/insuficiente; auditar propuesta, guardado y despacho.
 - [x] Comparar contra `origin/main`, correr pruebas focalizadas (59/59), Deno, TypeScript/build, auditoría de migraciones/seguridad, Guardian (0 errores; warning PERF-001 preexistente) y `git diff --check`.
-- [ ] Integrar y desplegar con CI verde; aplicar la migración aditiva antes del frontend/Edge, verificar versión, permisos/JWT y el bundle público. No crear ruta ni despacho de prueba.
+- [x] Integrar y desplegar con CI verde; aplicar la migración aditiva antes del frontend/Edge, verificar versión, permisos/JWT y el bundle público. No crear ruta ni despacho de prueba.
 
 CI inicial del PR #121 ejecutó las pruebas unitarias, contratos, integridad, seguridad y smoke de frontend correctamente; Guardian falló exclusivamente porque el build Linux/Node 24 excedió por 326 bytes el baseline de tolerancia cero. Se registró esa medición exacta (sin cambiar límites) y se vuelve a ejecutar Guardian completo antes de integrar.
+
+Verificación productiva 2026-10-09: PR #121 (`7999b810cc686aa54b3855b05d55066e9e3b54ec`) integrado; CI main run `37866657163` verde. Migración aplicada y registrada como `20261009004914 / atlas_short_route_soft_penalty_is_non_blocking`. Edge `atlas-route-intelligence` activa v11 con `verify_jwt=true`. `gestion.busesjm.cl` devuelve HTTP 200 y el chunk publicado `OperationsRoutePlannerDemo-LuNRhclW.js` (1.101.185 bytes) contiene `routeDurationSeconds`, `PENALIZE_SEGMENT` y el mensaje sub-50 vigente. No se creó ni modificó ruta/despacho de operación. Cierre de este subalcance: publicación verificada por artefacto y configuración backend; la interacción autenticada real queda pendiente porque requeriría crear una evaluación o ruta de prueba.
 
 Revisión inicial: la frase vigente “Menos de 50 min: viable. Confirma revisión.” contradice el criterio si la única señal adicional es `PENALIZE_SEGMENT`. Se tratará esa acción como alerta suave bajo el umbral, sin el paso humano; las acciones explícitas de bloqueo/revisión y los fallos IA se preservan. El límite se mide con segundos del snapshot validado por el servidor, no con entrada libre del cliente.
 
@@ -5311,3 +5313,21 @@ Revisión inicial: la frase vigente “Menos de 50 min: viable. Confirma revisi�
 - [ ] Verificar explícitamente qué valida la IA al cambiar la unidad asignada; preservar la advertencia no bloqueante de tipo distinta definida para Despacho y distinguirla de evidencia dimensional del vehículo.
 - [ ] Completar benchmark reproducible con fixtures geográficos iguales entre motores viables en Chile; la documentación comparada no prueba por sí sola cuál minimiza duración y maniobras en los casos Atlas.
 - [ ] Cerrar las brechas de verificación productiva mediante trazas/smokes autorizados sin crear ni alterar despachos operacionales.
+
+## Plan siguiente: autenticar la evidencia de ruta que evalúa la IA — 2026-10-09
+
+### Revisión del contrato y decisión previa
+
+La ruta y las maniobras se originan en Valhalla dentro de `atlas-tomtom-planning`, pero el navegador las reenvía como datos editables a `atlas-route-intelligence`; normalizar campos y calcular un hash después de recibirlos no demuestra su origen. Las RPC SQL sí atan el resultado al usuario y paradas/métricas para guardar o despachar, pero hoy la procedencia del trazado IA no está autenticada. Elegir una atestación HMAC corta generada por el Edge Function del planificador y verificada por el Edge de IA; ambas funciones ya tienen secreto Supabase server-side. La atestación incluirá usuario, tipo de vehículo, paradas ordenadas, resultado/maniobras/metadata del servidor, propósito de ruta y vencimiento; la IA rechazará evidencia cambiada, vencida o de otro usuario. La IA usará el payload atestado, no los campos duplicados del cliente. Guardar la procedencia verificada en el ledger para que SQL no permita usar auditorías históricas sin prueba autenticada.
+
+### Plan verificable
+
+- [x] Implementar un formato versionado, determinista y con vencimiento de evidencia de ruta HMAC; aislarlo en código compartido y fallar cerrado si no está disponible el secreto server-side.
+- [x] Emitir atestación en optimize/route solo después de una respuesta Valhalla completa; incluir orden real de paradas, geometría, métricas, perfil/dimensiones, maniobras, alcance de búsqueda y usuario verificado.
+- [x] Cambiar la frontera OpenAI para verificar HMAC, usuario, tiempo y propósito; ignorar/rechazar métricas y maniobras libres y persistir hash/procedencia de evidencia atestada.
+- [x] En simulación Ferrostar, auditar el trazado atestado y comprobar que la ruta concreta que se simula corresponde a la geometría validada; detener/recalcular automáticamente si difieren, sin pedir reordenamiento manual.
+- [x] Endurecer guardar/despachar para exigir procedencia autenticada para nuevos runs; mantener consulta histórica sin permitir que los runs anteriores pasen gates nuevos.
+- [x] Cubrir firma válida, campos/maniobras alterados, expiración, replay entre usuarios, faltas de clave, optimize, preview guardado y simulación; revisar tamaño del bundle y seguridad/grants. Unit/contract 25 focalizadas; build del planificador 1,098.52 KB (↓ frente a 1,101.19 KB publicado), Guardian 0 errores / warning PERF-001 preexistente (el archivo tenía 883 líneas en HEAD; quedó en 867), auditoría de seguridad sin nuevos hallazgos en la migración, Deno y `git diff --check` PASS.
+- [ ] Probar comparación de rutas con evidencia real segura o fixtures del motor; correr Deno, unit/contract, Guardian, CI, desplegar en orden compatible y verificar cada frontera productiva sin crear despacho operacional.
+
+El benchmark de Google/TomTom/Valhalla sigue sujeto a tener fixtures geográficos comparables y cobertura real del proveedor en Chile. La auditoría disponible encontró Valhalla como único router activo, TomTom solo para geocodificación, Google no integrado, y sin corpus de rutas operativas en el repo; no se declarará un ganador empírico hasta disponer de ese corpus o respuestas equivalentes guardadas.

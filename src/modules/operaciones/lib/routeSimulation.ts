@@ -3,6 +3,8 @@ import type { AtlasPlannedRoute, AtlasRouteManeuver } from "../services/atlasOpe
 
 const DEFAULT_SIMULATION_ERROR = "No fue posible iniciar la simulación del conductor.";
 export const VALHALLA_ROUTE_MAX_LOCATIONS = 10;
+const ROUTE_MATCH_TOLERANCE_METERS = 35;
+const ROUTE_ENDPOINT_TOLERANCE_METERS = 15;
 
 /** Valhalla's /route endpoint accepts at most ten locations per request. */
 export function splitRouteStops<T>(stops: T[], maxLocations = VALHALLA_ROUTE_MAX_LOCATIONS): T[][] {
@@ -14,6 +16,45 @@ export function splitRouteStops<T>(stops: T[], maxLocations = VALHALLA_ROUTE_MAX
     segments.push(stops.slice(start, start + maxLocations));
   }
   return segments;
+}
+
+function distanceMeters(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
+  const radians = (degrees: number) => degrees * Math.PI / 180;
+  const dLat = radians(b.lat - a.lat);
+  const dLng = radians(b.lng - a.lng);
+  const value = Math.sin(dLat / 2) ** 2 + Math.cos(radians(a.lat)) * Math.cos(radians(b.lat)) * Math.sin(dLng / 2) ** 2;
+  return 12_742_000 * Math.asin(Math.sqrt(value));
+}
+
+/** Compares the actual Ferrostar path with the independently attested Valhalla path. */
+export function routeGeometriesMatch(
+  attested: Array<[number, number]>,
+  simulated: Route["geometry"]
+): boolean {
+  if (attested.length < 2 || simulated.length < 2) return false;
+  const left = attested.filter((_, index) => index % 8 === 0 || index === attested.length - 1).map(([lng, lat]) => ({ lat, lng }));
+  const right = simulated.filter((_, index) => index % 8 === 0 || index === simulated.length - 1);
+  if (left.length < 2 || right.length < 2) return false;
+  if (distanceMeters(left[0]!, right[0]!) > ROUTE_ENDPOINT_TOLERANCE_METERS
+    || distanceMeters(left[left.length - 1]!, right[right.length - 1]!) > ROUTE_ENDPOINT_TOLERANCE_METERS) return false;
+
+  const coversInOrder = (source: typeof left, target: typeof right) => {
+    let cursor = 0;
+    for (const point of source) {
+      let nearestIndex = -1;
+      let nearestDistance = Infinity;
+      for (let index = cursor; index < target.length; index += 1) {
+        const distance = distanceMeters(point, target[index]!);
+        if (distance < nearestDistance) { nearestDistance = distance; nearestIndex = index; }
+        if (index > cursor && distance > nearestDistance + ROUTE_MATCH_TOLERANCE_METERS) break;
+      }
+      if (nearestIndex < cursor || nearestDistance > ROUTE_MATCH_TOLERANCE_METERS) return false;
+      cursor = nearestIndex;
+    }
+    return true;
+  };
+
+  return coversInOrder(left, right) && coversInOrder(right, left);
 }
 
 function sameCoordinate(a: Route["geometry"][number], b: Route["geometry"][number]) {

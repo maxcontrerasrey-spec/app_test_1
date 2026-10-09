@@ -8,7 +8,7 @@ type RouteAuditRequest = {
   vehicleType: string;
   vehicleId: string | null;
   serviceRouteId: string | null;
-  routeKind: "OPTIMIZED_PROPOSAL" | "SAVED_ROUTE_PREVIEW";
+  routeKind: "OPTIMIZED_PROPOSAL" | "SAVED_ROUTE_PREVIEW" | "DRIVER_SIMULATION";
   serviceTemplateId: number | null;
   bindAsPlanningAudit: boolean;
 };
