@@ -2,7 +2,14 @@ export const ATLAS_ROUTE_EVIDENCE_VERSION = 1 as const;
 export const ATLAS_ROUTE_EVIDENCE_MAX_AGE_MS = 30 * 60 * 1000;
 const SIGNING_CONTEXT = "atlas-route-evidence:v1:";
 
-export type AtlasRouteKind = "OPTIMIZED_PROPOSAL" | "SAVED_ROUTE_PREVIEW" | "DRIVER_SIMULATION";
+export const ATLAS_ROUTE_KINDS = ["OPTIMIZED_PROPOSAL", "SAVED_ROUTE_PREVIEW", "DRIVER_SIMULATION"] as const;
+export type AtlasRouteKind = typeof ATLAS_ROUTE_KINDS[number];
+
+export function parseAtlasRouteKind(value: unknown): AtlasRouteKind | null {
+  return typeof value === "string" && (ATLAS_ROUTE_KINDS as readonly string[]).includes(value)
+    ? value as AtlasRouteKind
+    : null;
+}
 
 export type AtlasRouteEvidenceClaims = {
   evidenceVersion: typeof ATLAS_ROUTE_EVIDENCE_VERSION;

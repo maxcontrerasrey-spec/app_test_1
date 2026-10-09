@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getAtlasRouteEvidenceSecret, hashAtlasRouteEvidence, signAtlasRouteEvidence, verifyAtlasRouteEvidence, type AtlasRouteEvidenceClaims } from "../../supabase/functions/_shared/atlasRouteEvidence";
+import { getAtlasRouteEvidenceSecret, hashAtlasRouteEvidence, parseAtlasRouteKind, signAtlasRouteEvidence, verifyAtlasRouteEvidence, type AtlasRouteEvidenceClaims } from "../../supabase/functions/_shared/atlasRouteEvidence";
 
 const secret = "test-only-secret-with-at-least-thirty-two-characters";
 const actor = "a5d1b64a-d1c5-4f63-9f1e-8bfab6e11111";
@@ -11,6 +11,16 @@ const claims: AtlasRouteEvidenceClaims = {
   routeSnapshot: { durationSeconds: 2400, stops: [{ lat: -22, lng: -69 }, { lat: -22.1, lng: -69.1 }] },
   maneuvers: [{ maneuverId: "m-001", maneuverType: "RIGHT" }]
 };
+
+describe("Atlas route evidence kinds", () => {
+  it("accepts signed proposal, saved-preview, and driver-simulation evidence only", () => {
+    expect(parseAtlasRouteKind("OPTIMIZED_PROPOSAL")).toBe("OPTIMIZED_PROPOSAL");
+    expect(parseAtlasRouteKind("SAVED_ROUTE_PREVIEW")).toBe("SAVED_ROUTE_PREVIEW");
+    expect(parseAtlasRouteKind("DRIVER_SIMULATION")).toBe("DRIVER_SIMULATION");
+    expect(parseAtlasRouteKind("UNSIGNED_KIND")).toBeNull();
+    expect(parseAtlasRouteKind(null)).toBeNull();
+  });
+});
 
 describe("Atlas server route evidence", () => {
   it("signs deterministically and verifies only for the active actor and time window", async () => {

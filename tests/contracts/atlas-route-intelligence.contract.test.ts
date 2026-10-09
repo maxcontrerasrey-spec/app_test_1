@@ -97,11 +97,13 @@ describe("Atlas Route Intelligence security contract", () => {
     expect(edge).toContain("reportedRouteOrderSearch");
     expect(edge).toContain("no afirmar que no hubo comparación de órdenes");
     expect(edge).toContain("di que se evaluó una búsqueda acotada, nunca exhaustiva ni global");
-    expect(edge).toContain("route-intelligence-prompt:1.8.0");
+    expect(edge).toContain("route-intelligence-prompt:1.9.0");
     expect(edge).toContain("no pidas cambiar manualmente el orden de puntos");
     expect(edge).toContain("Devuelve exactamente un resultado por cada maniobra recibida");
     expect(edge).toContain("routeDurationSeconds: routeSnapshot.durationSeconds");
-    expect(edge).toContain('const routeKind = row.routeKind === undefined ? "OPTIMIZED_PROPOSAL" : row.routeKind');
+    expect(edge).toContain('const routeKind = row.routeKind === undefined ? "OPTIMIZED_PROPOSAL" : parseAtlasRouteKind(row.routeKind)');
+    expect(edge).toContain('routeSnapshot.routeKind es DRIVER_SIMULATION');
+    expect(edge).toContain('route-intelligence-prompt:1.9.0');
     expect(edge).toContain('routeSnapshot.routeKind es SAVED_ROUTE_PREVIEW');
     expect(edge).toContain('service_route_id: serviceRouteId');
     expect(operationsApi).toContain('routeKind?: "OPTIMIZED_PROPOSAL" | "SAVED_ROUTE_PREVIEW"');
