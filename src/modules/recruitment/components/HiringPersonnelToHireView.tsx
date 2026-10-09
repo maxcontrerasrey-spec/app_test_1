@@ -332,7 +332,7 @@ export function HiringPersonnelToHireView({
     setExportMessage("");
 
     try {
-      const { data, processed, error, dispatchError } = await generateCandidatesInBuk(
+      const { processed, error, dispatchError, stillProcessingCount } = await generateCandidatesInBuk(
         selectedGeneratablePersonnel.map((candidate) => candidate.id)
       );
 
@@ -341,40 +341,32 @@ export function HiringPersonnelToHireView({
         return;
       }
 
-      const processingCount = data.filter((job) => job.status === "processing").length;
       const successCount = processed.filter((job) => job.status === "success").length;
       const failedJobs = processed.filter((job) => job.status === "error");
-      const pendingDocumentCount = processed.reduce(
-        (total, job) => total + Number(job.documentQueue?.pending ?? 0),
-        0
-      );
-      const documentReconciliationCount = processed.reduce(
-        (total, job) => total + Number(job.documentQueue?.reconciliation_required ?? 0),
-        0
-      );
-      const failedDocumentCount = processed.reduce(
-        (total, job) => total + Number(job.documentQueue?.failed ?? 0),
-        0
-      );
 
-      if (dispatchError) {
+      if (dispatchError && stillProcessingCount > 0) {
         setExportMessage(
-          `${successCount > 0 ? `BUK confirmó ${successCount} persona(s), pero ` : ""}la cola BUK quedó con procesamiento pendiente. ${dispatchError}`
+          `${successCount > 0 ? `BUK confirmó ${successCount} persona(s), pero ` : ""}${stillProcessingCount} persona(s) siguen en proceso y serán reconciliadas automáticamente. No es necesario volver a enviarlas. ${dispatchError}`
         );
+        setSelectedCandidateIds([]);
+        await Promise.all([
+          onCandidateFileUpdated(),
+          personnelQuery.refetch()
+        ]);
         return;
       }
 
       setExportMessage(
         failedJobs.length > 0
           ? `BUK procesó ${successCount} persona(s) correctamente, ${failedJobs.length} fallaron${
-              processingCount > 0 ? ` y ${processingCount} siguen en procesamiento` : ""
+              stillProcessingCount > 0 ? ` y ${stillProcessingCount} siguen en procesamiento` : ""
             }. ${failedJobs
               .map((job) => job.error)
               .filter(Boolean)
               .join(" | ")}`
-          : processingCount > 0 || pendingDocumentCount > 0 || documentReconciliationCount > 0 || failedDocumentCount > 0
-            ? `BUK confirmó ${successCount} persona(s). ${pendingDocumentCount + documentReconciliationCount + failedDocumentCount} documento(s) requieren seguimiento en la cola documental.`
-            : `BUK procesó ${successCount} persona(s) correctamente, incluida su Solicitud de Contratación.`
+          : stillProcessingCount > 0
+            ? `${stillProcessingCount} persona(s) siguen en proceso en BUK y serán reconciliadas automáticamente. No es necesario volver a enviarlas.`
+            : `BUK procesó ${successCount} persona(s) correctamente, incluida su Solicitud de Contratación. La carga documental continuará automáticamente en segundo plano.`
       );
       if (generatableSelection.omittedIds.length > 0) {
         setExportMessage((previous) =>

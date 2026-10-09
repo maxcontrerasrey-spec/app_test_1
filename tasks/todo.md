@@ -5501,3 +5501,16 @@ No se detectó un defecto de código que justifique otro cambio funcional en est
 Hallazgo inicial: `OperationsRoutePlannerDemo.startSimulation()` recalcula una ruta con evidencia firmada `DRIVER_SIMULATION` y luego la envía a Route Intelligence. `normalizeRouteSnapshot()` tipa ese valor, pero la condición de admisión solo acepta `OPTIMIZED_PROPOSAL` y `SAVED_ROUTE_PREVIEW`, por lo que devuelve `invalid_route_snapshot` antes de OpenAI. El simulador queda bloqueado aunque la ruta de planificación ya tuviera IA. No modificar rutas ni despachos de producción durante la verificación.
 
 Corrección local: el parser compartido acepta únicamente los tres tipos existentes en `AtlasRouteKind`; el prompt v1.9.0 guía la simulación como revalidación del trazado aplicado, no como reoptimización. Regresión parser: 3 tipos aceptados y tipos desconocidos/null rechazados. Validación: Atlas unit/contract 163/163, Deno check de ambas funciones PASS, build frontend PASS (se conserva el warning de chunk del planificador >520 kB), Guardian 0 errores/1 PERF-001 existente; `git diff --check` PASS. Falta integrar/desplegar y verificar la función productiva y un smoke autenticado del simulador.
+
+# Corrección permanente de generación BUK concurrente — 2026-10-09
+
+- [x] Correlacionar el incidente RC-0187 con candidato, jobs BUK, cola documental y logs productivos, sin reintentar ni mutar el caso.
+- [x] Corregir el cliente para reconciliar jobs `pending`/`processing` reclamados por el cron y eliminar mensajes falsos de “0 personas / 0 documentos”.
+- [x] Desacoplar la confirmación de alta BUK de la carga documental automática para que la bandeja no espere varios minutos por documentos.
+- [x] Agregar regresiones para carrera cron/navegador, error de despacho recuperable, terminales mixtos y timeout real aún en proceso.
+- [x] Ejecutar pruebas focalizadas, TypeScript, build, Guardian y `git diff --check`; revisar permisos y contratos sin ampliar acceso.
+- [ ] Integrar por PR/CI, desplegar en producción y verificar el bundle y el comportamiento productivo sin crear otra ficha BUK.
+
+Hallazgo inicial: Benjamín Ignacio Leiva Cortez (RC-0187) terminó correctamente como ficha BUK 45302, con 15 documentos exitosos y 1 documento psicolaboral excluido por política. El cron `pg_net` reclamó el job segundos después del enqueue del navegador; los clics posteriores recibieron el job en `processing`, pero el cliente solo despachaba jobs `pending` y convertía `processing + processed=[]` en “BUK confirmó 0 persona(s). 0 documento(s)”. La carga documental automática actualizó el checkpoint hasta cinco minutos después, prolongando además la espera visual aunque el alta ya estaba confirmada.
+
+Revisión local: la bandeja reconcilia todos los jobs devueltos por el enqueue hasta estado terminal (incluidos los reclamados por cron), deduplica por `job_id`, recupera resultados aun si el invoke del navegador falla y comunica un timeout real como “sigue en proceso”, nunca como cero confirmados. La cola documental deja de ejecutarse en ocho rondas desde el navegador y queda en el cron productivo ya existente. No hay migraciones, cambios RLS, grants ni contratos RPC. Regresiones focalizadas 30/30, TypeScript/build PASS, Guardian 0 errores/1 warning preexistente `PERF-001`, `git diff --check` PASS.

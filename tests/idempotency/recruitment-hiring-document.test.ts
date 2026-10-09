@@ -139,7 +139,8 @@ describe("Solicitud de Contratación ERP", () => {
     expect(edge).toContain("runCandidateDocumentQueue");
     expect(edge).toContain("isAmbiguousBukDocumentError");
     expect(edge).not.toContain("await processDocuments(");
-    expect(client.match(/await getSupabaseFunctionErrorMessage\(/g)).toHaveLength(3);
+    expect(client).toContain("reconcileBukSyncJobs");
+    expect(client).not.toContain('body: { mode: "documents"');
     expect(migration).toContain("claim_buk_candidate_document_jobs");
     expect(migration).toContain("max_concurrency integer not null default 3");
     expect(migration).toContain("for update skip locked");
