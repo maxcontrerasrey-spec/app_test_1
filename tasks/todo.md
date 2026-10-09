@@ -5305,6 +5305,8 @@ CI inicial del PR #121 ejecutó las pruebas unitarias, contratos, integridad, se
 
 Verificación productiva 2026-10-09: PR #121 (`7999b810cc686aa54b3855b05d55066e9e3b54ec`) integrado; CI main run `37866657163` verde. Migración aplicada y registrada como `20261009004914 / atlas_short_route_soft_penalty_is_non_blocking`. Edge `atlas-route-intelligence` activa v11 con `verify_jwt=true`. `gestion.busesjm.cl` devuelve HTTP 200 y el chunk publicado `OperationsRoutePlannerDemo-LuNRhclW.js` (1.101.185 bytes) contiene `routeDurationSeconds`, `PENALIZE_SEGMENT` y el mensaje sub-50 vigente. No se creó ni modificó ruta/despacho de operación. Cierre de este subalcance: publicación verificada por artefacto y configuración backend; la interacción autenticada real queda pendiente porque requeriría crear una evaluación o ruta de prueba.
 
+Conciliación de historial verificada al preparar PR #122: Supabase registra esa migración como `20261009004914`; se alinea el nombre local al número remoto manteniendo idéntico el contenido, para que el despliegue de la siguiente migración no vuelva a ejecutarla.
+
 Revisión inicial: la frase vigente “Menos de 50 min: viable. Confirma revisión.” contradice el criterio si la única señal adicional es `PENALIZE_SEGMENT`. Se tratará esa acción como alerta suave bajo el umbral, sin el paso humano; las acciones explícitas de bloqueo/revisión y los fallos IA se preservan. El límite se mide con segundos del snapshot validado por el servidor, no con entrada libre del cliente.
 
 ## Brechas de aseguramiento que continúan en el objetivo maestro
