@@ -5330,16 +5330,57 @@ Revisión inicial: la frase vigente “Menos de 50 min: viable. Confirma revisi�
 
 ### Evidencia inicial revalidada
 
+> Esta evidencia inicial corresponde a la revisión anterior al despliegue de atestación; el estado productivo corregido y reconsultado se registra debajo.
+
 - El worktree de auditoría se alineó a `origin/main` (`e8fa0fa0f2862ed87b20053f09cebe3d8d0bc3aa`). La rama anterior estaba un commit de merge por detrás.
-- Auditoría SQL de solo lectura: 11 corridas Route Intelligence OpenAI SHADOW, todas con evidencia atestada; 9 WARNING, 2 INSUFFICIENT_EVIDENCE y 2 ERROR históricos (OPENAI_INVALID_OUTPUT y OPENAI_TIMEOUT). El resultado ERROR bloquea uso; no se encontró bypass en esas filas.
+- Corrección de evidencia productiva (2026-10-09): la consulta SQL al proyecto `pzblmbahnoyntrhistea` muestra 11 corridas OpenAI SHADOW, pero **todas son históricas sin atestación** (`route_evidence_version=0`, hash ausente): 7 WARNING, 2 INSUFFICIENT_EVIDENCE y 2 ERROR (OPENAI_INVALID_OUTPUT / OPENAI_TIMEOUT). La migración `20261009010200` dejó los registros previos en versión 0; no se pueden contar como prueba del flujo HMAC nuevo. Los gates actuales sí exigen versión 1 y hash válido para guardar/despachar.
 - El navegador interno observable dirige a `gestion.busesjm.cl/login`; por ahora no hay evidencia visible de sesión autenticada para el smoke real.
 - Comparativa documental oficial: Google `avoid_u_turns` es experimental; Google TRUCK/LVR no publica cobertura Chile. Valhalla es el motor operante y soporta perfil bus, dimensiones de referencia, `preferred_side` y paradas `break_through`, pero el grafo no certifica maniobra física ni tráfico real sin feeds. No hay benchmark equivalente Google ejecutado.
 - El orden se decide usando tiempos de matriz y se revalida en rutas completas Valhalla; la búsqueda es acotada. La solicitud actual no comunica hora de salida/tráfico al motor.
 - Producción revalidada: `atlas-tomtom-planning` v27 y `atlas-route-intelligence` v12, ambas `verify_jwt=true`; el bundle público sirve `OperationsRoutePlannerDemo-Chg134us.js` (1,098,098 B) e incluye revisión de ruta guardada y regla visible sub-50. La página raíz devuelve HTTP 200, pero la sesión visible permanece en `/login`.
-- Prueba SQL no mutativa en producción del umbral: 2,999 s + PENALIZE aislada no requiere feedback; 3,000 s sí; `HUMAN_REVIEW` e `INSUFFICIENT_EVIDENCE` siguen requiriéndolo incluso bajo 50 min. Esto preserva hallazgos explícitos además de penalizaciones suaves.
+- Prueba SQL no mutativa revalidada para la regla más reciente del usuario: los hallazgos de maniobra, incluso `INSUFFICIENT_EVIDENCE`, no exigen feedback bajo 3.000 s; a 3.000 s la regla deja de aplicar. `ERROR`, corrida ausente y evidencia sin firma siguen bloqueando por controles independientes.
 - El único despacho abierto es histórico (`planning/not_started`): apunta a la ruta activa sin auditoría ligada. La guarda productiva lo detecta como no utilizable; no se alteró el despacho ni la ruta.
 - Suites dirigidas: unitarias 80/80 y contratos 40/40; `deno check` para ambas Edge Functions PASS; TypeScript/build PASS; Guardian 0 errores y 1 warning PERF-001 (página del planificador 868 líneas); migraciones PASS y auditoría de seguridad sin nuevos cambios, con 88 advertencias históricas del repositorio.
 - Se mantiene pendiente prueba autenticada de generación IA sobre la versión productiva actual y replay geográfico de casos operacionales. En ausencia de sesión visible y respuestas Google/TomTom equivalentes, no se atribuye optimalidad global ni superioridad empírica a ningún motor.
+
+### Reauditoría de producción y de calidad de ruta — 2026-10-09
+
+- [x] Reconciliar el ledger productivo de auditorías con las afirmaciones del tracker; corregir conteos y estados de atestación usando consultas agregadas de solo lectura.
+- [x] Reconfirmar migraciones productivas, versiones Edge, gates de evidencia y el umbral de 3.000 s desde fuentes activas.
+- [x] Repetir comparación documental primaria de Google, TomTom y Valhalla; separar cobertura/capacidad publicada de benchmark empírico.
+- [ ] Añadir y ejecutar fixtures geográficos versionados que modelen acceso por ambos lados de calle, sentido vial y giro/U-turn para Bus, Taxibus y Minibus; medir completitud, tiempo, distancia y cambios de acceso frente a los casos de referencia.
+- [ ] Revisar si el optimizador actual puede seleccionar automáticamente la mejor solución completa aplicable dentro del presupuesto; corregir solo hallazgos reproducibles y agregar regresiones.
+- [ ] Ejecutar propuesta y auditoría IA no mutativas contra la versión productiva desde una sesión superadministradora; comprobar respuesta, persistencia con firma v1, coherencia de snapshot y resultado visible. No guardar ruta ni crear/modificar despacho.
+- [ ] Ejecutar de nuevo suites Atlas, Deno, build, Guardian y auditorías pertinentes tras cualquier corrección; desplegar solo después de CI y verificar bundle/API productivos.
+
+Estado actual revalidado: la DB tiene 11 auditorías, todas anteriores a la atestación (`version=0`, sin hash), por lo que **no hay todavía una ejecución de producción que pruebe la cadena IA + evidencia firmada nueva**. La ruta guardada activa tampoco está ligada a una auditoría, y producción la considera no utilizable para despacho. Edge `atlas-tomtom-planning` v28 y `atlas-route-intelligence` v13 están activas con JWT. El navegador visible apunta a `/login`, así que no se ejecutó el smoke autenticado. Esta iteración sí confirma que una ruta completa menor de 3.000 s se considera viable ante hallazgos del modelo, mientras fallo técnico IA/falta de atestación siguen bloqueando.
+
+Replay exploratorio no mutativo contra el grafo público Valhalla: cuatro puntos urbanos de referencia en Calama (geocodificados por Photon; no equivalen a direcciones productivas confirmadas) para Bus, Taxibus y Minibus. Se usó `optimizeOpenRoute` real, que evaluó exactamente la matriz y propuso Balmaceda 3242 → Maipú → Granaderos → Grecia 2300; luego Valhalla trazó ese orden y el orden de entrada. En los tres perfiles: 3,187 km / 11,3 min / 0 U-turn frente a 6,172 km / 20,9 min / 0 U-turn (9,6 min menos). Se enumeraron 24 permutaciones sobre la matriz, pero solo se trazaron la ganadora de matriz y el orden ingresado; esto es evidencia ilustrativa del grafo/optimizador, no benchmark exhaustivo, ruta del usuario ni prueba de IA.
+
+Verificación de esta iteración: Atlas unit/contract 144/144; `deno check` de ambas Edge Functions PASS; `build:frontend-check` PASS con advertencia de chunk existente `OperationsRoutePlannerDemo` de 1.100,76 kB frente al límite 520 kB; Guardian 0 errores / 1 PERF-001 preexistente; auditoría de migraciones PASS; auditoría de seguridad conserva 88 advertencias históricas; `git diff --check` PASS. El HTML productivo resolvió al chunk `OperationsRoutePlannerDemo-BmC0tx5j.js` (1.100.755 B), que incluye los textos/regla sub-50 publicados. No se generó una auditoría productiva nueva ni se guardó/modificó ruta o despacho.
+
+### Evidencia geográfica capturada — continuación 2026-10-09
+
+- [x] Guardar respuestas reales de Valhalla en `tests/fixtures/atlas-route-calama-four-stop-valhalla.json`; probar las 24 permutaciones completas para Bus: 24/24 transitables. La ruta elegida por el optimizador coincide con la más rápida de las 24: 675,1 s / 3.187 m / 0 U-turn frente a 1.254,0 s / 6.172 m del orden ingresado. En el mismo set de cuatro puntos, Bus/Taxibus/Minibus produjeron igual orden y métricas; las dimensiones distintas no alteraron el grafo en este ejemplo urbano.
+- [x] Versionar en `tests/fixtures/atlas-route-calama-screenshot-five-stops-valhalla.json` un compuesto de coordenadas visibles en capturas y referencias Photon; reproducir la matriz, las ocho alternativas acotadas y las nueve rutas completas válidas. La selección real de Atlas fue la más rápida de las nueve observadas: 1.087,8 s / 5.307 m / 0 U-turn. Una alternativa fue 1.132,8 s / 5.620 m / 1 U-turn. Cada ruta probada duró menos de 50 minutos.
+- [x] Agregar regresión offline para ambos fixtures; suite focalizada actual: 18/18 tests.
+- [ ] Aún falta una ubicación productiva confirmada que permita reproducir acceso a ambos lados de calle/one-way y revisar el U-turn de la captura; estos fixtures son aproximados y no prueban cruce seguro ni factibilidad física.
+- [ ] Sigue pendiente el smoke autenticado de propuesta + OpenAI + firma v1 en producción. La pestaña del ERP está en `/login`; los logs productivos muestran POST 200 históricos de versiones previas y requests recientes no autenticados con 401, sin una nueva ejecución válida de la versión activa v13.
+
+### Revalidación de gates y código activo — 2026-10-09
+
+- [x] Confirmar desde el código Edge desplegado en Supabase que el planner v28 con JWT ejecuta `optimizeOpenRoute`, traza las alternativas completas y atesta la ruta; Route Intelligence v13 con JWT verifica la atestación, llama OpenAI y persiste la auditoría. El helper compartido desplegado conserva el límite estricto `< 3000 s`.
+- [x] Ejecutar Atlas unitarias 115/115 y contratos 32/32; `deno check` de ambas funciones PASS; build frontend PASS; Guardian 0 errores/1 PERF-001 en `OperationsRoutePlannerDemo.tsx` (879 líneas); auditoría de migraciones PASS; auditoría de seguridad con 88 advertencias históricas; `git diff --check` PASS.
+- [x] Reconfirmar en producción Edge v28/v13 (`verify_jwt=true`) y migración `20261009015908` aplicada. Los gates de cliente/SQL conservan las mismas condiciones sub-50 para evaluaciones, guardado y despacho.
+- [x] Revisar el detalle agregado de los dos errores IA históricos (ambos anteriores a firma v1): `OPENAI_INVALID_OUTPUT` evaluó 1 maniobra y terminó en 8,3 s; `OPENAI_TIMEOUT` intentó 20 y terminó en 10,0 s. Son insuficientes para atribuir la causa al código activo v13 o justificar una relajación del gate.
+- [ ] No completar el smoke de producción hasta tener sesión ERP activa en el navegador interno. Se envió la solicitud al usuario; no se escribieron rutas ni despachos durante esta revisión.
+
+### Aclaración aplicada — rutas completas bajo 50 minutos
+
+- [x] Conservar la ruta más rápida de Valhalla bajo el umbral cuando la IA marca `REJECT`, `REQUEST_ALTERNATIVE`, `BLOCK_MANEUVER` o `PENALIZE_SEGMENT`; registrar y mostrar sus hallazgos, sin reordenar automáticamente ni pedir aprobación humana.
+- [x] Aplicar el mismo criterio al inicio de la simulación, que antes podía volver a disparar replan de forma incondicional.
+- [x] Mantener bloqueantes los fallos técnicos, una auditoría no persistida o evidencia firmada inválida.
+- [x] Ejecutar regresiones bajo, igual y sobre 3.000 segundos, incluyendo `REQUEST_ALTERNATIVE`, `PENALIZE_SEGMENT`, `REJECT`, replan e insuficiencia de evidencia; Atlas unit 272/272, build frontend PASS, Guardian 0 errores / 1 PERF-001 conocido, `git diff --check` PASS.
 
 ## Plan siguiente: autenticar la evidencia de ruta que evalúa la IA — 2026-10-09
 

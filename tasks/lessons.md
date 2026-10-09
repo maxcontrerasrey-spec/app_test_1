@@ -2,8 +2,8 @@
 
 ## 2026-10-09 — El criterio de viabilidad de ruta usa el recorrido completo
 
-- El usuario define un recorrido completo menor de 50 minutos como totalmente viable; una acción IA `PENALIZE_SEGMENT` aislada es una advertencia suave y no debe bloquear ni exigir feedback humano.
-- Mantener independientes las alertas concretas de revisión humana, falta de evidencia y bloqueo; el umbral de duración no anula hallazgos explícitos.
+- El usuario define un recorrido completo menor de 50 minutos como totalmente viable; cualquier hallazgo IA de maniobra —incluidos `REJECT`, `INSUFFICIENT_EVIDENCE`, `HUMAN_REVIEW`, `BLOCK_MANEUVER` o `REQUEST_ALTERNATIVE`— debe quedar visible/auditable, pero no bloquear el uso ni exigir cambios manuales de puntos.
+- Separar los hallazgos operacionales de los fallos técnicos: ruta incompleta, auditoría IA fallida/no persistida o atestación inválida sí bloquean por integridad.
 - Evaluar el tiempo total desde el snapshot firmado del planificador, no segmentos sueltos ni valores editables del navegador.
 
 ## 2026-10-08 — El detalle operacional debe respetar la continuidad visual solicitada
@@ -4392,7 +4392,8 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 
 - Un recorrido completo Valhalla menor a 3000 segundos cuenta como viable para una penalización suave `PENALIZE_SEGMENT`; no mostrar “viable” mientras UI, guardado o despacho exigen confirmar esa misma penalización.
 - Derivar el criterio desde la duración del snapshot auditado y repetirlo en Edge, interfaz, RPC de guardado y gate de despacho; exactamente 3000 segundos queda fuera del umbral.
-- Mantener explícitos `HUMAN_REVIEW`, rechazo, replan, evidencia insuficiente y fallo/falta de persistencia como gates independientes. La duración no certifica la geometría física ni reemplaza la evaluación de IA.
+- Bajo el umbral, rechazos, replan, revisión humana y evidencia insuficiente del análisis de maniobras son recomendaciones visibles y no disparan búsqueda de otro orden ni bloquean la ruta. El fallo técnico, falta de auditoría/persistencia o atestación inválida siguen siendo bloqueantes; la duración no certifica factibilidad física.
+- Aplicar el mismo criterio al iniciar simulación del conductor y al buscar alternativas: ningún camino debe reactivar el bloqueo por hallazgos de maniobra en una ruta completa bajo 50 minutos.
 
 # 2026-10-09 - La viabilidad operativa sub-50 prevalece sobre hallazgos de maniobra
 

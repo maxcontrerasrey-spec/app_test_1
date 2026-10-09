@@ -32,13 +32,15 @@ describe("Atlas mandatory route audit gate", () => {
     const alternative = { ...successfulAudit, requiresHumanReview: false, requiresReplan: false, analyzedManeuvers: [{ maneuverId: "m-1", decision: "CAUTION", riskScore: 75, reasons: [], evidence: ["giro"], recommendedAction: "REQUEST_ALTERNATIVE" }] };
     expect(isRouteAuditEvaluationComplete("ready", alternative)).toBe(true);
     expect(isRouteAuditOperationallyComplete("ready", alternative)).toBe(true);
-    expect(routeAuditRequiresReplan(alternative)).toBe(true);
+    expect(routeAuditRequiresReplan(alternative)).toBe(false);
 
     const penalizedSegment = { ...successfulAudit, requiresHumanReview: true, requiresReplan: false, analyzedManeuvers: [{ maneuverId: "m-2", decision: "CAUTION", riskScore: 73, reasons: ["Tramo mejorable"], evidence: ["Valhalla"], recommendedAction: "PENALIZE_SEGMENT" }] };
     expect(isRouteAuditEvaluationComplete("ready", penalizedSegment)).toBe(true);
     expect(isRouteAuditOperationallyComplete("ready", penalizedSegment)).toBe(true);
-    expect(routeAuditRequiresReplan(penalizedSegment)).toBe(true);
+    expect(routeAuditRequiresReplan(penalizedSegment)).toBe(false);
     expect(isRouteAuditOperationallyComplete("ready", { ...penalizedSegment, routeDurationSeconds: 2_999 })).toBe(true);
+    expect(routeAuditRequiresReplan({ ...penalizedSegment, routeDurationSeconds: 2_999 })).toBe(false);
+    expect(routeAuditRequiresReplan({ ...penalizedSegment, routeDurationSeconds: 3_000 })).toBe(true);
     expect(isRouteAuditOperationallyComplete("ready", { ...penalizedSegment, routeDurationSeconds: 3_000 })).toBe(false);
     expect(isRouteAuditOperationallyComplete("ready", { ...penalizedSegment, routeDurationSeconds: 3_001 })).toBe(false);
     const explicitReview = { ...penalizedSegment, analyzedManeuvers: [...penalizedSegment.analyzedManeuvers, { maneuverId: "m-3", decision: "CAUTION", riskScore: 75, reasons: ["Revisar"], evidence: ["IA"], recommendedAction: "HUMAN_REVIEW" }] };
@@ -46,6 +48,11 @@ describe("Atlas mandatory route audit gate", () => {
     expect(isRouteAuditOperationallyComplete("ready", { ...explicitReview, routeDurationSeconds: 2_999 })).toBe(true);
     expect(isRouteAuditOperationallyComplete("ready", { ...explicitReview, routeDurationSeconds: 3_000 })).toBe(false);
     expect(isRouteAuditOperationallyComplete("ready", { ...explicitReview, routeDurationSeconds: 3_001 })).toBe(false);
+
+    const rejectedUnderThreshold = { ...explicitReview, decision: "REJECT" as const, requiresReplan: true, routeDurationSeconds: 2_999 };
+    expect(isRouteAuditEvaluationComplete("ready", rejectedUnderThreshold)).toBe(true);
+    expect(routeAuditRequiresReplan(rejectedUnderThreshold)).toBe(false);
+    expect(routeAuditRequiresReplan({ ...rejectedUnderThreshold, routeDurationSeconds: 3_000 })).toBe(true);
   });
 
   it("keeps AI technical errors unavailable regardless of route duration", () => {
