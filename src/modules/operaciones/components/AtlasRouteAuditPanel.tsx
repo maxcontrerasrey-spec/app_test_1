@@ -24,6 +24,13 @@ export function routeAuditRequiresReplan(audit: AtlasRouteAuditResponse | null) 
     || audit.analyzedManeuvers.some((item) => item.decision === "REJECT" || ["BLOCK_MANEUVER", "REQUEST_ALTERNATIVE", "PENALIZE_SEGMENT"].includes(String(item.recommendedAction))));
 }
 
+/** A viable route can still trigger an automatic search for an AI-recommended improvement. */
+export function routeAuditSuggestsAlternative(audit: AtlasRouteAuditResponse | null) {
+  if (!audit) return false;
+  return Boolean(audit.requiresReplan || audit.decision === "REJECT"
+    || audit.analyzedManeuvers.some((item) => item.decision === "REJECT" || ["BLOCK_MANEUVER", "REQUEST_ALTERNATIVE", "PENALIZE_SEGMENT"].includes(String(item.recommendedAction))));
+}
+
 export function isRouteAuditEvaluationComplete(status: "idle" | "loading" | "ready" | "error", audit: AtlasRouteAuditResponse | null) {
   return status === "ready"
     && audit !== null
@@ -93,7 +100,7 @@ export function AtlasRouteAuditPanel({
       <p><b>{auditDecisionLabel(audit.decision, routeIsUnderOperationalThreshold(audit))}</b>{audit.riskScore === null ? " · sin puntaje" : ` · indicador ${audit.riskScore}/100`}{routeAuditNeedsHumanReview(audit) ? " · requiere revisión humana" : ""}</p>
       <p>{audit.summary}</p>
       {routeIsUnderOperationalThreshold(audit) && <p role="status">Recorrido viable por regla operacional (&lt;50 min). La evaluación IA queda registrada; sus observaciones no exigen cambiar puntos ni bloquean el uso.</p>}
-      {routeAuditRequiresReplan(audit) && <>
+      {routeAuditSuggestsAlternative(audit) && <>
         <p role={routeIsUnderOperationalThreshold(audit) ? "status" : "alert"}>{routeIsUnderOperationalThreshold(audit)
           ? "La IA sugiere una mejora. El sistema probará alternativas automáticamente y las volverá a evaluar; si no encuentra una mejor, conservará esta ruta completa sin pedirte cambiar los puntos."
           : "La IA marcó una maniobra que requiere revisar el trazado. El sistema intenta rodear ese tramo y, si no mejora la ruta, prueba otras secuencias con las mismas direcciones, destino y tipo de equipo. Cada alternativa debe volver a pasar por IA antes de usarse."}</p>
@@ -101,7 +108,7 @@ export function AtlasRouteAuditPanel({
           ? <p role="status">Buscando la alternativa {alternativeAttempts} de 2 y volviendo a evaluarla con IA…</p>
           : alternativeSearchComplete
             ? <p role="status">{routeIsUnderOperationalThreshold(audit)
-              ? `No se encontró una alternativa sin observaciones tras ${alternativeAttempts} intentos. Se conserva el recorrido completo bajo 50 min; puedes usarlo sin cambiar puntos.`
+              ? `Se evaluaron ${alternativeAttempts} alternativa(s) automáticamente. Se conserva la mejor ruta completa auditada bajo 50 min; no necesitas cambiar puntos.`
               : `Sin ruta aprobable tras ${alternativeAttempts} alternativas; propuesta bloqueada.`}</p>
             : null}
       </>}
