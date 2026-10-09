@@ -3,7 +3,7 @@ export const MAX_AUTOMATIC_ROUTE_ALTERNATIVES = 2;
 export type OrderedRouteCandidate<T> = { value: T; order: number[] };
 
 export type AuditedRouteSearchResult<TCandidate, TAudit> = {
-  status: "accepted" | "accepted_with_review" | "audit_error" | "alternative_error" | "alternatives_exhausted" | "stale";
+  status: "accepted" | "audit_error" | "alternative_error" | "alternatives_exhausted" | "stale";
   candidate: TCandidate;
   audit: TAudit | null;
   auditAttempts: number;
@@ -18,8 +18,6 @@ export async function searchAuditedRoute<TCandidate, TAudit>(
     maxAlternatives?: number;
     audit: (candidate: TCandidate) => Promise<TAudit | null>;
     requiresReplan: (audit: TAudit) => boolean;
-    shouldSearchAlternative?: (audit: TAudit) => boolean;
-    mayAcceptAfterAlternatives?: (candidate: TCandidate, audit: TAudit) => boolean;
     hasPersistedEvaluation: (audit: TAudit) => boolean;
     findAlternative: (excludedOrders: number[][], currentCandidate: TCandidate, currentAudit: TAudit) => Promise<OrderedRouteCandidate<TCandidate> | null>;
     isDuplicateCandidate?: (left: OrderedRouteCandidate<TCandidate>, right: OrderedRouteCandidate<TCandidate>) => boolean;
@@ -29,10 +27,6 @@ export async function searchAuditedRoute<TCandidate, TAudit>(
   }
 ): Promise<AuditedRouteSearchResult<TCandidate, TAudit>> {
   const maxAlternatives = Math.max(0, Math.min(options.maxAlternatives ?? MAX_AUTOMATIC_ROUTE_ALTERNATIVES, 4));
-  const exhausted = (candidate: TCandidate, audit: TAudit, auditAttempts: number, alternativeAttempts: number): AuditedRouteSearchResult<TCandidate, TAudit> =>
-    !options.requiresReplan(audit) && options.mayAcceptAfterAlternatives?.(candidate, audit)
-      ? { status: "accepted_with_review", candidate, audit, auditAttempts, alternativeAttempts }
-      : { status: "alternatives_exhausted", candidate, audit, auditAttempts, alternativeAttempts };
   const excludedOrders = [initial.order];
   const evaluatedCandidates: OrderedRouteCandidate<TCandidate>[] = [initial];
   let candidate = initial.value;
@@ -53,13 +47,11 @@ export async function searchAuditedRoute<TCandidate, TAudit>(
     if (!options.hasPersistedEvaluation(audit)) {
       return { status: "audit_error", candidate, audit, auditAttempts, alternativeAttempts };
     }
-    const requiresReplan = options.requiresReplan(audit);
-    const shouldSearchAlternative = requiresReplan || options.shouldSearchAlternative?.(audit) === true;
-    if (!shouldSearchAlternative) {
+    if (!options.requiresReplan(audit)) {
       return { status: "accepted", candidate, audit, auditAttempts, alternativeAttempts };
     }
     if (alternativeAttempts >= maxAlternatives) {
-      return exhausted(candidate, audit, auditAttempts, alternativeAttempts);
+      return { status: "alternatives_exhausted", candidate, audit, auditAttempts, alternativeAttempts };
     }
 
     alternativeAttempts += 1;
@@ -67,10 +59,10 @@ export async function searchAuditedRoute<TCandidate, TAudit>(
     try {
       const alternative = await options.findAlternative(excludedOrders.map((order) => [...order]), candidate, audit);
       if (!alternative) {
-        return exhausted(candidate, audit, auditAttempts, alternativeAttempts);
+        return { status: "alternatives_exhausted", candidate, audit, auditAttempts, alternativeAttempts };
       }
       if (evaluatedCandidates.some((evaluated) => (options.isDuplicateCandidate ?? ((left, right) => left.order.join(",") === right.order.join(",")))(evaluated, alternative))) {
-        return exhausted(candidate, audit, auditAttempts, alternativeAttempts);
+        return { status: "alternatives_exhausted", candidate, audit, auditAttempts, alternativeAttempts };
       }
       if (!excludedOrders.some((order) => order.join(",") === alternative.order.join(","))) excludedOrders.push(alternative.order);
       evaluatedCandidates.push(alternative);
@@ -78,13 +70,7 @@ export async function searchAuditedRoute<TCandidate, TAudit>(
     } catch (reason) {
       const message = options.getErrorMessage?.(reason);
       if (message?.includes("route_alternative_exhausted")) {
-        return exhausted(candidate, audit, auditAttempts, alternativeAttempts);
-      }
-      if (!requiresReplan && options.mayAcceptAfterAlternatives?.(candidate, audit)) {
-        return {
-          status: "accepted_with_review", candidate, audit, auditAttempts, alternativeAttempts,
-          error: message
-        };
+        return { status: "alternatives_exhausted", candidate, audit, auditAttempts, alternativeAttempts };
       }
       return {
         status: "alternative_error", candidate, audit, auditAttempts, alternativeAttempts,

@@ -106,40 +106,4 @@ describe("bounded AI-audited route search", () => {
     expect(result.candidate).toBe(sameOrderAlternate);
     expect(result.auditAttempts).toBe(2);
   });
-
-  it("retains a sub-50-minute soft-penalty route for required human review when no alternative exists", async () => {
-    const options = config({
-      shouldSearchAlternative: () => true,
-      mayAcceptAfterAlternatives: (candidate: Candidate) => candidate.route === "initial",
-      findAlternative: vi.fn(async () => null)
-    });
-    const result = await searchAuditedRoute({ value: initial, order: initial.order }, options);
-
-    expect(result.status).toBe("accepted_with_review");
-    expect(result.candidate).toBe(initial);
-    expect(result.audit?.requiresReplan).toBe(false);
-  });
-
-  it("keeps a soft penalty blocked when its route exceeds the business viability threshold", async () => {
-    const options = config({
-      shouldSearchAlternative: () => true,
-      mayAcceptAfterAlternatives: () => false,
-      findAlternative: vi.fn(async () => null)
-    });
-    const result = await searchAuditedRoute({ value: initial, order: initial.order }, options);
-
-    expect(result.status).toBe("alternatives_exhausted");
-  });
-
-  it("keeps an under-50-minute soft-penalty route reviewable if alternative routing errors", async () => {
-    const options = config({
-      shouldSearchAlternative: () => true,
-      mayAcceptAfterAlternatives: () => true,
-      findAlternative: vi.fn(async () => { throw new Error("provider unavailable"); })
-    });
-    const result = await searchAuditedRoute({ value: initial, order: initial.order }, options);
-
-    expect(result.status).toBe("accepted_with_review");
-    expect(result.error).toBe("provider unavailable");
-  });
 });

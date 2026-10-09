@@ -6,7 +6,7 @@ import { buildRouteSegments } from "./routeSegments.ts";
 import { countUTurns, routeLocationType, type RouteManeuver } from "./routeQuality.ts";
 import { analyzeValhallaManeuvers, preFilterRouteManeuvers } from "./routeIntelligence.ts";
 import { collectStopAccessAdjustments, distanceBetweenPointsMeters, findStopsNearTurningManeuvers, isStopAccessRouteImproved, MAX_STOP_ACCESS_RADIUS_METERS, MAX_STOP_ACCESS_WALK_METERS, type StopAccessAdjustment } from "./routeStopAccess.ts";
-import { ALTERNATIVE_REQUEST_TIMEOUT_MS, MAX_ALTERNATES_PER_LEG, MAX_ALTERNATIVE_CONCURRENCY, buildManeuverLinearCostFactors, extractValhallaAlternateLegs, findUturnLegIndexes, parseValhallaRouteLeg, selectRoutePathAlternatives, type AtlasRoutePathLeg, type ManeuverAvoidanceTarget, type ManeuverLinearCostFactor } from "./routePathAlternatives.ts";
+import { ALTERNATIVE_REQUEST_TIMEOUT_MS, MAX_ALTERNATES_PER_LEG, MAX_ALTERNATIVE_CONCURRENCY, extractValhallaAlternateLegs, findUturnLegIndexes, parseValhallaRouteLeg, selectRoutePathAlternatives, type AtlasRoutePathLeg } from "./routePathAlternatives.ts";
 import { resolveAtlasVehicleRoutingModel } from "../../../src/modules/operaciones/lib/vehicleRoutingCosting.ts";
 
 const ALLOWED_ORIGINS = new Set([
@@ -18,7 +18,6 @@ const MAX_BODY_BYTES = 64 * 1024;
 const MAX_STOPS = 151;
 const MATRIX_BLOCK_SIZE = 10;
 const ROUTE_MAX_LOCATIONS = 10;
-const MAX_TARGETED_AVOIDANCE_SEGMENTS = 4;
 const VALHALLA = "https://valhalla1.openstreetmap.de";
 const CALAMA = { longitude: -68.9294, latitude: -22.4544 };
 
@@ -140,7 +139,7 @@ function combineValhallaLegs(routeLegs: AtlasRoutePathLeg[], model: ReturnType<t
   };
 }
 
-async function valhallaRouteSegment(sites: Point[], model: ReturnType<typeof resolveAtlasVehicleRoutingModel>, allowNearbyAccess: boolean[] = [], linearCostFactors: ManeuverLinearCostFactor[] = []) {
+async function valhallaRouteSegment(sites: Point[], model: ReturnType<typeof resolveAtlasVehicleRoutingModel>, allowNearbyAccess: boolean[] = []) {
   const locations = sites.map(({ lat, lng }, index) => ({
     lat,
     lon: lng,
@@ -155,8 +154,7 @@ async function valhallaRouteSegment(sites: Point[], model: ReturnType<typeof res
       costing: model.costing,
       costing_options: vehicleCostingOptions(model),
       units: "kilometers",
-      shape_format: "polyline6",
-      ...(linearCostFactors.length ? { linear_cost_factors: linearCostFactors.map(({ shape, factor }) => ({ shape, factor })) } : {})
+      shape_format: "polyline6"
     }),
     signal: AbortSignal.timeout(18_000)
   });
@@ -171,41 +169,19 @@ async function valhallaRouteSegment(sites: Point[], model: ReturnType<typeof res
   return { ...combineValhallaLegs(routeLegs, model), distanceMeters: Math.round(summary.length * 1000), durationSeconds: Math.round(summary.time) };
 }
 
-async function valhallaRoute(sites: Point[], model: ReturnType<typeof resolveAtlasVehicleRoutingModel>, accessStopIndexes = new Set<number>(), linearCostFactors: ManeuverLinearCostFactor[] = []) {
+async function valhallaRoute(sites: Point[], model: ReturnType<typeof resolveAtlasVehicleRoutingModel>, accessStopIndexes = new Set<number>()) {
   const segments = buildRouteSegments(sites.length, ROUTE_MAX_LOCATIONS);
   const results: Array<Awaited<ReturnType<typeof valhallaRouteSegment>>> = Array(segments.length);
   for (let offset = 0; offset < segments.length; offset += 3) {
     await Promise.all(segments.slice(offset, offset + 3).map(async (segment, resultOffset) => {
       const segmentStops = sites.slice(segment.start, segment.end);
       const allowNearbyAccess = segmentStops.map((_, index) => accessStopIndexes.has(segment.start + index));
-      const segmentFactors = linearCostFactors.filter(({ routeLegIndex }) => routeLegIndex >= segment.start && routeLegIndex < segment.end - 1);
-      results[offset + resultOffset] = await valhallaRouteSegment(segmentStops, model, allowNearbyAccess, segmentFactors);
+      results[offset + resultOffset] = await valhallaRouteSegment(segmentStops, model, allowNearbyAccess);
     }));
   }
   const complete = results.filter((result): result is Awaited<ReturnType<typeof valhallaRouteSegment>> => Boolean(result));
   if (complete.length !== segments.length) throw new Error("valhalla_route_incomplete_segments");
   return combineValhallaLegs(complete.flatMap((result) => result.routeLegs), model);
-}
-
-async function rerouteTargetedRouteSegments(sites: Point[], baseRoute: Awaited<ReturnType<typeof valhallaRoute>>, model: ReturnType<typeof resolveAtlasVehicleRoutingModel>, factors: ManeuverLinearCostFactor[]) {
-  const segments = buildRouteSegments(sites.length, ROUTE_MAX_LOCATIONS);
-  const affectedSegmentIndexes = [...new Set(factors.map(({ routeLegIndex }) => segments.findIndex((segment) => routeLegIndex >= segment.start && routeLegIndex < segment.end - 1)).filter((index) => index >= 0))]
-    .sort((left, right) => left - right)
-    .slice(0, MAX_TARGETED_AVOIDANCE_SEGMENTS);
-  if (!affectedSegmentIndexes.length) return null;
-
-  const routeLegs = [...baseRoute.routeLegs];
-  const alternatives = await Promise.all(affectedSegmentIndexes.map(async (segmentIndex) => {
-    const segment = segments[segmentIndex]!;
-    const segmentFactors = factors.filter(({ routeLegIndex }) => routeLegIndex >= segment.start && routeLegIndex < segment.end - 1);
-    const route = await valhallaRouteSegment(sites.slice(segment.start, segment.end), model, [], segmentFactors);
-    return { segment, routeLegs: route.routeLegs };
-  }));
-  for (const { segment, routeLegs: alternativeLegs } of alternatives) {
-    if (alternativeLegs.length !== segment.end - segment.start - 1) throw new Error("valhalla_targeted_route_incomplete_segments");
-    alternativeLegs.forEach((leg, offset) => { routeLegs[segment.start + offset] = leg; });
-  }
-  return combineValhallaLegs(routeLegs, model);
 }
 
 async function pedestrianAccessDistanceMeters(from: Point, to: Point): Promise<number | null> {
@@ -625,46 +601,8 @@ Deno.serve(async (request) => {
       if (!vehicleType) return response({ error: "vehicle_type_required" }, 400, origin);
       const vehicleRoutingModel = resolveAtlasVehicleRoutingModel(vehicleType);
       const stops = payload.stops.map(point);
-      let targets: ManeuverAvoidanceTarget[] = [];
-      if (payload.avoidManeuvers !== undefined) {
-        if (!Array.isArray(payload.avoidManeuvers) || payload.avoidManeuvers.length > 6) return response({ error: "invalid_maneuver_avoidances" }, 400, origin);
-        targets = payload.avoidManeuvers.map((value) => {
-          if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("invalid_maneuver_avoidances");
-          const target = value as Record<string, unknown>;
-          const routeLegIndex = target.routeLegIndex;
-          const latitude = target.latitude;
-          const longitude = target.longitude;
-          if (!Number.isInteger(routeLegIndex) || (routeLegIndex as number) < 0 || (routeLegIndex as number) >= stops.length - 1
-            || typeof latitude !== "number" || !Number.isFinite(latitude) || latitude < -90 || latitude > 90
-            || typeof longitude !== "number" || !Number.isFinite(longitude) || longitude < -180 || longitude > 180) throw new Error("invalid_maneuver_avoidances");
-          return { routeLegIndex: routeLegIndex as number, latitude, longitude };
-        });
-      }
       const baseRoute = await valhallaRoute(stops, vehicleRoutingModel);
-      let selectedRoute = baseRoute;
-      let avoidanceStatus: "NOT_REQUESTED" | "NO_MATCHING_MANEUVER" | "NO_IMPROVEMENT" | "APPLIED" = "NOT_REQUESTED";
-      let targetedManeuverCount = 0;
-      if (payload.avoidManeuvers !== undefined) {
-        const factors = buildManeuverLinearCostFactors(baseRoute.routeLegs, targets);
-        targetedManeuverCount = factors.length;
-        if (factors.length === 0) avoidanceStatus = "NO_MATCHING_MANEUVER";
-        else {
-          const alternativeRoute = await rerouteTargetedRouteSegments(stops, baseRoute, vehicleRoutingModel, factors);
-          if (!alternativeRoute) {
-            avoidanceStatus = "NO_MATCHING_MANEUVER";
-          } else {
-            const isFaster = alternativeRoute.durationSeconds < baseRoute.durationSeconds
-              || alternativeRoute.durationSeconds === baseRoute.durationSeconds && alternativeRoute.distanceMeters < baseRoute.distanceMeters;
-            const withinDetourAllowance = alternativeRoute.durationSeconds <= baseRoute.durationSeconds + Math.min(180, baseRoute.durationSeconds * 0.15);
-            const operationallyViable = alternativeRoute.durationSeconds < 50 * 60;
-            if (isFaster || (withinDetourAllowance && operationallyViable)) {
-              selectedRoute = alternativeRoute;
-              avoidanceStatus = "APPLIED";
-            } else avoidanceStatus = "NO_IMPROVEMENT";
-          }
-        }
-      }
-      return response({ ...publicRoute(selectedRoute), targetedAvoidance: { status: avoidanceStatus, maneuverCount: targetedManeuverCount }, plannedVehicleType: vehicleRoutingModel.category, referenceModel: vehicleRoutingModel.model, referenceDimensions: vehicleRoutingModel.dimensions, dimensionEvidence: vehicleRoutingModel.dimensionEvidence, referenceDimensionsSent: true }, 200, origin);
+      return response({ ...publicRoute(baseRoute), plannedVehicleType: vehicleRoutingModel.category, referenceModel: vehicleRoutingModel.model, referenceDimensions: vehicleRoutingModel.dimensions, dimensionEvidence: vehicleRoutingModel.dimensionEvidence, referenceDimensionsSent: true }, 200, origin);
     }
     return response({ error: "unsupported_action" }, 400, origin);
   } catch (error) {

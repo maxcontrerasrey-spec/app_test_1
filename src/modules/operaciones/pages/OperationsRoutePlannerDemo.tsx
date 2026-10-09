@@ -12,11 +12,10 @@ import { applyRouteAccessAdjustments } from "../lib/applyRouteAccessAdjustments"
 import { matchRouteDestinationPresets, type RouteDestinationPreset } from "../lib/routeDestinationCatalog";
 import { formatDriverSimulationError, mergeFerrostarRouteSegments, splitRouteStops, toAtlasPlannedRoute } from "../lib/routeSimulation";
 import { searchAuditedRoute } from "../lib/auditedRouteSearch";
-import { findFasterTargetedRouteAlternative, MAX_OPERATIONALLY_VIABLE_ROUTE_SECONDS, routeGeometrySignature } from "../lib/routeAuditAlternatives";
 import { useAtlasRouteAudit } from "../hooks/useAtlasRouteAudit";
 import { atlasVehicleTypesMatch, getAvailableAtlasRouteVehicleCategories, resolveAtlasRouteVehicleCategory } from "../lib/vehicleRoutingCosting";
 import { ensurePlannedRouteLayers } from "../lib/plannedRouteMapLayers";
-import { AtlasRouteAuditPanel, isRouteAuditEvaluationComplete, routeAuditHasSoftPenalty, routeAuditNeedsHumanReview, routeAuditRequiresReplan } from "../components/AtlasRouteAuditPanel";
+import { AtlasRouteAuditPanel, isRouteAuditEvaluationComplete, routeAuditNeedsHumanReview, routeAuditRequiresReplan } from "../components/AtlasRouteAuditPanel";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "../styles/route-planner-demo.css";
 
@@ -522,19 +521,11 @@ export function OperationsRoutePlannerDemo() {
       const search = await searchAuditedRoute({ value: initial, order: result.order }, {
         audit: (candidate) => evaluateRouteAudit(candidate.route, candidate.stops),
         requiresReplan: routeAuditRequiresReplan,
-        shouldSearchAlternative: routeAuditHasSoftPenalty,
-        mayAcceptAfterAlternatives: (candidate, audit) => routeAuditHasSoftPenalty(audit)
-          && !routeAuditRequiresReplan(audit)
-          && candidate.route.durationSeconds < MAX_OPERATIONALLY_VIABLE_ROUTE_SECONDS,
         hasPersistedEvaluation: (audit) => Boolean(audit.runId && audit.mode === "SHADOW" && audit.provider === "openai" && audit.decision !== "ERROR" && (audit.auditedManeuverCount ?? 0) > 0),
         findAlternative: async (excludedOrders, currentCandidate, currentAudit) => {
-          const targetedAlternative = await findFasterTargetedRouteAlternative(currentCandidate, currentAudit, plannedVehicleType);
-          if (targetedAlternative) return targetedAlternative;
           const alternative = await optimizeAtlasOpenRoute(coordinates, plannedVehicleType, fixedDestinationIndex < 0 ? undefined : fixedDestinationIndex, undefined, excludedOrders);
           return { value: { stops: normalizeRouteStops(applyRouteAccessAdjustments(inputStops, alternative.order, alternative.stopAccessAdjustments)), route: alternative }, order: alternative.order };
         },
-        isDuplicateCandidate: (left, right) => left.order.join(",") === right.order.join(",")
-          && routeGeometrySignature(left.value.route) === routeGeometrySignature(right.value.route),
         onCandidate: (candidate, auditAttempt) => {
           setProposal(candidate);
           setRouteState("ready");
@@ -549,19 +540,12 @@ export function OperationsRoutePlannerDemo() {
       });
       setAlternativeLoading(false);
       setAlternativeAttempts(search.alternativeAttempts);
-      const routeAcceptedForReview = search.status === "accepted_with_review";
-      setPlanningAudit(search.status === "accepted" || routeAcceptedForReview ? search.audit : null);
-      setAlternativeSearchComplete(search.alternativeAttempts > 0 && search.status !== "accepted" && !routeAcceptedForReview);
-      if (search.status === "accepted" && search.candidate.route.targetedAvoidance?.status === "APPLIED") {
-        setNotice(`La IA objetó una maniobra y Valhalla encontró un trazado completo distinto, más rápido o de igual tiempo y menor distancia. La geometría final volvió a pasar la auditoría IA.`);
-      } else if (search.status === "accepted" && replanReason) {
+      setPlanningAudit(search.status === "accepted" ? search.audit : null);
+      setAlternativeSearchComplete(search.alternativeAttempts > 0 && search.status !== "accepted");
+      if (search.status === "accepted" && replanReason) {
         setNotice(`${replanReason} Se generó una nueva secuencia y cada alternativa se volvió a validar con IA.`);
       } else if (search.status === "accepted" && search.alternativeAttempts > 0) {
         setNotice(`La IA pidió revisar la ruta inicial; se evaluaron automáticamente ${search.auditAttempts} propuestas y se encontró una secuencia alternativa con auditoría IA persistida.`);
-      } else if (routeAcceptedForReview) {
-        setNotice(search.error
-          ? `La ruta dura menos de 50 minutos y se considera viable, pero no se pudo completar la búsqueda de desvío (${search.error}). Revisa la maniobra señalada por IA y registra tu evaluación para continuar.`
-          : `La ruta dura menos de 50 minutos y se considera viable. No se encontró un desvío mejor dentro del margen permitido; revisa la maniobra señalada por IA y registra tu evaluación para continuar.`);
       } else if (search.status === "alternatives_exhausted") {
         setNotice(`La IA solicitó otra secuencia. Se evaluaron ${search.auditAttempts} propuestas y no se encontró una ruta aceptable dentro de las ${search.alternativeAttempts} alternativas automáticas; la ruta permanece bloqueada.`);
         setAlternativeSearchComplete(true);

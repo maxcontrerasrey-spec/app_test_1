@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
   findUturnLegIndexes,
-  buildManeuverLinearCostFactors,
   decodeValhallaPolyline6,
   MAX_ALTERNATIVE_EXTRA_DISTANCE_METERS,
   extractValhallaAlternateLegs,
@@ -143,27 +142,4 @@ describe("Atlas Valhalla route path alternatives", () => {
     expect(findUturnLegIndexes(base, 2)).toEqual([2, 0]);
   });
 
-  it("maps an AI-flagged maneuver to a short, encoded Valhalla edge corridor", () => {
-    const routeLeg: AtlasRoutePathLeg = {
-      coordinates: [[-68.9300, -22.4500], [-68.9298, -22.4500], [-68.9296, -22.4500], [-68.9294, -22.4500], [-68.9292, -22.4500]],
-      distanceMeters: 90,
-      durationSeconds: 20,
-      uturnCount: 1,
-      maneuvers: [{ type: 12, begin_shape_index: 2 }]
-    };
-
-    const factors = buildManeuverLinearCostFactors([routeLeg], [{ routeLegIndex: 0, latitude: -22.45, longitude: -68.9296 }]);
-
-    expect(factors).toHaveLength(1);
-    expect(factors[0]).toMatchObject({ routeLegIndex: 0, factor: 10 });
-    expect(factors[0]?.shape.length).toBeGreaterThan(2);
-    expect(decodeValhallaPolyline6(factors[0]!.shape)).toEqual(routeLeg.coordinates.slice(0, 5));
-  });
-
-  it("ignores a maneuver target that cannot be matched to the same Valhalla leg", () => {
-    const routeLeg = leg(100, 20, 1, 0);
-    routeLeg.maneuvers = [{ type: 12, begin_shape_index: 0 }];
-    expect(buildManeuverLinearCostFactors([routeLeg], [{ routeLegIndex: 1, latitude: -22.45, longitude: -68.93 }])).toEqual([]);
-    expect(buildManeuverLinearCostFactors([routeLeg], [{ routeLegIndex: 0, latitude: -21, longitude: -68.93 }])).toEqual([]);
-  });
 });

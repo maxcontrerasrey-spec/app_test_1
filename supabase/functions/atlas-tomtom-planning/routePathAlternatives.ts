@@ -18,8 +18,6 @@ export type RouteAlternativeEvaluation = {
   changedLegCount: number;
 };
 
-export type ManeuverAvoidanceTarget = { routeLegIndex: number; latitude: number; longitude: number };
-export type ManeuverLinearCostFactor = { routeLegIndex: number; shape: string; factor: number };
 
 export const MAX_ALTERNATIVE_LEGS = 4;
 export const MAX_ALTERNATES_PER_LEG = 2;
@@ -31,10 +29,6 @@ export const MAX_ALTERNATIVE_EXTRA_LEG_DURATION_RATIO = 0.25;
 export const MAX_ALTERNATIVE_EXTRA_ROUTE_DURATION_SECONDS = 180;
 export const MAX_ALTERNATIVE_EXTRA_ROUTE_DURATION_RATIO = 0.15;
 export const MAX_OPERATIONALLY_VIABLE_ROUTE_SECONDS = 50 * 60;
-export const MAX_TARGETED_MANEUVER_AVOIDANCES = 6;
-export const TARGETED_MANEUVER_AVOIDANCE_FACTOR = 10;
-const TARGETED_MANEUVER_MATCH_RADIUS_METERS = 35;
-const TARGETED_MANEUVER_CONTEXT_METERS = 35;
 
 export function decodeValhallaPolyline6(value: string): [number, number][] {
   const coordinates: [number, number][] = [];
@@ -86,81 +80,6 @@ export function parseValhallaRouteLeg(value: unknown): AtlasRoutePathLeg {
     uturnCount: countUTurns(maneuvers),
     maneuvers
   };
-}
-
-function pointDistanceMeters(a: [number, number], b: [number, number]) {
-  const radians = Math.PI / 180;
-  const latitude = ((a[1] + b[1]) / 2) * radians;
-  return Math.hypot((a[0] - b[0]) * radians * Math.cos(latitude), (a[1] - b[1]) * radians) * 6_371_000;
-}
-
-function encodePolyline6(coordinates: [number, number][]) {
-  let previousLatitude = 0;
-  let previousLongitude = 0;
-  let encoded = "";
-  const encodeValue = (value: number) => {
-    let remaining = value < 0 ? ~(value << 1) : value << 1;
-    while (remaining >= 0x20) {
-      encoded += String.fromCharCode((0x20 | (remaining & 0x1f)) + 63);
-      remaining >>= 5;
-    }
-    encoded += String.fromCharCode(remaining + 63);
-  };
-  for (const [longitude, latitude] of coordinates) {
-    const scaledLatitude = Math.round(latitude * 1e6);
-    const scaledLongitude = Math.round(longitude * 1e6);
-    encodeValue(scaledLatitude - previousLatitude);
-    encodeValue(scaledLongitude - previousLongitude);
-    previousLatitude = scaledLatitude;
-    previousLongitude = scaledLongitude;
-  }
-  return encoded;
-}
-
-function maneuverContextShape(leg: AtlasRoutePathLeg, shapeIndex: number) {
-  if (!Number.isInteger(shapeIndex) || shapeIndex < 0 || shapeIndex >= leg.coordinates.length) return null;
-  let start = shapeIndex;
-  let end = shapeIndex;
-  let startDistance = 0;
-  let endDistance = 0;
-  while (start > 0 && startDistance < TARGETED_MANEUVER_CONTEXT_METERS) {
-    startDistance += pointDistanceMeters(leg.coordinates[start]!, leg.coordinates[start - 1]!);
-    start -= 1;
-  }
-  while (end < leg.coordinates.length - 1 && endDistance < TARGETED_MANEUVER_CONTEXT_METERS) {
-    endDistance += pointDistanceMeters(leg.coordinates[end]!, leg.coordinates[end + 1]!);
-    end += 1;
-  }
-  const shape = leg.coordinates.slice(start, end + 1);
-  return shape.length >= 2 ? encodePolyline6(shape) : null;
-}
-
-/** Maps AI-flagged maneuver points back onto a Valhalla route edge corridor. */
-export function buildManeuverLinearCostFactors(legs: AtlasRoutePathLeg[], targets: ManeuverAvoidanceTarget[]): ManeuverLinearCostFactor[] {
-  if (!Array.isArray(legs) || !Array.isArray(targets) || targets.length === 0) return [];
-  const factors: ManeuverLinearCostFactor[] = [];
-  const seen = new Set<string>();
-  for (const target of targets.slice(0, MAX_TARGETED_MANEUVER_AVOIDANCES)) {
-    if (!Number.isInteger(target.routeLegIndex) || target.routeLegIndex < 0 || target.routeLegIndex >= legs.length
-      || !Number.isFinite(target.latitude) || target.latitude < -90 || target.latitude > 90
-      || !Number.isFinite(target.longitude) || target.longitude < -180 || target.longitude > 180) continue;
-    const leg = legs[target.routeLegIndex]!;
-    const targetPoint: [number, number] = [target.longitude, target.latitude];
-    const nearest = leg.maneuvers
-      .map((maneuver) => {
-        const index = maneuver.begin_shape_index;
-        const coordinate = typeof index === "number" ? leg.coordinates[index] : undefined;
-        return coordinate ? { index: index as number, distance: pointDistanceMeters(targetPoint, coordinate) } : null;
-      })
-      .filter((candidate): candidate is { index: number; distance: number } => candidate !== null)
-      .sort((a, b) => a.distance - b.distance)[0];
-    if (!nearest || nearest.distance > TARGETED_MANEUVER_MATCH_RADIUS_METERS) continue;
-    const shape = maneuverContextShape(leg, nearest.index);
-    if (!shape || seen.has(`${target.routeLegIndex}:${shape}`)) continue;
-    seen.add(`${target.routeLegIndex}:${shape}`);
-    factors.push({ routeLegIndex: target.routeLegIndex, shape, factor: TARGETED_MANEUVER_AVOIDANCE_FACTOR });
-  }
-  return factors;
 }
 
 export function extractValhallaAlternateLegs(value: unknown): Array<Record<string, unknown>> {
