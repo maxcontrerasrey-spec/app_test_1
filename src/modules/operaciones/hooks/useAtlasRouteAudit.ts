@@ -54,7 +54,8 @@ export function useAtlasRouteAudit(plannedVehicleType: string, selectedServiceId
     routeKind: RouteAuditRequest["routeKind"] = "OPTIMIZED_PROPOSAL",
     serviceTemplateId = Number(selectedServiceId) || null,
     vehicleId: string | null = auditVehicleId || null,
-    bindAsPlanningAudit = true
+    bindAsPlanningAudit = true,
+    throwOnError = false
   ) {
     const requestId = ++sequence.current;
     lastRequest.current = { route: candidate, stops: candidateStops.map(({ lat, lng }) => ({ lat, lng })), vehicleType, vehicleId, serviceRouteId, routeKind, serviceTemplateId, bindAsPlanningAudit };
@@ -73,6 +74,7 @@ export function useAtlasRouteAudit(plannedVehicleType: string, selectedServiceId
       if (sequence.current !== requestId) return null;
       setRouteAuditError(reason instanceof Error ? reason.message : "No fue posible completar la auditoría de ruta.");
       setRouteAuditStatus("error");
+      if (throwOnError) throw reason;
       return null;
     }
   }
@@ -84,6 +86,25 @@ export function useAtlasRouteAudit(plannedVehicleType: string, selectedServiceId
     void evaluateRouteAudit(request.route, request.stops, request.vehicleType, request.serviceRouteId, request.routeKind, request.serviceTemplateId, request.vehicleId, request.bindAsPlanningAudit).then((audit) => {
       if (audit && request.bindAsPlanningAudit && isRouteAuditEvaluationComplete("ready", audit)) setPlanningAudit(audit);
     });
+  }
+
+  function restoreRouteAudit(audit: AtlasRouteAuditResponse, candidate: AtlasPlannedRoute, stops: Array<{ lat: number; lng: number }>) {
+    sequence.current += 1;
+    lastRequest.current = {
+      route: candidate,
+      stops: stops.map(({ lat, lng }) => ({ lat, lng })),
+      vehicleType: plannedVehicleType,
+      vehicleId: auditVehicleId || null,
+      serviceRouteId: null,
+      routeKind: "OPTIMIZED_PROPOSAL",
+      serviceTemplateId: Number(selectedServiceId) || null,
+      bindAsPlanningAudit: true
+    };
+    setRouteAudit(audit);
+    setPlanningAudit(audit);
+    setRouteAuditStatus("ready");
+    setRouteAuditError("");
+    setAuditFeedbackSaved(false);
   }
 
   async function submitRouteAuditFeedback() {
@@ -105,6 +126,6 @@ export function useAtlasRouteAudit(plannedVehicleType: string, selectedServiceId
     auditFeedbackType, setAuditFeedbackType, auditFeedbackReason, setAuditFeedbackReason,
     auditFeedbackSaved, setAuditFeedbackSaved, auditFeedbackSaving, alternativeLoading, setAlternativeLoading,
     alternativeAttempts, setAlternativeAttempts, alternativeSearchComplete, setAlternativeSearchComplete,
-    canUseAuditedRoute, reset, evaluateRouteAudit, retryRouteAudit, submitRouteAuditFeedback
+    canUseAuditedRoute, reset, evaluateRouteAudit, restoreRouteAudit, retryRouteAudit, submitRouteAuditFeedback
   };
 }

@@ -15,7 +15,7 @@ import { searchAuditedRoute } from "../lib/auditedRouteSearch";
 import { useAtlasRouteAudit } from "../hooks/useAtlasRouteAudit";
 import { atlasVehicleTypesMatch, getAvailableAtlasRouteVehicleCategories, resolveAtlasRouteVehicleCategory } from "../lib/vehicleRoutingCosting";
 import { ensurePlannedRouteLayers } from "../lib/plannedRouteMapLayers";
-import { AtlasRouteAuditPanel, isRouteAuditEvaluationComplete, routeAuditNeedsHumanReview, routeAuditRequiresReplan } from "../components/AtlasRouteAuditPanel";
+import { AtlasRouteAuditPanel, isRouteAuditEvaluationComplete, routeAuditNeedsHumanReview, routeAuditRequiresReplan, routeAuditSuggestsAlternative } from "../components/AtlasRouteAuditPanel";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "../styles/route-planner-demo.css";
 
@@ -129,7 +129,7 @@ export function OperationsRoutePlannerDemo() {
   const { routeAudit, planningAudit, setPlanningAudit, routeAuditStatus, routeAuditError, auditFeedbackType,
     setAuditFeedbackType, auditFeedbackReason, setAuditFeedbackReason, auditFeedbackSaved, setAuditFeedbackSaved,
     auditFeedbackSaving, alternativeLoading, setAlternativeLoading, alternativeAttempts, setAlternativeAttempts,
-    alternativeSearchComplete, setAlternativeSearchComplete, canUseAuditedRoute, reset: resetRouteAudit, evaluateRouteAudit,
+    alternativeSearchComplete, setAlternativeSearchComplete, canUseAuditedRoute, reset: resetRouteAudit, evaluateRouteAudit, restoreRouteAudit,
     retryRouteAudit, submitRouteAuditFeedback } = routeAuditFlow;
   const preserveAuditOnProposalApply = useRef(false);
   const [saving, setSaving] = useState(false);
@@ -515,8 +515,8 @@ export function OperationsRoutePlannerDemo() {
       }
       setAlternativeLoading(false);
       const search = await searchAuditedRoute({ value: initial, order: result.order }, {
-        audit: (candidate) => evaluateRouteAudit(candidate.route, candidate.stops),
-        requiresReplan: routeAuditRequiresReplan,
+        audit: (candidate) => evaluateRouteAudit(candidate.route, candidate.stops, plannedVehicleType, null, "OPTIMIZED_PROPOSAL", Number(selectedServiceId) || null, auditVehicleId || null, true, true),
+        shouldExploreAlternative: routeAuditSuggestsAlternative,
         selectViableFallback: (evaluated) => evaluated
           .filter(({ audit }) => Number.isFinite(audit.routeDurationSeconds) && audit.routeDurationSeconds < 3_000)
           .sort((left, right) => left.audit.routeDurationSeconds - right.audit.routeDurationSeconds
@@ -541,16 +541,18 @@ export function OperationsRoutePlannerDemo() {
       });
       setAlternativeLoading(false);
       setAlternativeAttempts(search.alternativeAttempts);
-      setPlanningAudit(search.status === "accepted" ? search.audit : null);
       if (search.status === "accepted") {
         setProposal(search.candidate);
         setRouteState("ready");
+        if (search.audit) restoreRouteAudit(search.audit, search.candidate.route, search.candidate.stops);
+      } else {
+        setPlanningAudit(null);
       }
-      setAlternativeSearchComplete(search.alternativeAttempts > 0 && (search.status !== "accepted" || search.viableFallback === true));
+      setAlternativeSearchComplete(search.alternativeAttempts > 0);
       if (search.status === "accepted" && replanReason) {
         setNotice(`${replanReason} Se generó una nueva secuencia y cada alternativa se volvió a validar con IA.`);
       } else if (search.status === "accepted" && search.viableFallback) {
-        setNotice(`La IA recomendó revisar la ruta y el sistema probó ${search.alternativeAttempts} alternativa(s) automáticamente. Se conserva el recorrido completo bajo 50 min con su auditoría IA; no necesitas mover direcciones.`);
+        setNotice(`La IA recomendó revisar la ruta y el sistema probó ${search.alternativeAttempts} alternativa(s) automáticamente. Se conserva el recorrido completo bajo 50 min con su auditoría IA; no necesitas mover direcciones.${search.error ? ` La alternativa adicional falló: ${search.error}` : ""}`);
       } else if (search.status === "accepted" && search.alternativeAttempts > 0) {
         setNotice(`La IA pidió revisar la ruta inicial; se evaluaron automáticamente ${search.auditAttempts} propuestas y se encontró una secuencia alternativa con auditoría IA persistida.`);
       } else if (search.status === "alternatives_exhausted") {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isRouteAuditEvaluationComplete, isRouteAuditOperationallyComplete, routeAuditRequiresReplan } from "../../src/modules/operaciones/components/AtlasRouteAuditPanel";
+import { isRouteAuditEvaluationComplete, isRouteAuditOperationallyComplete, routeAuditRequiresReplan, routeAuditSuggestsAlternative } from "../../src/modules/operaciones/components/AtlasRouteAuditPanel";
 import type { AtlasRouteAuditResponse } from "../../src/modules/operaciones/services/atlasOperationsApi";
 
 const successfulAudit: AtlasRouteAuditResponse = {
@@ -33,11 +33,13 @@ describe("Atlas mandatory route audit gate", () => {
     expect(isRouteAuditEvaluationComplete("ready", alternative)).toBe(true);
     expect(isRouteAuditOperationallyComplete("ready", alternative)).toBe(true);
     expect(routeAuditRequiresReplan(alternative)).toBe(false);
+    expect(routeAuditSuggestsAlternative(alternative)).toBe(true);
 
     const penalizedSegment = { ...successfulAudit, requiresHumanReview: true, requiresReplan: false, analyzedManeuvers: [{ maneuverId: "m-2", decision: "CAUTION", riskScore: 73, reasons: ["Tramo mejorable"], evidence: ["Valhalla"], recommendedAction: "PENALIZE_SEGMENT" }] };
     expect(isRouteAuditEvaluationComplete("ready", penalizedSegment)).toBe(true);
     expect(isRouteAuditOperationallyComplete("ready", penalizedSegment)).toBe(true);
     expect(routeAuditRequiresReplan(penalizedSegment)).toBe(false);
+    expect(routeAuditSuggestsAlternative(penalizedSegment)).toBe(true);
     expect(isRouteAuditOperationallyComplete("ready", { ...penalizedSegment, routeDurationSeconds: 2_999 })).toBe(true);
     expect(routeAuditRequiresReplan({ ...penalizedSegment, routeDurationSeconds: 2_999 })).toBe(false);
     expect(routeAuditRequiresReplan({ ...penalizedSegment, routeDurationSeconds: 3_000 })).toBe(true);

@@ -18,7 +18,7 @@ export async function searchAuditedRoute<TCandidate, TAudit>(
   options: {
     maxAlternatives?: number;
     audit: (candidate: TCandidate) => Promise<TAudit | null>;
-    requiresReplan: (audit: TAudit) => boolean;
+    shouldExploreAlternative: (audit: TAudit) => boolean;
     selectViableFallback?: (evaluated: Array<{ candidate: TCandidate; order: number[]; audit: TAudit }>) => { candidate: TCandidate; audit: TAudit } | null;
     hasPersistedEvaluation: (audit: TAudit) => boolean;
     findAlternative: (excludedOrders: number[][], currentCandidate: TCandidate, currentAudit: TAudit) => Promise<OrderedRouteCandidate<TCandidate> | null>;
@@ -43,15 +43,27 @@ export async function searchAuditedRoute<TCandidate, TAudit>(
       auditAttempts += 1;
       audit = await options.audit(candidate);
     } catch (reason) {
+      const fallback = options.selectViableFallback?.(evaluatedCandidates);
+      if (fallback) {
+        return { status: "accepted", candidate: fallback.candidate, audit: fallback.audit, auditAttempts, alternativeAttempts, error: options.getErrorMessage?.(reason), viableFallback: true };
+      }
       return { status: "audit_error", candidate, audit, auditAttempts, alternativeAttempts, error: options.getErrorMessage?.(reason) };
     }
 
     if (audit === null) return { status: "stale", candidate, audit, auditAttempts, alternativeAttempts };
     if (!options.hasPersistedEvaluation(audit)) {
+      const fallback = options.selectViableFallback?.(evaluatedCandidates);
+      if (fallback) {
+        return { status: "accepted", candidate: fallback.candidate, audit: fallback.audit, auditAttempts, alternativeAttempts, error: "La auditoría de una alternativa no se completó; se conserva la mejor ruta viable ya auditada.", viableFallback: true };
+      }
       return { status: "audit_error", candidate, audit, auditAttempts, alternativeAttempts };
     }
     evaluatedCandidates.push({ candidate, order: currentOrder, audit });
-    if (!options.requiresReplan(audit)) {
+    if (!options.shouldExploreAlternative(audit)) {
+      const fallback = options.selectViableFallback?.(evaluatedCandidates);
+      if (fallback) {
+        return { status: "accepted", candidate: fallback.candidate, audit: fallback.audit, auditAttempts, alternativeAttempts, viableFallback: fallback.candidate !== candidate };
+      }
       return { status: "accepted", candidate, audit, auditAttempts, alternativeAttempts };
     }
     if (alternativeAttempts >= maxAlternatives) {

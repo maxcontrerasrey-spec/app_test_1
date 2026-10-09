@@ -4392,7 +4392,7 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 
 - Un recorrido completo Valhalla menor a 3000 segundos cuenta como viable para una penalización suave `PENALIZE_SEGMENT`; no mostrar “viable” mientras UI, guardado o despacho exigen confirmar esa misma penalización.
 - Derivar el criterio desde la duración del snapshot auditado y repetirlo en Edge, interfaz, RPC de guardado y gate de despacho; exactamente 3000 segundos queda fuera del umbral.
-- Bajo el umbral, rechazos, replan, revisión humana y evidencia insuficiente del análisis de maniobras son recomendaciones visibles y no disparan búsqueda de otro orden ni bloquean la ruta. El fallo técnico, falta de auditoría/persistencia o atestación inválida siguen siendo bloqueantes; la duración no certifica factibilidad física.
+- Bajo el umbral, rechazos, replan, revisión humana y evidencia insuficiente del análisis de maniobras no bloquean la ruta. Mantener separadas la búsqueda automática de una mejora y la decisión de bloquear: una recomendación accionable puede disparar alternativas aunque la ruta actual ya sea viable; si la búsqueda opcional falla, conservar la candidata sub-50 con auditoría persistida.
 - Aplicar el mismo criterio al iniciar simulación del conductor y al buscar alternativas: ningún camino debe reactivar el bloqueo por hallazgos de maniobra en una ruta completa bajo 50 minutos.
 
 # 2026-10-09 - La viabilidad operativa sub-50 prevalece sobre hallazgos de maniobra
