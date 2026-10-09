@@ -5489,3 +5489,15 @@ Fixture integrado agregado después del release: `atlas-under-50-cross-street-ai
 | Regla de 50 minutos | Recorrido completo `< 3000 s`: los hallazgos de maniobra no requieren edición manual; el error técnico IA, falta de run/firma o ruta incompleta siguen bloqueando. | Cliente y migración productiva usan comparación estricta `< 3000`; unitarias prueban 2999/3000/3001 y la función pura de producción se ejecutó en solo lectura con resultado false/true/true para esos límites, incluso ante `REJECT` + `BLOCK_MANEUVER`. |
 
 No se detectó un defecto de código que justifique otro cambio funcional en esta revisión estática. El gap no cerrado es de evidencia productiva: sesión autenticada para una propuesta/auditoría real y fixture integrado para acceso peatonal + cambio de parada + reducción de maniobras. Google se comparó documentalmente; no hay solve equivalente configurado/costeado para Chile, por lo que Valhalla sigue siendo la opción sustentada para producción y no se afirma superioridad empírica global.
+
+### Corrección de auditoría IA al simular la ruta del conductor — 2026-10-09
+
+- [x] Confirmar el contrato actual de Route Intelligence y de evidencia firmada para los tres tipos de ruta; preservar autorización, HMAC, snapshot y persistencia.
+- [x] Permitir y describir correctamente `DRIVER_SIMULATION` en la validación de snapshot del Edge auditor, sin afirmar que esa pasada reoptimizó el orden.
+- [x] Agregar regresiones para que `OPTIMIZED_PROPOSAL`, `SAVED_ROUTE_PREVIEW` y `DRIVER_SIMULATION` acepten solo los snapshots firmados correspondientes, y tipos inválidos sigan rechazados.
+- [x] Ejecutar suites Atlas, `deno check` en ambas Edge Functions, build frontend, Guardian y `git diff --check`.
+- [ ] Desplegar por PR/CI y confirmar en producción el Edge actualizado; completar smoke autenticado de simulación y persistencia de IA cuando el navegador tenga una sesión operativa disponible.
+
+Hallazgo inicial: `OperationsRoutePlannerDemo.startSimulation()` recalcula una ruta con evidencia firmada `DRIVER_SIMULATION` y luego la envía a Route Intelligence. `normalizeRouteSnapshot()` tipa ese valor, pero la condición de admisión solo acepta `OPTIMIZED_PROPOSAL` y `SAVED_ROUTE_PREVIEW`, por lo que devuelve `invalid_route_snapshot` antes de OpenAI. El simulador queda bloqueado aunque la ruta de planificación ya tuviera IA. No modificar rutas ni despachos de producción durante la verificación.
+
+Corrección local: el parser compartido acepta únicamente los tres tipos existentes en `AtlasRouteKind`; el prompt v1.9.0 guía la simulación como revalidación del trazado aplicado, no como reoptimización. Regresión parser: 3 tipos aceptados y tipos desconocidos/null rechazados. Validación: Atlas unit/contract 163/163, Deno check de ambas funciones PASS, build frontend PASS (se conserva el warning de chunk del planificador >520 kB), Guardian 0 errores/1 PERF-001 existente; `git diff --check` PASS. Falta integrar/desplegar y verificar la función productiva y un smoke autenticado del simulador.
