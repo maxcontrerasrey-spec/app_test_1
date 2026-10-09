@@ -372,7 +372,11 @@ Deno.serve(async (request) => {
         if (finalizeError) {
           throw new Error("No fue posible confirmar la entrega");
         }
-        return response({ sent: true, assessment_id: prepared.assessment_id });
+        return response({
+          sent: true,
+          assessment_id: prepared.assessment_id,
+          recipient_email: prepared.email,
+        });
       } catch (error) {
         await admin.rpc("finalize_psycholaboral_dispatch", {
           p_assessment_id: prepared.assessment_id,

@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "../../../shared/lib/queryKeys";
 import { PageShell, TextField } from "../../../shared/ui";
@@ -81,6 +81,9 @@ export function PsycholaboralManagementPage() {
   const candidates = usePsychCandidates(filters);
   const statusSummary = usePsychStatusSummary(search);
   const catalog = usePsychCatalog();
+  useEffect(() => {
+    setFeedback("");
+  }, [search, status, page, expanded]);
   const rows = candidates.data?.items ?? [];
   const totalVisible = candidates.data?.total_count ?? 0;
   const counts: Partial<PsychStatusSummary> = statusSummary.data ?? {};
@@ -110,8 +113,8 @@ export function PsycholaboralManagementPage() {
     setBusy(row.id);
     setFeedback("");
     try {
-      await sendPsychBattery(row.id, codes);
-      setFeedback(`Batería enviada a ${row.email}.`);
+      const recipientEmail = await sendPsychBattery(row.id, codes);
+      setFeedback(`Batería enviada a ${recipientEmail}.`);
       await refresh();
     } catch (error) {
       setFeedback(

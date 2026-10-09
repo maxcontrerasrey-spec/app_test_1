@@ -107,12 +107,16 @@ export async function sendPsychBattery(
   caseCandidateId: string,
   codes: string[],
 ) {
-  return invoke({
+  const result = await invoke({
     action: "send",
     case_candidate_id: caseCandidateId,
     instrument_codes: codes,
     idempotency_key: crypto.randomUUID(),
   });
+  if (typeof result.recipient_email !== "string" || !result.recipient_email) {
+    throw new Error("El servidor no confirmó el correo de destino.");
+  }
+  return result.recipient_email;
 }
 export async function decidePsychAssessment(
   assessmentId: string,

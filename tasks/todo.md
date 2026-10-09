@@ -5514,3 +5514,12 @@ Corrección local: el parser compartido acepta únicamente los tres tipos existe
 Hallazgo inicial: Benjamín Ignacio Leiva Cortez (RC-0187) terminó correctamente como ficha BUK 45302, con 15 documentos exitosos y 1 documento psicolaboral excluido por política. El cron `pg_net` reclamó el job segundos después del enqueue del navegador; los clics posteriores recibieron el job en `processing`, pero el cliente solo despachaba jobs `pending` y convertía `processing + processed=[]` en “BUK confirmó 0 persona(s). 0 documento(s)”. La carga documental automática actualizó el checkpoint hasta cinco minutos después, prolongando además la espera visual aunque el alta ya estaba confirmada.
 
 Revisión local: la bandeja reconcilia todos los jobs devueltos por el enqueue hasta estado terminal (incluidos los reclamados por cron), deduplica por `job_id`, recupera resultados aun si el invoke del navegador falla y comunica un timeout real como “sigue en proceso”, nunca como cero confirmados. La cola documental deja de ejecutarse en ocho rondas desde el navegador y queda en el cron productivo ya existente. No hay migraciones, cambios RLS, grants ni contratos RPC. Regresiones focalizadas 30/30, TypeScript/build PASS, Guardian 0 errores/1 warning preexistente `PERF-001`, `git diff --check` PASS.
+## Evitar avisos de envío psicolaboral obsoletos — 2026-10-09
+
+- [x] Reconciliar la rama con `origin/main` y preservar todo el WIP ajeno actualmente presente en el checkout; inspeccionar worktrees antes de elegir el espacio de trabajo.
+- [x] Limpiar el aviso al cambiar búsqueda, estado, candidato expandido o página; mostrar `recipient_email` devuelto por el servidor después de confirmar el envío.
+- [x] Añadir regresiones focalizadas del contrato de envío y del reinicio contextual del aviso sin alterar autorización, idempotencia ni registros de evaluación.
+- [x] Ejecutar pruebas focalizadas, TypeScript/build, Guardian y `git diff --check`; revisar que el diff no incluya cambios ajenos.
+- [ ] Publicar por el flujo seguro del repositorio y comprobar el bundle/Edge Function productivos y el destinatario reportado.
+
+Validación local: `psycholaboral-module-integrity` 41/41; TypeScript/build PASS; `deno check --node-modules-dir=auto` PASS para `psycholaboral-assessment`; Guardian 0 errores, con 1 warning preexistente PERF-001 en `OperationsRoutePlannerDemo.tsx`; `git diff --check` PASS. No se ejecutó ningún envío ni se cambiaron registros productivos.
