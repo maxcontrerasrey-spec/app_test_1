@@ -4376,3 +4376,8 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - Si una ruta guardada se vuelve a trazar al cargarla, auditar ese trazado nuevo; un run anterior de la misma lista de paradas no representa necesariamente la geometría visible actual.
 - Repetir el gate de IA en la frontera de despacho/publicación, ligado a las paradas exactas guardadas. Una ruta histórica sin vínculo se conserva para consulta, pero no puede entrar a un despacho nuevo.
 - Un U-turn trazable no prueba marcha atrás ni inviabilidad. No aceptar un recorrido más lento solo por reducir U-turns; la mejora debe aparecer en tiempo/ruta completa y quedar explicada.
+# 2026-10-08 - Separar penalización de maniobra de viabilidad total del recorrido
+
+- Una recomendación `PENALIZE_SEGMENT` por sí sola no debe bloquear un recorrido completo inferior a 50 minutos; requiere revisión humana.
+- Probar alternativas de giros U en el optimizador Valhalla antes de auditar la ruta; medir el umbral sobre el recorrido completo y limitar el desvío.
+- Mantener bloqueantes los rechazos, `BLOCK_MANEUVER`, `REQUEST_ALTERNATIVE` y las auditorías fallidas; la viabilidad por duración no certifica la factibilidad física y el caso penalizado aún requiere revisión humana.

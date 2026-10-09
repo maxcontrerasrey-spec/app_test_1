@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   findUturnLegIndexes,
+  decodeValhallaPolyline6,
   MAX_ALTERNATIVE_EXTRA_DISTANCE_METERS,
   extractValhallaAlternateLegs,
   parseValhallaRouteLeg,
@@ -78,9 +79,20 @@ describe("Atlas Valhalla route path alternatives", () => {
     expect(selectRoutePathAlternatives(base, new Map([[0, [tooSlow]]]))).toBeNull();
   });
 
-  it("never trades a faster baseline for a slower route just to remove a legal U-turn", () => {
+  it("allows a bounded slower alternative below the 50-minute operational threshold", () => {
     const base = [leg(500, 100, 1, 0)];
     const slowerWithoutUturn = leg(600, 101, 0, 1);
+
+    expect(selectRoutePathAlternatives(base, new Map([[0, [slowerWithoutUturn]]]))).toMatchObject({
+      uturnsBefore: 1,
+      uturnsAfter: 0,
+      addedDurationSeconds: 1
+    });
+  });
+
+  it("does not apply a slower local alternative at or above 50 minutes total", () => {
+    const base = [leg(500, 2_995, 1, 0)];
+    const slowerWithoutUturn = leg(600, 3_000, 0, 1);
 
     expect(selectRoutePathAlternatives(base, new Map([[0, [slowerWithoutUturn]]]))).toBeNull();
   });
@@ -105,12 +117,15 @@ describe("Atlas Valhalla route path alternatives", () => {
     expect(result.addedDurationSeconds).toBe(-5);
   });
 
-  it("keeps the faster baseline when an alternate removes a U-turn but takes longer", () => {
+  it("chooses an allowed viable detour over an excessive detour", () => {
     const base = [leg(500, 200, 1, 0)];
     const slower = leg(700, 240, 0, 1);
     const faster = leg(650, 205, 0, 2);
 
-    expect(selectRoutePathAlternatives(base, new Map([[0, [slower, faster]]]))).toBeNull();
+    expect(selectRoutePathAlternatives(base, new Map([[0, [slower, faster]]]))).toMatchObject({
+      legs: [faster],
+      addedDurationSeconds: 5
+    });
   });
 
   it("prefers a shorter equal-time path that keeps a legal mapped U-turn", () => {
@@ -126,4 +141,5 @@ describe("Atlas Valhalla route path alternatives", () => {
     expect(findUturnLegIndexes(base)).toEqual([2, 0, 3, 4]);
     expect(findUturnLegIndexes(base, 2)).toEqual([2, 0]);
   });
+
 });

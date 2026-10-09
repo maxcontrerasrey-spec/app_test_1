@@ -82,18 +82,18 @@ export function AtlasRouteAuditPanel({
       <p><b>{auditDecisionLabel(audit.decision)}</b>{audit.riskScore === null ? " · sin puntaje" : ` · indicador ${audit.riskScore}/100`}{routeAuditNeedsHumanReview(audit) ? " · requiere revisión humana" : ""}</p>
       <p>{audit.summary}</p>
       {routeAuditRequiresReplan(audit) && <>
-        <p role="alert">La IA marcó una maniobra que requiere cambiar el recorrido. El sistema busca automáticamente otras secuencias con las mismas direcciones, destino y tipo de equipo. El feedback no habilita una ruta objetada.</p>
+        <p role="alert">La IA marcó una maniobra que requiere revisar el trazado. El sistema intenta rodear ese tramo y, si no mejora la ruta, prueba otras secuencias con las mismas direcciones, destino y tipo de equipo. Cada alternativa debe volver a pasar por IA antes de usarse.</p>
         {alternativeLoading
           ? <p role="status">Buscando la alternativa {alternativeAttempts} de 2 y volviendo a evaluarla con IA…</p>
           : alternativeSearchComplete
-            ? <p role="status">Se evaluaron {alternativeAttempts} alternativas automáticas sin encontrar una ruta aprobable; esta propuesta sigue bloqueada.</p>
+            ? <p role="status">Sin ruta aprobable tras {alternativeAttempts} alternativas; propuesta bloqueada.</p>
             : null}
       </>}
-      {routeAuditNeedsHumanReview(audit) && !routeAuditRequiresReplan(audit) && !feedbackSaved && <p role="status">La evidencia no es suficiente para liberar la ruta automáticamente. Revisa el caso y registra una evaluación positiva para habilitar aplicar, guardar o probar la navegación.</p>}
+      {routeAuditNeedsHumanReview(audit) && !routeAuditRequiresReplan(audit) && !feedbackSaved && <p role="status">Menos de 50 min: viable. Confirma revisión.</p>}
       <small>
         {audit.decision === "ERROR" || audit.provider !== "openai"
           ? "No se completó la evaluación de IA."
-          : `GPT-6 Luna · ${audit.latencyMs ?? 0} ms · ${audit.auditedManeuverCount ?? 0} de ${audit.totalManeuverCount ?? 0} maniobras evaluadas (${audit.evaluationScope === "RISK_PRIORITIZED_SAMPLE" ? "priorizadas por riesgo" : "muestra distribuida en todo el recorrido"})`}. La IA revisa cada ruta propuesta, pero no cambia su trazado en modo sombra ni garantiza una mejora cuando no existe una alternativa comprobable. {audit.vehicleProfileVerified ? "Perfil dimensional verificado." : "Sin dimensiones verificadas; no se certifica viabilidad física."}
+          : `GPT-6 Luna · ${audit.latencyMs ?? 0} ms · ${audit.auditedManeuverCount ?? 0} de ${audit.totalManeuverCount ?? 0} maniobras evaluadas (${audit.evaluationScope === "RISK_PRIORITIZED_SAMPLE" ? "priorizadas por riesgo" : "muestra distribuida en todo el recorrido"})`}. La IA identifica y prioriza maniobras; Valhalla calcula y valida la geometría. La revisión no certifica espacio físico, maniobras reales ni seguridad del cruce. {audit.vehicleProfileVerified ? "Perfil dimensional verificado." : "Sin dimensiones verificadas; no se certifica viabilidad física."}
       </small>
       {audit.analyzedManeuvers.length > 0 && <ul>{audit.analyzedManeuvers.map((item, index) => {
         const maneuver = item as Record<string, unknown>;

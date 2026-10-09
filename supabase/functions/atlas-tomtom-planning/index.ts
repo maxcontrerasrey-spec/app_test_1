@@ -149,7 +149,13 @@ async function valhallaRouteSegment(sites: Point[], model: ReturnType<typeof res
   const routeResponse = await fetch(`${VALHALLA}/route`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ locations, costing: model.costing, costing_options: vehicleCostingOptions(model), units: "kilometers", shape_format: "polyline6" }),
+    body: JSON.stringify({
+      locations,
+      costing: model.costing,
+      costing_options: vehicleCostingOptions(model),
+      units: "kilometers",
+      shape_format: "polyline6"
+    }),
     signal: AbortSignal.timeout(18_000)
   });
   if (!routeResponse.ok) throw new Error(`valhalla_route_http_${routeResponse.status}`);
@@ -594,7 +600,9 @@ Deno.serve(async (request) => {
       const vehicleType = typeof payload.plannedVehicleType === "string" ? payload.plannedVehicleType : "";
       if (!vehicleType) return response({ error: "vehicle_type_required" }, 400, origin);
       const vehicleRoutingModel = resolveAtlasVehicleRoutingModel(vehicleType);
-      return response({ ...publicRoute(await valhallaRoute(payload.stops.map(point), vehicleRoutingModel)), plannedVehicleType: vehicleRoutingModel.category, referenceModel: vehicleRoutingModel.model, referenceDimensions: vehicleRoutingModel.dimensions, dimensionEvidence: vehicleRoutingModel.dimensionEvidence, referenceDimensionsSent: true }, 200, origin);
+      const stops = payload.stops.map(point);
+      const baseRoute = await valhallaRoute(stops, vehicleRoutingModel);
+      return response({ ...publicRoute(baseRoute), plannedVehicleType: vehicleRoutingModel.category, referenceModel: vehicleRoutingModel.model, referenceDimensions: vehicleRoutingModel.dimensions, dimensionEvidence: vehicleRoutingModel.dimensionEvidence, referenceDimensionsSent: true }, 200, origin);
     }
     return response({ error: "unsupported_action" }, 400, origin);
   } catch (error) {

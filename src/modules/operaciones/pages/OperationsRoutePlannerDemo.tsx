@@ -522,7 +522,7 @@ export function OperationsRoutePlannerDemo() {
         audit: (candidate) => evaluateRouteAudit(candidate.route, candidate.stops),
         requiresReplan: routeAuditRequiresReplan,
         hasPersistedEvaluation: (audit) => Boolean(audit.runId && audit.mode === "SHADOW" && audit.provider === "openai" && audit.decision !== "ERROR" && (audit.auditedManeuverCount ?? 0) > 0),
-        findAlternative: async (excludedOrders) => {
+        findAlternative: async (excludedOrders, currentCandidate, currentAudit) => {
           const alternative = await optimizeAtlasOpenRoute(coordinates, plannedVehicleType, fixedDestinationIndex < 0 ? undefined : fixedDestinationIndex, undefined, excludedOrders);
           return { value: { stops: normalizeRouteStops(applyRouteAccessAdjustments(inputStops, alternative.order, alternative.stopAccessAdjustments)), route: alternative }, order: alternative.order };
         },

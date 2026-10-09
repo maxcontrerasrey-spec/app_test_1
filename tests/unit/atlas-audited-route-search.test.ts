@@ -90,6 +90,20 @@ describe("bounded AI-audited route search", () => {
       findAlternative: vi.fn(async () => ({ value: initial, order: initial.order }))
     });
     const result = await searchAuditedRoute({ value: initial, order: initial.order }, options);
-    expect(result.status).toBe("alternative_error");
+    expect(result.status).toBe("alternatives_exhausted");
+  });
+
+  it("allows a distinct traced geometry for the same stop order", async () => {
+    const sameOrderAlternate = { route: "rerouted geometry", order: [0, 1, 2] };
+    const options = config({
+      audit: vi.fn(async (candidate: Candidate) => persisted(candidate.route === "initial")),
+      findAlternative: vi.fn(async () => ({ value: sameOrderAlternate, order: sameOrderAlternate.order })),
+      isDuplicateCandidate: (left, right) => left.order.join(",") === right.order.join(",") && left.value.route === right.value.route
+    });
+    const result = await searchAuditedRoute({ value: initial, order: initial.order }, options);
+
+    expect(result.status).toBe("accepted");
+    expect(result.candidate).toBe(sameOrderAlternate);
+    expect(result.auditAttempts).toBe(2);
   });
 });

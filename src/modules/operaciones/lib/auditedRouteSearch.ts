@@ -11,7 +11,7 @@ export type AuditedRouteSearchResult<TCandidate, TAudit> = {
   error?: string;
 };
 
-/** Audits each candidate before considering another order; all orders share the original stop identities. */
+/** Audits every distinct path before considering another order; all candidates share the original stop identities. */
 export async function searchAuditedRoute<TCandidate, TAudit>(
   initial: OrderedRouteCandidate<TCandidate>,
   options: {
@@ -19,7 +19,8 @@ export async function searchAuditedRoute<TCandidate, TAudit>(
     audit: (candidate: TCandidate) => Promise<TAudit | null>;
     requiresReplan: (audit: TAudit) => boolean;
     hasPersistedEvaluation: (audit: TAudit) => boolean;
-    findAlternative: (excludedOrders: number[][]) => Promise<OrderedRouteCandidate<TCandidate> | null>;
+    findAlternative: (excludedOrders: number[][], currentCandidate: TCandidate, currentAudit: TAudit) => Promise<OrderedRouteCandidate<TCandidate> | null>;
+    isDuplicateCandidate?: (left: OrderedRouteCandidate<TCandidate>, right: OrderedRouteCandidate<TCandidate>) => boolean;
     onCandidate?: (candidate: TCandidate, auditAttempt: number) => void;
     onAlternativeSearch?: (alternativeAttempt: number) => void;
     getErrorMessage?: (reason: unknown) => string;
@@ -27,6 +28,7 @@ export async function searchAuditedRoute<TCandidate, TAudit>(
 ): Promise<AuditedRouteSearchResult<TCandidate, TAudit>> {
   const maxAlternatives = Math.max(0, Math.min(options.maxAlternatives ?? MAX_AUTOMATIC_ROUTE_ALTERNATIVES, 4));
   const excludedOrders = [initial.order];
+  const evaluatedCandidates: OrderedRouteCandidate<TCandidate>[] = [initial];
   let candidate = initial.value;
   let audit: TAudit | null = null;
   let auditAttempts = 0;
@@ -55,12 +57,15 @@ export async function searchAuditedRoute<TCandidate, TAudit>(
     alternativeAttempts += 1;
     options.onAlternativeSearch?.(alternativeAttempts);
     try {
-      const alternative = await options.findAlternative(excludedOrders.map((order) => [...order]));
-      if (!alternative) return { status: "alternatives_exhausted", candidate, audit, auditAttempts, alternativeAttempts };
-      if (excludedOrders.some((order) => order.join(",") === alternative.order.join(","))) {
-        return { status: "alternative_error", candidate, audit, auditAttempts, alternativeAttempts, error: "El optimizador devolvió una secuencia ya evaluada." };
+      const alternative = await options.findAlternative(excludedOrders.map((order) => [...order]), candidate, audit);
+      if (!alternative) {
+        return { status: "alternatives_exhausted", candidate, audit, auditAttempts, alternativeAttempts };
       }
-      excludedOrders.push(alternative.order);
+      if (evaluatedCandidates.some((evaluated) => (options.isDuplicateCandidate ?? ((left, right) => left.order.join(",") === right.order.join(",")))(evaluated, alternative))) {
+        return { status: "alternatives_exhausted", candidate, audit, auditAttempts, alternativeAttempts };
+      }
+      if (!excludedOrders.some((order) => order.join(",") === alternative.order.join(","))) excludedOrders.push(alternative.order);
+      evaluatedCandidates.push(alternative);
       candidate = alternative.value;
     } catch (reason) {
       const message = options.getErrorMessage?.(reason);
