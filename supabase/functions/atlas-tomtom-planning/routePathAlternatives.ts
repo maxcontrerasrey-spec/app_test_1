@@ -181,8 +181,9 @@ export function selectRoutePathAlternatives(
   const evaluate = (optionIndex: number) => {
     if (optionIndex >= eligibleIndexes.length) {
       const totals = routeTotals(selected);
-      // A mapped U-turn is legal unless there is evidence it requires reversing or is physically impossible.
-      // Never trade away a faster full route merely to reduce the U-turn count.
+      // A mapped U-turn is not prohibited by itself. Below 50 minutes, a bounded
+      // slower detour may be considered when it removes a U-turn; at or above
+      // that threshold, a slower detour is not accepted.
       const withinDetourAllowance = totals.durationSeconds <= baseTotals.durationSeconds + totalDurationAllowance;
       const operationallyViable = totals.durationSeconds < MAX_OPERATIONALLY_VIABLE_ROUTE_SECONDS;
       if (totals.uturnCount >= baseTotals.uturnCount || !withinDetourAllowance

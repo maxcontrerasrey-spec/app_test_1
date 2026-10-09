@@ -1,0 +1,59 @@
+{
+  "fixtureId": "calama-screenshot-reference-five-stop-bus-candidate-search-2026-10-09",
+  "capturedAt": "2026-10-09",
+  "status": "exploratory_coordinate_references_not_verified_operational_addresses",
+  "provenance": {
+    "someCoordinates": "Visible directly in screenshots supplied by the user; others are approximate Photon street geocodes.",
+    "routingEngine": "Valhalla public endpoint",
+    "endpoint": "https://valhalla1.openstreetmap.de",
+    "vehicleCategory": "Bus",
+    "referenceDimensions": { "length": 13.2, "width": 2.6, "height": 4, "weight": 20 },
+    "warning": "Composite of reference points from different screenshots and geocoded street points. This is not a confirmed operational route or an exhaustive permutation search."
+  },
+  "stops": [
+    { "index": 0, "label": "Punto 2 (captura 9:59)", "lat": -22.45108, "lng": -68.93422 },
+    { "index": 1, "label": "Granaderos, referencia Photon", "lat": -22.462173, "lng": -68.9278263 },
+    { "index": 2, "label": "Punto 4, coordenada visible aproximada", "lat": -22.44421, "lng": -68.9359 },
+    { "index": 3, "label": "Avenida Maipú, referencia Photon", "lat": -22.4532848, "lng": -68.9279172 },
+    { "index": 4, "label": "Balmaceda 3242, referencia Photon", "lat": -22.4483617, "lng": -68.9216709 }
+  ],
+  "matrix": [
+    [0, 351, 256, 186, 432],
+    [444, 0, 666, 306, 442],
+    [259, 526, 0, 387, 346],
+    [202, 236, 405, 0, 245],
+    [379, 395, 449, 259, 0]
+  ],
+  "optimizer": {
+    "searchMethod": "EXACT_OPEN_PATH_UP_TO_12",
+    "selectedOrder": [2, 0, 3, 4, 1],
+    "matrixDurationSeconds": 1085,
+    "inputOrderMatrixSeconds": 1649,
+    "candidateBudget": 8,
+    "candidateOrders": [
+      [2, 0, 3, 1, 4], [4, 2, 0, 3, 1], [2, 4, 0, 3, 1], [2, 4, 3, 0, 1],
+      [2, 0, 1, 3, 4], [2, 0, 4, 3, 1], [3, 0, 2, 4, 1], [0, 2, 3, 4, 1]
+    ]
+  },
+  "observedCandidateRoutes": [
+    { "order": [2, 0, 3, 4, 1], "durationSeconds": 1087.787, "distanceMeters": 5307, "uturnCount": 0 },
+    { "order": [2, 0, 3, 1, 4], "durationSeconds": 1125.162, "distanceMeters": 5541, "uturnCount": 0 },
+    { "order": [4, 2, 0, 3, 1], "durationSeconds": 1132.802, "distanceMeters": 5620, "uturnCount": 1 },
+    { "order": [2, 4, 0, 3, 1], "durationSeconds": 1149.198, "distanceMeters": 5476, "uturnCount": 0 },
+    { "order": [2, 4, 3, 0, 1], "durationSeconds": 1159.262, "distanceMeters": 5740, "uturnCount": 0 },
+    { "order": [2, 0, 1, 3, 4], "durationSeconds": 1162.952, "distanceMeters": 5700, "uturnCount": 0 },
+    { "order": [2, 0, 4, 3, 1], "durationSeconds": 1187.972, "distanceMeters": 5826, "uturnCount": 0 },
+    { "order": [3, 0, 2, 4, 1], "durationSeconds": 1200.346, "distanceMeters": 5774, "uturnCount": 0 },
+    { "order": [0, 2, 3, 4, 1], "durationSeconds": 1284.955, "distanceMeters": 6141, "uturnCount": 0 }
+  ],
+  "selection": {
+    "selectedOrder": [2, 0, 3, 4, 1],
+    "durationSeconds": 1087.787,
+    "distanceMeters": 5307,
+    "uturnCount": 0,
+    "alternativesEvaluated": 8,
+    "alternativesFailed": 0,
+    "fastestObservedWithinBoundedSearch": true,
+    "under50Minutes": true
+  }
+}

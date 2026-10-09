@@ -19,8 +19,9 @@ export function routeAuditNeedsHumanReview(audit: AtlasRouteAuditResponse | null
 }
 
 export function routeAuditRequiresReplan(audit: AtlasRouteAuditResponse | null) {
-  return Boolean(audit && (audit.requiresReplan || audit.decision === "REJECT"
-    || audit.analyzedManeuvers.some((item) => item.decision === "REJECT" || ["BLOCK_MANEUVER", "REQUEST_ALTERNATIVE", "PENALIZE_SEGMENT"].includes(String(item.recommendedAction)))));
+  if (!audit || routeIsUnderOperationalThreshold(audit)) return false;
+  return Boolean(audit.requiresReplan || audit.decision === "REJECT"
+    || audit.analyzedManeuvers.some((item) => item.decision === "REJECT" || ["BLOCK_MANEUVER", "REQUEST_ALTERNATIVE", "PENALIZE_SEGMENT"].includes(String(item.recommendedAction))));
 }
 
 export function isRouteAuditEvaluationComplete(status: "idle" | "loading" | "ready" | "error", audit: AtlasRouteAuditResponse | null) {

@@ -1,0 +1,514 @@
+{
+  "fixtureId": "calama-center-four-stop-valhalla-2026-10-09",
+  "capturedAt": "2026-10-09",
+  "status": "exploratory_geographic_fixture_not_production_address_truth",
+  "provenance": {
+    "geocoder": "Photon",
+    "routingEngine": "Valhalla public endpoint",
+    "endpoint": "https://valhalla1.openstreetmap.de",
+    "warning": "Las coordenadas son resultados de geocodificación aproximados para calles/lugares de referencia; no representan una ruta operacional confirmada ni la dirección exacta de un usuario."
+  },
+  "stops": [
+    {
+      "label": "Avenida Maipú",
+      "query": "Avenida Maipú, Calama, Chile",
+      "lat": -22.4532848,
+      "lng": -68.9279172
+    },
+    {
+      "label": "Calle Granaderos (aproximación Photon)",
+      "query": "Calle Granaderos, Calama, Chile",
+      "lat": -22.462173,
+      "lng": -68.9278263
+    },
+    {
+      "label": "Balmaceda 3242 (aproximación Photon)",
+      "query": "Balmaceda 3242, Calama, Chile",
+      "lat": -22.4483617,
+      "lng": -68.9216709
+    },
+    {
+      "label": "Avenida Grecia 2300 (aproximación Photon)",
+      "query": "Avenida Grecia 2300, Calama, Chile",
+      "lat": -22.4647204,
+      "lng": -68.9334043
+    }
+  ],
+  "profiles": {
+    "Bus": {
+      "dimensions": {
+        "length": 13.2,
+        "width": 2.6,
+        "height": 4,
+        "weight": 20
+      },
+      "matrixDurations": [
+        [
+          0,
+          236,
+          245,
+          415
+        ],
+        [
+          306,
+          0,
+          442,
+          179
+        ],
+        [
+          259,
+          395,
+          0,
+          575
+        ],
+        [
+          456,
+          263,
+          638,
+          0
+        ]
+      ],
+      "optimizedOrder": [
+        2,
+        0,
+        1,
+        3
+      ],
+      "matrixInputSeconds": 1253,
+      "matrixOptimizedSeconds": 674,
+      "inputRoute": {
+        "order": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "durationSeconds": 1253.994,
+        "distanceMeters": 6172,
+        "uturnCount": 0
+      },
+      "optimizedRoute": {
+        "order": [
+          2,
+          0,
+          1,
+          3
+        ],
+        "durationSeconds": 675.117,
+        "distanceMeters": 3187,
+        "uturnCount": 0
+      }
+    },
+    "Taxibus": {
+      "dimensions": {
+        "length": 9.2,
+        "width": 2.4,
+        "height": 3.5,
+        "weight": 9.4
+      },
+      "matrixDurations": [
+        [
+          0,
+          236,
+          245,
+          415
+        ],
+        [
+          306,
+          0,
+          442,
+          179
+        ],
+        [
+          259,
+          395,
+          0,
+          575
+        ],
+        [
+          456,
+          263,
+          638,
+          0
+        ]
+      ],
+      "optimizedOrder": [
+        2,
+        0,
+        1,
+        3
+      ],
+      "matrixInputSeconds": 1253,
+      "matrixOptimizedSeconds": 674,
+      "inputRoute": {
+        "order": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "durationSeconds": 1253.994,
+        "distanceMeters": 6172,
+        "uturnCount": 0
+      },
+      "optimizedRoute": {
+        "order": [
+          2,
+          0,
+          1,
+          3
+        ],
+        "durationSeconds": 675.117,
+        "distanceMeters": 3187,
+        "uturnCount": 0
+      }
+    },
+    "Minibus": {
+      "dimensions": {
+        "length": 7.367,
+        "width": 2.02,
+        "height": 2.874,
+        "weight": 5
+      },
+      "matrixDurations": [
+        [
+          0,
+          236,
+          245,
+          415
+        ],
+        [
+          306,
+          0,
+          442,
+          179
+        ],
+        [
+          259,
+          395,
+          0,
+          575
+        ],
+        [
+          456,
+          263,
+          638,
+          0
+        ]
+      ],
+      "optimizedOrder": [
+        2,
+        0,
+        1,
+        3
+      ],
+      "matrixInputSeconds": 1253,
+      "matrixOptimizedSeconds": 674,
+      "inputRoute": {
+        "order": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "durationSeconds": 1253.994,
+        "distanceMeters": 6172,
+        "uturnCount": 0
+      },
+      "optimizedRoute": {
+        "order": [
+          2,
+          0,
+          1,
+          3
+        ],
+        "durationSeconds": 675.117,
+        "distanceMeters": 3187,
+        "uturnCount": 0
+      }
+    }
+  },
+  "exhaustiveBusOrderSearch": {
+    "evaluated": 24,
+    "successful": 24,
+    "failed": 0,
+    "ranking": "Valhalla complete route duration, then distance",
+    "best": {
+      "order": [
+        2,
+        0,
+        1,
+        3
+      ],
+      "durationSeconds": 675.117,
+      "distanceMeters": 3187,
+      "uturnCount": 0
+    },
+    "results": [
+      {
+        "order": [
+          2,
+          0,
+          1,
+          3
+        ],
+        "durationSeconds": 675.117,
+        "distanceMeters": 3187,
+        "uturnCount": 0
+      },
+      {
+        "order": [
+          3,
+          1,
+          0,
+          2
+        ],
+        "durationSeconds": 814.908,
+        "distanceMeters": 3801,
+        "uturnCount": 0
+      },
+      {
+        "order": [
+          0,
+          2,
+          1,
+          3
+        ],
+        "durationSeconds": 820.844,
+        "distanceMeters": 3941,
+        "uturnCount": 0
+      },
+      {
+        "order": [
+          1,
+          3,
+          0,
+          2
+        ],
+        "durationSeconds": 881.941,
+        "distanceMeters": 4230,
+        "uturnCount": 1
+      },
+      {
+        "order": [
+          2,
+          0,
+          3,
+          1
+        ],
+        "durationSeconds": 938.36,
+        "distanceMeters": 4384,
+        "uturnCount": 0
+      },
+      {
+        "order": [
+          3,
+          1,
+          2,
+          0
+        ],
+        "durationSeconds": 964.707,
+        "distanceMeters": 4593,
+        "uturnCount": 0
+      },
+      {
+        "order": [
+          2,
+          1,
+          3,
+          0
+        ],
+        "durationSeconds": 1032.375,
+        "distanceMeters": 5125,
+        "uturnCount": 1
+      },
+      {
+        "order": [
+          0,
+          1,
+          3,
+          2
+        ],
+        "durationSeconds": 1054.053,
+        "distanceMeters": 5315,
+        "uturnCount": 0
+      },
+      {
+        "order": [
+          1,
+          3,
+          2,
+          0
+        ],
+        "durationSeconds": 1077.024,
+        "distanceMeters": 5378,
+        "uturnCount": 0
+      },
+      {
+        "order": [
+          0,
+          2,
+          3,
+          1
+        ],
+        "durationSeconds": 1084.087,
+        "distanceMeters": 5138,
+        "uturnCount": 0
+      },
+      {
+        "order": [
+          3,
+          0,
+          2,
+          1
+        ],
+        "durationSeconds": 1097.991,
+        "distanceMeters": 5384,
+        "uturnCount": 1
+      },
+      {
+        "order": [
+          1,
+          2,
+          0,
+          3
+        ],
+        "durationSeconds": 1117.399,
+        "distanceMeters": 5379,
+        "uturnCount": 0
+      },
+      {
+        "order": [
+          2,
+          1,
+          0,
+          3
+        ],
+        "durationSeconds": 1118.034,
+        "distanceMeters": 5482,
+        "uturnCount": 0
+      },
+      {
+        "order": [
+          0,
+          3,
+          1,
+          2
+        ],
+        "durationSeconds": 1121.462,
+        "distanceMeters": 5373,
+        "uturnCount": 0
+      },
+      {
+        "order": [
+          1,
+          0,
+          2,
+          3
+        ],
+        "durationSeconds": 1127.166,
+        "distanceMeters": 5443,
+        "uturnCount": 0
+      },
+      {
+        "order": [
+          3,
+          2,
+          0,
+          1
+        ],
+        "durationSeconds": 1133.508,
+        "distanceMeters": 5676,
+        "uturnCount": 0
+      },
+      {
+        "order": [
+          3,
+          0,
+          1,
+          2
+        ],
+        "durationSeconds": 1135.365,
+        "distanceMeters": 5618,
+        "uturnCount": 1
+      },
+      {
+        "order": [
+          2,
+          3,
+          1,
+          0
+        ],
+        "durationSeconds": 1145.068,
+        "distanceMeters": 5539,
+        "uturnCount": 0
+      },
+      {
+        "order": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "durationSeconds": 1253.994,
+        "distanceMeters": 6172,
+        "uturnCount": 0
+      },
+      {
+        "order": [
+          2,
+          3,
+          0,
+          1
+        ],
+        "durationSeconds": 1268.585,
+        "distanceMeters": 6265,
+        "uturnCount": 1
+      },
+      {
+        "order": [
+          3,
+          2,
+          1,
+          0
+        ],
+        "durationSeconds": 1340.215,
+        "distanceMeters": 6830,
+        "uturnCount": 0
+      },
+      {
+        "order": [
+          1,
+          0,
+          3,
+          2
+        ],
+        "durationSeconds": 1360.376,
+        "distanceMeters": 6817,
+        "uturnCount": 0
+      },
+      {
+        "order": [
+          0,
+          3,
+          2,
+          1
+        ],
+        "durationSeconds": 1449.829,
+        "distanceMeters": 7311,
+        "uturnCount": 0
+      },
+      {
+        "order": [
+          1,
+          2,
+          3,
+          0
+        ],
+        "durationSeconds": 1474.657,
+        "distanceMeters": 7317,
+        "uturnCount": 1
+      }
+    ]
+  }
+}
