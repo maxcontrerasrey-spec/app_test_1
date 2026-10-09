@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mergeFerrostarRouteSegments, formatDriverSimulationError, splitRouteStops } from "../../src/modules/operaciones/lib/routeSimulation";
+import { mergeFerrostarRouteSegments, formatDriverSimulationError, routeGeometriesMatch, splitRouteStops } from "../../src/modules/operaciones/lib/routeSimulation";
 import type { Route } from "@stadiamaps/ferrostar";
 
 function route(start: number, end: number, distance: number): Route {
@@ -15,6 +15,16 @@ function route(start: number, end: number, distance: number): Route {
 }
 
 describe("Valhalla route segments", () => {
+  it("accepts equivalent Valhalla paths with different point density and rejects a divergent street", () => {
+    const server = [[-69, -22], [-69.0001, -22], [-69.0002, -22], [-69.0003, -22]] as Array<[number, number]>;
+    const samePath = server.map(([lng, lat]) => ({ lat, lng }));
+    const differentStreet = server.map(([lng, lat]) => ({ lat, lng: lng + 0.002 }));
+    expect(routeGeometriesMatch(server, [...samePath, { lat: -22, lng: -69.0003 }])).toBe(true);
+    expect(routeGeometriesMatch(server, differentStreet)).toBe(false);
+    expect(routeGeometriesMatch(server, [...samePath].reverse())).toBe(false);
+    expect(routeGeometriesMatch(server.slice(0, 1), samePath)).toBe(false);
+  });
+
   it("splits 12 stops into requests of ten and three with an overlapping boundary", () => {
     const stops = Array.from({ length: 12 }, (_, index) => index);
     const segments = splitRouteStops(stops);

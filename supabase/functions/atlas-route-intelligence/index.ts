@@ -1,4 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { getAtlasRouteEvidenceSecret, hashAtlasRouteEvidence, verifyAtlasRouteEvidence, type AtlasRouteEvidenceProof } from "../_shared/atlasRouteEvidence.ts";
 import { extractResponsesOutputText } from "./responsesOutput.ts";
 import { attachValidatedRestrictions, enforceFailClosedRouteAudit, hasValidManeuverLegContext, normalizeClientManeuverFeature, parseRouteAuditOutput, preFilterRouteManeuvers, selectManeuversForAiAudit, type RouteAuditOutput, type RouteManeuverFeature, type ValidatedRouteRestriction } from "../atlas-tomtom-planning/routeIntelligence.ts";
 
@@ -48,7 +49,7 @@ type RouteSnapshot = {
   referenceDimensions: { lengthM: number; widthM: number; heightM: number; weightTons: number } | null;
   dimensionEvidence: string | null;
   reportedRouteOrderSearch: { candidatesEvaluated: number; failedCandidates: number; alternativeApplied: boolean; status: "COMPLETE" | "SEARCH_INCOMPLETE" | "SKIPPED_ROUTE_SIZE"; searchScope: "BOUNDED"; searchMethod: "EXACT_OPEN_PATH_UP_TO_12" | "MULTISTART_2OPT_HEURISTIC" | null; alternativeBudget: number | null; selectionAuthority: "VALHALLA_COMPLETE_ROUTE_DURATION" } | null;
-  routeKind?: "OPTIMIZED_PROPOSAL" | "SAVED_ROUTE_PREVIEW";
+  routeKind?: "OPTIMIZED_PROPOSAL" | "SAVED_ROUTE_PREVIEW" | "DRIVER_SIMULATION";
 };
 
 function json(body: unknown, status: number, origin: string | null) {
@@ -301,7 +302,13 @@ Deno.serve(async (request) => {
     const mode = Deno.env.get("ATLAS_ROUTE_INTELLIGENCE_MODE")?.trim().toUpperCase() || "OFF";
     if (mode === "OFF") return json({ mode: "OFF", status: "disabled" }, 200, origin);
     if (mode !== "SHADOW") return json({ error: "invalid_mode" }, 503, origin);
+    const proof = body.serverEvidence as AtlasRouteEvidenceProof | undefined;
+    const secret = getAtlasRouteEvidenceSecret((name) => Deno.env.get(name));
+    if (!proof || !secret) return json({ error: "route_evidence_unavailable" }, 400, origin);
     if (!Array.isArray(body.maneuvers) || body.maneuvers.length < 1 || body.maneuvers.length > MAX_MANEUVERS) return json({ error: "invalid_maneuvers" }, 400, origin);
+    const claims = { evidenceVersion: proof.evidenceVersion, actorUserId: proof.actorUserId, issuedAtMs: proof.issuedAtMs, geometryHash: proof.geometryHash, routeSnapshot: proof.routeSnapshot, maneuvers: body.maneuvers as unknown[] };
+    if (!await verifyAtlasRouteEvidence(claims, proof.signature, secret, actorUserId)) return json({ error: "invalid_route_evidence" }, 400, origin);
+    const routeEvidenceHash = await hashAtlasRouteEvidence(claims);
     const maneuvers = body.maneuvers.map(normalizeClientManeuverFeature);
     if (maneuvers.some((item) => item === null)) return json({ error: "invalid_maneuver_evidence" }, 400, origin);
     const normalizedManeuvers = maneuvers as RouteManeuverFeature[];
@@ -309,12 +316,11 @@ Deno.serve(async (request) => {
     if (templateId !== null && (!Number.isSafeInteger(templateId) || templateId < 1)) return json({ error: "invalid_service_template" }, 400, origin);
     const vehicleId = body.vehicleId === null || body.vehicleId === undefined || body.vehicleId === "" ? null : String(body.vehicleId);
     if (vehicleId !== null && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(vehicleId)) return json({ error: "invalid_vehicle_id" }, 400, origin);
-    const plannedVehicleType = typeof body.plannedVehicleType === "string" ? body.plannedVehicleType.trim().slice(0, 80) : "";
-    if (!plannedVehicleType) return json({ error: "planned_vehicle_type_required" }, 400, origin);
-    const routeSnapshot = normalizeRouteSnapshot(body.routeSnapshot);
+    const routeSnapshot = normalizeRouteSnapshot(proof.routeSnapshot);
+    const plannedVehicleType = routeSnapshot?.plannedVehicleType ?? "";
     const serviceRouteId = body.serviceRouteId === null || body.serviceRouteId === undefined || body.serviceRouteId === "" ? null : String(body.serviceRouteId);
     if (serviceRouteId !== null && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(serviceRouteId)) return json({ error: "invalid_service_route" }, 400, origin);
-    if (!routeSnapshot || routeSnapshot.plannedVehicleType !== plannedVehicleType && routeSnapshot.plannedVehicleType.toUpperCase() !== plannedVehicleType.toUpperCase()) return json({ error: "invalid_route_snapshot" }, 400, origin);
+    if (!routeSnapshot) return json({ error: "invalid_route_snapshot" }, 400, origin);
     if (!hasValidManeuverLegContext(normalizedManeuvers, routeSnapshot.stops.length)) return json({ error: "invalid_maneuver_leg_context" }, 400, origin);
     let profile: Record<string, unknown> | null = null;
     let profileLookupFailed = false;
@@ -345,12 +351,12 @@ Deno.serve(async (request) => {
       output = { decision: "ERROR", riskScore: null, summary: "No fue posible completar la evaluación IA. La ruta se conserva como borrador; no se puede aplicar ni guardar hasta completar una revisión.", analyzedManeuvers: [], requiresReplan: false, requiresHumanReview: true };
     }
     const latencyMs = Math.min(120000, Math.round(performance.now() - started));
-    const candidateHash = await sha256(JSON.stringify({ analyzer: ANALYZER_VERSION, routeSnapshot, maneuvers: normalizedManeuvers }));
+    const candidateHash = await sha256(JSON.stringify({ analyzer: ANALYZER_VERSION, routeEvidenceHash, routeSnapshot, maneuvers: normalizedManeuvers }));
     const idempotencyKey = await sha256(JSON.stringify({ evaluationId, candidateHash, vehicleId, model, prompt: PROMPT_VERSION, riskRules: "1.0.0" }));
     let runId: string;
     try {
       runId = await recordRun({
-        idempotency_key: idempotencyKey, candidate_hash: candidateHash, route_snapshot: routeSnapshot,
+        idempotency_key: idempotencyKey, candidate_hash: candidateHash, route_snapshot: routeSnapshot, route_evidence_version: proof.evidenceVersion, route_evidence_hash: routeEvidenceHash,
         requires_replan: output.requiresReplan, requires_human_review: output.requiresHumanReview, service_template_id: templateId,
         actor_user_id: actorUserId,
         service_route_id: serviceRouteId, vehicle_id: vehicleId, vehicle_profile_snapshot: { ...(profile ?? { status: "UNKNOWN", verified: false }), planned_vehicle_type: plannedVehicleType },
@@ -366,7 +372,7 @@ Deno.serve(async (request) => {
     } catch {
       return json({ error: "audit_persistence_failed" }, 503, origin);
     }
-    return json({ ...output, routeDurationSeconds: routeSnapshot.durationSeconds, runId, mode, provider, model, latencyMs, candidateManeuverCount: allCandidates.length, auditedManeuverCount, totalManeuverCount: normalizedManeuvers.length, evaluationScope: allCandidates.length ? "RISK_PRIORITIZED_SAMPLE" : "DISTRIBUTED_ROUTE_SAMPLE", vehicleProfileVerified: profileIsVerified, matchedRestrictionCount: maneuversWithRestrictions.reduce((count, item) => count + (item.knownRestrictionCount ?? 0), 0), restrictionLookupFailed, errorCategory }, 200, origin);
+    return json({ ...output, routeDurationSeconds: routeSnapshot.durationSeconds, runId, mode, provider, model, latencyMs, candidateManeuverCount: allCandidates.length, auditedManeuverCount, totalManeuverCount: normalizedManeuvers.length, evaluationScope: allCandidates.length ? "RISK_PRIORITIZED_SAMPLE" : "DISTRIBUTED_ROUTE_SAMPLE", vehicleProfileVerified: profileIsVerified, matchedRestrictionCount: maneuversWithRestrictions.reduce((count, item) => count + (item.knownRestrictionCount ?? 0), 0), restrictionLookupFailed, errorCategory, routeEvidenceVersion: proof.evidenceVersion, routeEvidenceHash }, 200, origin);
   } catch (error) {
     const message = error instanceof Error ? error.message : "request_failed";
     const status = message.startsWith("superadmin_check_") || message === "auth_config_missing" ? 503 : message === "superadmin_only" ? 403 : 400;

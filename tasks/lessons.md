@@ -1,5 +1,11 @@
 # Lecciones Técnicas Aprendidas (Lessons)
 
+## 2026-10-09 — El criterio de viabilidad de ruta usa el recorrido completo
+
+- El usuario define un recorrido completo menor de 50 minutos como totalmente viable; una acción IA `PENALIZE_SEGMENT` aislada es una advertencia suave y no debe bloquear ni exigir feedback humano.
+- Mantener independientes las alertas concretas de revisión humana, falta de evidencia y bloqueo; el umbral de duración no anula hallazgos explícitos.
+- Evaluar el tiempo total desde el snapshot firmado del planificador, no segmentos sueltos ni valores editables del navegador.
+
 ## 2026-10-08 — El detalle operacional debe respetar la continuidad visual solicitada
 
 - En el drawer de Control Tower, conductor y jornada son una sola fila lógica; mantenerlos en celdas separadas produce una lectura fragmentada.
