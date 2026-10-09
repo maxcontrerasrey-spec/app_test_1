@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 const migration = readFileSync(new URL("../../supabase/migrations/20261008004912_atlas_route_intelligence_shadow.sql", import.meta.url), "utf8");
 const humanReviewMigration = readFileSync(new URL("../../supabase/migrations/20261008182601_atlas_route_human_review_gate.sql", import.meta.url), "utf8");
 const shortRoutePolicyMigration = readFileSync(new URL("../../supabase/migrations/20261009004914_atlas_short_route_soft_penalty_is_non_blocking.sql", import.meta.url), "utf8");
-const shortRouteViabilityMigration = readFileSync(new URL("../../supabase/migrations/20261009015414_atlas_under_50_minute_route_viability.sql", import.meta.url), "utf8");
+const shortRouteViabilityMigration = readFileSync(new URL("../../supabase/migrations/20261009015908_atlas_under_50_minute_route_viability.sql", import.meta.url), "utf8");
 const edge = readFileSync(new URL("../../supabase/functions/atlas-route-intelligence/index.ts", import.meta.url), "utf8");
 const config = readFileSync(new URL("../../supabase/config.toml", import.meta.url), "utf8");
 const planner = readFileSync(new URL("../../supabase/functions/atlas-tomtom-planning/index.ts", import.meta.url), "utf8");
