@@ -1,0 +1,23 @@
+{
+  "fixtureId": "atlas-short-cross-street-access-ai-workflow-2026-10-09",
+  "status": "synthetic_workflow_fixture_not_production_route_truth",
+  "stops": [
+    { "id": "A", "label": "Paradero original lado poniente", "lat": -22.45000, "lng": -68.93400 },
+    { "id": "B", "label": "Paradero propuesto lado oriente", "lat": -22.45000, "lng": -68.93390 },
+    { "id": "D", "label": "Destino fijado", "lat": -22.45200, "lng": -68.93200 }
+  ],
+  "optimizedOrder": [1, 0, 2],
+  "accessAdjustment": {
+    "stopIndex": 1,
+    "adjusted": { "lat": -22.45001, "lng": -68.93390 },
+    "pedestrianAccessMeters": 11,
+    "maximumPedestrianAccessMeters": 30,
+    "baseRoute": { "durationSeconds": 2640, "uturnCount": 1 },
+    "adjustedRoute": { "durationSeconds": 2720, "uturnCount": 0 }
+  },
+  "auditedCandidates": [
+    { "id": "base", "order": [1, 0, 2], "durationSeconds": 2720, "decision": "REJECT", "requiresReplan": true, "requiresHumanReview": true, "recommendedAction": "REQUEST_ALTERNATIVE" },
+    { "id": "alternative-1", "order": [0, 1, 2], "durationSeconds": 2860, "decision": "REJECT", "requiresReplan": true, "requiresHumanReview": true, "recommendedAction": "REQUEST_ALTERNATIVE" },
+    { "id": "alternative-2", "order": [1, 2, 0], "durationSeconds": 2550, "decision": "APPROVE", "requiresReplan": false, "requiresHumanReview": false, "recommendedAction": "NONE" }
+  ]
+}
