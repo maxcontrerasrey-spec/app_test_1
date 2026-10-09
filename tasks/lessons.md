@@ -4405,3 +4405,9 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 
 - Mantener las paradas indexadas por orden de entrada hasta aplicar la permutación del optimizador; no aplicar índices de origen sobre una lista que ya está ordenada.
 - Usar la misma secuencia final para trazar, firmar evidencia y enviar al auditor IA. Probar una permutación no identidad y accesos ajustados, porque el orden identidad oculta esta clase de discrepancia.
+
+# 2026-10-09 - Una cola concurrente no puede interpretar `processing` como resultado vacío
+
+- Si navegador y cron pueden reclamar el mismo job, que el navegador reciba `processing` o una respuesta `processed=[]` no significa cero altas: debe consultar el estado canónico hasta terminal o informar que sigue en curso.
+- La confirmación del alta BUK y la carga de sus documentos son hitos distintos. La bandeja debe salir al confirmar empleado/plan/cargo y dejar los documentos a la cola automática, sin bloquear varios minutos ni mostrar contadores cero engañosos.
+- Ante timeout o fallo de despacho, reconciliar primero `get_buk_sync_jobs_status`; nunca inducir un nuevo enqueue o un segundo clic mientras existe un job `pending/processing` idempotente.
