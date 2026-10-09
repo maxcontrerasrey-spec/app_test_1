@@ -5433,6 +5433,9 @@ Release productivo: PR #123 integrado en `main` como `7a20c3bb`; migración `202
 - [x] Mantener a partir de 50 minutos los bloqueos/replan actuales; no degradar error IA, persistencia ausente, discrepancia de evidencia o firma inválida.
 - [x] Mostrar que el sistema está explorando mejoras automáticamente sin pedir cambiar el orden manualmente; cubrir propuesta y simulación del conductor con regresiones.
 - [x] Ejecutar unitarias (274/274), build TypeScript/Vite, Guardian (0 errores; 1 PERF-001 preexistente por el módulo de 881 líneas) y `git diff --check`. Build mantiene la advertencia existente de chunk del planificador sobre 520 kB.
-- [ ] Integrar por CI y verificar el bundle productivo; después completar smoke autenticado sin crear ni modificar recorridos operacionales.
+- [x] Integrar por CI y verificar el bundle productivo.
+- [ ] Smoke autenticado de propuesta sin guardar ni despachar; no hay sesión confirmada activa en el navegador.
 
 Revisión local (2026-10-09): el usuario aclaró que todo recorrido completo bajo 50 minutos es viable. Se mantiene esa elegibilidad aunque la IA recomiende mejorar una maniobra; el optimizador prueba hasta dos secuencias alternativas completas y solo aplica auditorías IA persistidas. Se conserva la ruta auditada más rápida bajo 50 minutos si una alternativa no mejora o la auditoría opcional falla. El hook restaura en conjunto trazado y auditoría seleccionados para evitar mostrar resultados IA de otra propuesta. Pruebas específicas 28/28 y suite unitaria 274/274; `npm run build` PASS con advertencia conocida de chunk 1.102 kB y Guardian 0 errores / 1 PERF-001 por tamaño del archivo.
+
+Producción (2026-10-09): PR #126 integrado en `main` como `c4b8585695208dedf97d38764b1c6c0d2ab1990b`; CI y Cloudflare Pages pasaron. Se verificó `gestion.busesjm.cl` en HTTP 200 y el chunk servido `OperationsRoutePlannerDemo-Bjy7C4RP.js` (1.101.612 B) contiene la indicación de viabilidad bajo 50 min y la búsqueda automática de alternativas. No se generaron ni editaron rutas/despachos. Smoke autenticado de propuesta queda pendiente para evitar crear auditorías o versiones operacionales.
