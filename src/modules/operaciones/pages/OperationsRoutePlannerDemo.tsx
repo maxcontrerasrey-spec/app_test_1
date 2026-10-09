@@ -559,7 +559,9 @@ export function OperationsRoutePlannerDemo() {
       } else if (search.status === "accepted" && search.alternativeAttempts > 0) {
         setNotice(`La IA pidió revisar la ruta inicial; se evaluaron automáticamente ${search.auditAttempts} propuestas y se encontró una secuencia alternativa con auditoría IA persistida.`);
       } else if (routeAcceptedForReview) {
-        setNotice(`La ruta dura menos de 50 minutos y se considera viable. No se encontró un desvío mejor dentro del margen permitido; revisa la maniobra señalada por IA y registra tu evaluación para continuar.`);
+        setNotice(search.error
+          ? `La ruta dura menos de 50 minutos y se considera viable, pero no se pudo completar la búsqueda de desvío (${search.error}). Revisa la maniobra señalada por IA y registra tu evaluación para continuar.`
+          : `La ruta dura menos de 50 minutos y se considera viable. No se encontró un desvío mejor dentro del margen permitido; revisa la maniobra señalada por IA y registra tu evaluación para continuar.`);
       } else if (search.status === "alternatives_exhausted") {
         setNotice(`La IA solicitó otra secuencia. Se evaluaron ${search.auditAttempts} propuestas y no se encontró una ruta aceptable dentro de las ${search.alternativeAttempts} alternativas automáticas; la ruta permanece bloqueada.`);
         setAlternativeSearchComplete(true);

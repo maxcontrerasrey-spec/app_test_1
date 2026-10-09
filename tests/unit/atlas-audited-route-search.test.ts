@@ -130,4 +130,16 @@ describe("bounded AI-audited route search", () => {
 
     expect(result.status).toBe("alternatives_exhausted");
   });
+
+  it("keeps an under-50-minute soft-penalty route reviewable if alternative routing errors", async () => {
+    const options = config({
+      shouldSearchAlternative: () => true,
+      mayAcceptAfterAlternatives: () => true,
+      findAlternative: vi.fn(async () => { throw new Error("provider unavailable"); })
+    });
+    const result = await searchAuditedRoute({ value: initial, order: initial.order }, options);
+
+    expect(result.status).toBe("accepted_with_review");
+    expect(result.error).toBe("provider unavailable");
+  });
 });

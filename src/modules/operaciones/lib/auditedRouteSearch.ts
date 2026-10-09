@@ -80,6 +80,12 @@ export async function searchAuditedRoute<TCandidate, TAudit>(
       if (message?.includes("route_alternative_exhausted")) {
         return exhausted(candidate, audit, auditAttempts, alternativeAttempts);
       }
+      if (!requiresReplan && options.mayAcceptAfterAlternatives?.(candidate, audit)) {
+        return {
+          status: "accepted_with_review", candidate, audit, auditAttempts, alternativeAttempts,
+          error: message
+        };
+      }
       return {
         status: "alternative_error", candidate, audit, auditAttempts, alternativeAttempts,
         error: message
