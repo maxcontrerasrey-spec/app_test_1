@@ -286,19 +286,17 @@ export type RouteAuditOutput = {
 
 /** Treat incomplete or action-bearing model findings conservatively even if its summary flags disagree. */
 export function enforceFailClosedRouteAudit(output: RouteAuditOutput, routeDurationSeconds: number): RouteAuditOutput {
+  const shortRouteIsOperationallyViable = Number.isFinite(routeDurationSeconds) && routeDurationSeconds < 3_000;
   const hasRejectedManeuver = output.analyzedManeuvers.some((item) => item.decision === "REJECT");
   const hasInsufficientEvidence = output.decision === "INSUFFICIENT_EVIDENCE"
     || output.analyzedManeuvers.some((item) => item.decision === "INSUFFICIENT_EVIDENCE");
+  const hasSoftPenalty = output.analyzedManeuvers.some((item) => item.recommendedAction === "PENALIZE_SEGMENT");
   const requiresReplan = output.requiresReplan || hasRejectedManeuver
+    || hasSoftPenalty
     || output.analyzedManeuvers.some((item) => item.recommendedAction === "BLOCK_MANEUVER" || item.recommendedAction === "REQUEST_ALTERNATIVE");
   const hasHumanReviewAction = output.analyzedManeuvers.some((item) => item.recommendedAction === "HUMAN_REVIEW");
-  const hasSoftPenalty = output.analyzedManeuvers.some((item) => item.recommendedAction === "PENALIZE_SEGMENT");
-  const shortRouteSoftPenaltyOnly = Number.isFinite(routeDurationSeconds) && routeDurationSeconds < 3_000
-    && hasSoftPenalty && !hasHumanReviewAction && !hasInsufficientEvidence && !hasRejectedManeuver && !requiresReplan
-    && output.decision !== "REJECT";
-  const requiresHumanReview = output.requiresHumanReview && !shortRouteSoftPenaltyOnly
-    || hasInsufficientEvidence || requiresReplan || hasHumanReviewAction
-    || hasSoftPenalty && !shortRouteSoftPenaltyOnly;
+  const requiresHumanReview = !shortRouteIsOperationallyViable && (output.requiresHumanReview
+    || hasInsufficientEvidence || requiresReplan || hasHumanReviewAction || hasSoftPenalty);
   const decision = hasRejectedManeuver
     ? "REJECT"
     : hasInsufficientEvidence && output.decision === "APPROVE"
@@ -323,16 +321,19 @@ export function parseRouteAuditOutput(value: unknown, allowedManeuverIds: Set<st
   const riskScore = finiteNumber(row.riskScore);
   if (!routeDecisions.has(row.decision as RouteAuditDecision) || riskScore === null || riskScore < 0 || riskScore > 100 || typeof row.summary !== "string" || row.summary.length > 1200 || !Array.isArray(row.analyzedManeuvers) || row.analyzedManeuvers.length > 100 || typeof row.requiresReplan !== "boolean" || typeof row.requiresHumanReview !== "boolean") return null;
   const analyzedManeuvers: RouteAuditOutput["analyzedManeuvers"] = [];
+  const seenManeuverIds = new Set<string>();
   for (const item of row.analyzedManeuvers) {
     if (!item || typeof item !== "object" || Array.isArray(item)) return null;
     const entry = item as Record<string, unknown>;
     const score = finiteNumber(entry.riskScore);
     const reasons = boundedStringArray(entry.reasons, 8);
     const evidence = boundedStringArray(entry.evidence, 8);
-    if (typeof entry.maneuverId !== "string" || !allowedManeuverIds.has(entry.maneuverId) || !maneuverDecisions.has(entry.decision as ManeuverAuditDecision) || score === null || score < 0 || score > 100 || !reasons || !evidence || !actions.has(entry.recommendedAction as RouteAuditOutput["analyzedManeuvers"][number]["recommendedAction"])) return null;
+    if (typeof entry.maneuverId !== "string" || !allowedManeuverIds.has(entry.maneuverId) || seenManeuverIds.has(entry.maneuverId) || !maneuverDecisions.has(entry.decision as ManeuverAuditDecision) || score === null || score < 0 || score > 100 || !reasons || !evidence || !actions.has(entry.recommendedAction as RouteAuditOutput["analyzedManeuvers"][number]["recommendedAction"])) return null;
     if (entry.decision === "REJECT" && evidence.length === 0) return null;
+    seenManeuverIds.add(entry.maneuverId);
     analyzedManeuvers.push({ maneuverId: entry.maneuverId, decision: entry.decision as RouteAuditOutput["analyzedManeuvers"][number]["decision"], riskScore: score, reasons, evidence, recommendedAction: entry.recommendedAction as RouteAuditOutput["analyzedManeuvers"][number]["recommendedAction"] });
   }
+  if (seenManeuverIds.size !== allowedManeuverIds.size) return null;
   if (row.decision === "REJECT" && !analyzedManeuvers.some((item) => item.decision === "REJECT" && item.evidence.length > 0)) return null;
   return { decision: row.decision as RouteAuditDecision, riskScore, summary: row.summary.trim(), analyzedManeuvers, requiresReplan: row.requiresReplan, requiresHumanReview: row.requiresHumanReview };
 }

@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 const migration = readFileSync(new URL("../../supabase/migrations/20261008004912_atlas_route_intelligence_shadow.sql", import.meta.url), "utf8");
 const humanReviewMigration = readFileSync(new URL("../../supabase/migrations/20261008182601_atlas_route_human_review_gate.sql", import.meta.url), "utf8");
 const shortRoutePolicyMigration = readFileSync(new URL("../../supabase/migrations/20261009004914_atlas_short_route_soft_penalty_is_non_blocking.sql", import.meta.url), "utf8");
+const shortRouteViabilityMigration = readFileSync(new URL("../../supabase/migrations/20261009015908_atlas_under_50_minute_route_viability.sql", import.meta.url), "utf8");
 const edge = readFileSync(new URL("../../supabase/functions/atlas-route-intelligence/index.ts", import.meta.url), "utf8");
 const config = readFileSync(new URL("../../supabase/config.toml", import.meta.url), "utf8");
 const planner = readFileSync(new URL("../../supabase/functions/atlas-tomtom-planning/index.ts", import.meta.url), "utf8");
@@ -67,13 +68,18 @@ describe("Atlas Route Intelligence security contract", () => {
     expect(strictGate).toContain("to authenticated");
   });
 
-  it("uses persisted full-route duration to make only a short-route soft penalty non-blocking", () => {
-    expect(shortRoutePolicyMigration).toContain("durationSeconds') = 'number'");
+  it("uses the signed complete-route duration to keep all AI route findings advisory below 50 minutes", () => {
+    expect(shortRouteViabilityMigration).toContain("< 3000 else false end as route_under_50_minutes");
+    expect(shortRouteViabilityMigration).toContain("when route_under_50_minutes then false");
+    expect(shortRouteViabilityMigration).toContain("audit_row.decision = 'ERROR'");
+    expect(shortRouteViabilityMigration).toContain("audit_row.route_evidence_version <> 1");
+    expect(shortRouteViabilityMigration).toContain("audit_row.route_snapshot->'stops'");
+    expect(shortRouteViabilityMigration).toContain("ai.decision <> 'ERROR'");
+    expect(shortRouteViabilityMigration).toContain("ai.route_evidence_hash ~ '^[a-f0-9]{64}$'");
+    expect(shortRouteViabilityMigration).toContain("public.atlas_ops_route_audit_needs_human_feedback(");
+    expect(shortRouteViabilityMigration).toContain("grant execute on function public.atlas_ops_save_optimized_service_route");
+    expect(shortRouteViabilityMigration).toContain("from public, anon, authenticated");
     expect(shortRoutePolicyMigration).toContain("< 3000 else false end as route_under_50_minutes");
-    expect(shortRoutePolicyMigration).toContain("when route_under_50_minutes and has_soft_penalty then false");
-    expect(shortRoutePolicyMigration).toContain("public.atlas_ops_route_audit_needs_human_feedback(");
-    expect(shortRoutePolicyMigration).toContain("grant execute on function public.atlas_ops_save_optimized_service_route");
-    expect(shortRoutePolicyMigration).toContain("from public, anon, authenticated");
   });
 
   it("defaults to OFF, calls the model for every valid route, keeps risk triage bounded, and leaves failed routes as blocked drafts", () => {
@@ -91,7 +97,9 @@ describe("Atlas Route Intelligence security contract", () => {
     expect(edge).toContain("reportedRouteOrderSearch");
     expect(edge).toContain("no afirmar que no hubo comparación de órdenes");
     expect(edge).toContain("di que se evaluó una búsqueda acotada, nunca exhaustiva ni global");
-    expect(edge).toContain("route-intelligence-prompt:1.7.0");
+    expect(edge).toContain("route-intelligence-prompt:1.8.0");
+    expect(edge).toContain("no pidas cambiar manualmente el orden de puntos");
+    expect(edge).toContain("Devuelve exactamente un resultado por cada maniobra recibida");
     expect(edge).toContain("routeDurationSeconds: routeSnapshot.durationSeconds");
     expect(edge).toContain('const routeKind = row.routeKind === undefined ? "OPTIMIZED_PROPOSAL" : row.routeKind');
     expect(edge).toContain('routeSnapshot.routeKind es SAVED_ROUTE_PREVIEW');
@@ -133,5 +141,6 @@ describe("Atlas Route Intelligence security contract", () => {
     expect(attestationMigration).toContain("atlas_ops_dispatch_attested_route_guard");
     expect(evidence).toContain("ATLAS_ROUTE_EVIDENCE_MAX_AGE_MS");
     expect(readFileSync(new URL("../../src/modules/operaciones/pages/OperationsRoutePlannerDemo.tsx", import.meta.url), "utf8")).toContain("routeGeometriesMatch(driverAuditRoute.coordinates, driverRoute.geometry)");
+    expect(readFileSync(new URL("../../supabase/functions/atlas-tomtom-planning/routeIntelligence.ts", import.meta.url), "utf8")).toContain("const requiresHumanReview = !shortRouteIsOperationallyViable");
   });
 });

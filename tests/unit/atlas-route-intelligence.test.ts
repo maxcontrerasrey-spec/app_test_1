@@ -86,27 +86,44 @@ describe("Atlas Route Intelligence maneuver analyzer", () => {
     expect(parseRouteAuditOutput({ ...valid, analyzedManeuvers: [{ ...valid.analyzedManeuvers[0], maneuverId: "m-999" }] }, new Set(["m-001"]))).toBeNull();
   });
 
-  it("deriva revisión humana y replan desde evidencia y acciones aunque las banderas del modelo contradigan el detalle", () => {
+  it("requires exactly one AI result for every maneuver sent for evaluation", () => {
+    const first = { maneuverId: "m-001", decision: "OK", riskScore: 5, reasons: [], evidence: [], recommendedAction: "NONE" };
+    const second = { ...first, maneuverId: "m-002" };
+    const output = { decision: "APPROVE", riskScore: 5, summary: "Evaluada", analyzedManeuvers: [first, second], requiresReplan: false, requiresHumanReview: false };
+    const candidateIds = new Set(["m-001", "m-002"]);
+    expect(parseRouteAuditOutput(output, candidateIds)?.analyzedManeuvers).toHaveLength(2);
+    expect(parseRouteAuditOutput({ ...output, analyzedManeuvers: [first] }, candidateIds)).toBeNull();
+    expect(parseRouteAuditOutput({ ...output, analyzedManeuvers: [first, first] }, candidateIds)).toBeNull();
+  });
+
+  it("registra hallazgos IA como recomendaciones no bloqueantes bajo 50 minutos", () => {
     const base = { decision: "APPROVE" as const, riskScore: 10, summary: "Evaluada", analyzedManeuvers: [], requiresReplan: false, requiresHumanReview: false };
     const insufficientRoute = enforceFailClosedRouteAudit({ ...base, decision: "INSUFFICIENT_EVIDENCE" }, 2_999);
-    expect(insufficientRoute.requiresHumanReview).toBe(true);
+    expect(insufficientRoute.requiresHumanReview).toBe(false);
+    expect(insufficientRoute.decision).toBe("INSUFFICIENT_EVIDENCE");
 
     const insufficientManeuver = enforceFailClosedRouteAudit({ ...base, analyzedManeuvers: [{ maneuverId: "m-001", decision: "INSUFFICIENT_EVIDENCE", riskScore: 10, reasons: [], evidence: [], recommendedAction: "NONE" }] }, 2_999);
-    expect(insufficientManeuver.requiresHumanReview).toBe(true);
+    expect(insufficientManeuver.requiresHumanReview).toBe(false);
     expect(insufficientManeuver.decision).toBe("INSUFFICIENT_EVIDENCE");
 
     const requestedAlternative = enforceFailClosedRouteAudit({ ...base, analyzedManeuvers: [{ maneuverId: "m-001", decision: "CAUTION", riskScore: 75, reasons: [], evidence: ["giro"], recommendedAction: "REQUEST_ALTERNATIVE" }] }, 2_999);
     expect(requestedAlternative.requiresReplan).toBe(true);
-    expect(requestedAlternative.requiresHumanReview).toBe(true);
+    expect(requestedAlternative.requiresHumanReview).toBe(false);
 
     const penalizedSegment = enforceFailClosedRouteAudit({ ...base, requiresHumanReview: true, analyzedManeuvers: [{ maneuverId: "m-001", decision: "CAUTION", riskScore: 75, reasons: ["Tramo mejorable"], evidence: ["maniobra de Valhalla"], recommendedAction: "PENALIZE_SEGMENT" }] }, 2_999);
-    expect(penalizedSegment.requiresReplan).toBe(false);
+    expect(penalizedSegment.requiresReplan).toBe(true);
     expect(penalizedSegment.requiresHumanReview).toBe(false);
 
     for (const durationSeconds of [3_000, 3_001]) {
-      expect(enforceFailClosedRouteAudit({ ...base, analyzedManeuvers: penalizedSegment.analyzedManeuvers }, durationSeconds).requiresHumanReview).toBe(true);
+      const aboveThreshold = enforceFailClosedRouteAudit({ ...base, analyzedManeuvers: penalizedSegment.analyzedManeuvers }, durationSeconds);
+      expect(aboveThreshold.requiresHumanReview).toBe(true);
     }
     const explicitReview = enforceFailClosedRouteAudit({ ...base, analyzedManeuvers: [...penalizedSegment.analyzedManeuvers, { maneuverId: "m-002", decision: "CAUTION", riskScore: 75, reasons: ["Confirmar giro"], evidence: ["IA"], recommendedAction: "HUMAN_REVIEW" }] }, 2_999);
-    expect(explicitReview.requiresHumanReview).toBe(true);
+    expect(explicitReview.requiresHumanReview).toBe(false);
+    const rejected = enforceFailClosedRouteAudit({ ...base, decision: "REJECT", analyzedManeuvers: [{ maneuverId: "m-001", decision: "REJECT", riskScore: 90, reasons: ["Giro"], evidence: ["Valhalla"], recommendedAction: "BLOCK_MANEUVER" }] }, 2_999);
+    expect(rejected.decision).toBe("REJECT");
+    expect(rejected.requiresReplan).toBe(true);
+    expect(rejected.requiresHumanReview).toBe(false);
+    expect(enforceFailClosedRouteAudit({ ...base, requiresReplan: true }, 3_000).requiresReplan).toBe(true);
   });
 });
