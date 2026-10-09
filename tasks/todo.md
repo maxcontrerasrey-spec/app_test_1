@@ -5279,13 +5279,13 @@ Una `PENALIZE_SEGMENT` se trataba como bloqueo duro, incluso en recorridos corto
 ### Plan verificable
 
 - [x] Confirmar los campos de evidencia y clasificación de las acciones IA; probar `linear_cost_factors` como investigación y medir el costo del enfoque contra el presupuesto de bundle.
-- [x] Incorporar el criterio operativo acordado: el recorrido completo bajo 50 minutos es viable; los desvíos trazables que evitan giros U respetan el límite 15%/180 s y las penalizaciones suaves requieren revisión humana. Las acciones duras continúan bloqueando.
+- [x] Incorporar el criterio operativo acordado: el recorrido completo bajo 50 minutos es viable; los desvíos trazables que evitan giros U respetan el límite 15%/180 s. La regla vigente de penalizaciones suaves está precisada en la iteración del 2026-10-09.
 - [x] Mantener alternativas de giros U en el optimizador Valhalla del servidor, antes de la auditoría; respetar el tope de desvío y el umbral del negocio.
-- [x] Tratar `PENALIZE_SEGMENT` como revisión humana, no como bloqueo; conservar el bloqueo para REJECT, BLOCK_MANEUVER, REQUEST_ALTERNATIVE y auditoría incompleta.
+- [x] Tratar `PENALIZE_SEGMENT` como observación suave que requiere revisión solo si la duración y las demás señales la hacen bloqueante; véase la regla vigente del 2026-10-09.
 - [x] Agregar regresiones para el umbral de 50 minutos, desvío máximo, reducción de U-turns y gate de revisión humana.
 - [ ] Ejecutar CI del PR; después publicar y verificar el bundle y la Edge Function de planificación en producción sin guardar rutas o despachos de prueba.
 
-Implementación ajustada: el optimizador del servidor prueba alternativas Valhalla en hasta cuatro tramos con U-turn trazables. Puede elegir una ruta algo más lenta si reduce los giros U, el trayecto total es inferior a 50 minutos y el desvío no supera el menor entre 15% y 180 segundos. La IA evalúa el trazado final; una penalización requiere revisión humana. Se retiró la búsqueda posauditoría del cliente porque excedía el baseline de bundle.
+Implementación ajustada: el optimizador del servidor prueba alternativas Valhalla en hasta cuatro tramos con U-turn trazables. Puede elegir una ruta algo más lenta si reduce los giros U, el trayecto total es inferior a 50 minutos y el desvío no supera el menor entre 15% y 180 segundos. La IA evalúa el trazado final; una penalización suave bajo 50 minutos no bloquea por sí sola, según la regla vigente del 2026-10-09. Se retiró la búsqueda posauditoría del cliente porque excedía el baseline de bundle.
 
 Verificación local de la arquitectura ajustada: 45/45 pruebas dirigidas; `npm run guardian` con Node 24 pasó con 0 errores y warning PERF-001 (884 líneas); build TypeScript/Vite y `deno check` de ambas Edge Functions pasaron; la última build queda 4.860 bytes bajo baseline local y 47 bytes bajo el build local de `origin/main`; `git diff --check` pasó. Se mantiene el warning de chunk >520 kB sin alterar el umbral. El CI remoto del commit previo falló por +125 bytes; esperar CI del ajuste final. No se ha desplegado el PR ni se guardó ruta o despacho de prueba.
 
@@ -5300,6 +5300,8 @@ Revisión del plan antes de implementar: la IA solo priorizará una maniobra ya 
 - [x] Agregar regresiones justo bajo, igual y sobre 50 minutos, incluida combinación PENALIZE + HUMAN_REVIEW/insuficiente; auditar propuesta, guardado y despacho.
 - [x] Comparar contra `origin/main`, correr pruebas focalizadas (59/59), Deno, TypeScript/build, auditoría de migraciones/seguridad, Guardian (0 errores; warning PERF-001 preexistente) y `git diff --check`.
 - [ ] Integrar y desplegar con CI verde; aplicar la migración aditiva antes del frontend/Edge, verificar versión, permisos/JWT y el bundle público. No crear ruta ni despacho de prueba.
+
+CI inicial del PR #121 ejecutó las pruebas unitarias, contratos, integridad, seguridad y smoke de frontend correctamente; Guardian falló exclusivamente porque el build Linux/Node 24 excedió por 326 bytes el baseline de tolerancia cero. Se registró esa medición exacta (sin cambiar límites) y se vuelve a ejecutar Guardian completo antes de integrar.
 
 Revisión inicial: la frase vigente “Menos de 50 min: viable. Confirma revisión.” contradice el criterio si la única señal adicional es `PENALIZE_SEGMENT`. Se tratará esa acción como alerta suave bajo el umbral, sin el paso humano; las acciones explícitas de bloqueo/revisión y los fallos IA se preservan. El límite se mide con segundos del snapshot validado por el servidor, no con entrada libre del cliente.
 
