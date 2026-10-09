@@ -199,12 +199,14 @@ Revision 2026-10-08 Atlas replanteo auditado, CI Ubuntu/Node 24: Guardian run 37
 
 Revision 2026-10-09 viabilidad bajo 50 minutos: Guardian CI run 37865964890 midió +326 bytes en `dist` y JS para derivar el gate de penalización suave desde la duración validada del snapshot y aplicarlo consistentemente en la auditoría, guardado y despacho. CSS, vendors y assets trackeados no cambian; se actualiza el baseline exactamente a la medición CI, manteniendo tolerancia cero y el límite de chunk de 520 KB.
 
+Revision 2026-10-09 avisos de envío psicolaboral: Guardian CI run `37949901794` midió un aumento de 166 bytes en `dist` y JavaScript para limpiar avisos al cambiar contexto y mostrar el destinatario confirmado por el servidor. Se actualizan solo los totales canónicos a esa medición; tolerancia cero y límites por vendors/chunks permanecen sin cambios.
+
 <!-- EEES_PERFORMANCE_BASELINE_JSON -->
 ```json
 {
-  "distTotalBytes": 7474029,
+  "distTotalBytes": 7474195,
   "jsFileCount": 71,
-  "jsTotalBytes": 5355169,
+  "jsTotalBytes": 5355335,
   "cssFileCount": 15,
   "cssTotalBytes": 539686,
   "budgetPolicy": {
