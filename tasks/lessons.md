@@ -4393,3 +4393,9 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 - Un recorrido completo Valhalla menor a 3000 segundos cuenta como viable para una penalización suave `PENALIZE_SEGMENT`; no mostrar “viable” mientras UI, guardado o despacho exigen confirmar esa misma penalización.
 - Derivar el criterio desde la duración del snapshot auditado y repetirlo en Edge, interfaz, RPC de guardado y gate de despacho; exactamente 3000 segundos queda fuera del umbral.
 - Mantener explícitos `HUMAN_REVIEW`, rechazo, replan, evidencia insuficiente y fallo/falta de persistencia como gates independientes. La duración no certifica la geometría física ni reemplaza la evaluación de IA.
+
+# 2026-10-09 - La viabilidad operativa sub-50 prevalece sobre hallazgos de maniobra
+
+- Cuando el usuario define que el recorrido completo dura menos de 50 minutos y es totalmente viable, los rechazos y recomendaciones de calidad de maniobra IA quedan registrados/visibles, pero no exigen aprobación manual ni cambios de puntos para habilitar el recorrido.
+- Mantener separados esos hallazgos de los requisitos técnicos: Valhalla debe devolver un recorrido completo; OpenAI debe ejecutarse y persistir su auditoría; la firma server-side y la coincidencia exacta de vehículo, paradas y métricas deben validarse en servidor.
+- Un fallo técnico, ausencia de auditoría o atestación inválida siempre bloquea; “viable” describe el criterio operativo de duración, no certifica seguridad vial, maniobra física ni radio de giro.

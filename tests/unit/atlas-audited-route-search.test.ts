@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { searchAuditedRoute } from "../../src/modules/operaciones/lib/auditedRouteSearch";
 
 type Candidate = { route: string; order: number[] };
-type Audit = { runId: string | null; requiresReplan: boolean; status: "OK" | "ERROR" };
+type Audit = { runId: string | null; requiresReplan: boolean; status: "OK" | "ERROR"; routeDurationSeconds?: number };
 const initial: Candidate = { route: "initial", order: [0, 1, 2] };
 const persisted = (requiresReplan: boolean): Audit => ({ runId: crypto.randomUUID(), requiresReplan, status: "OK" });
 const config = (overrides: Partial<Parameters<typeof searchAuditedRoute<Candidate, Audit>>[1]> = {}) => ({
@@ -58,6 +58,36 @@ describe("bounded AI-audited route search", () => {
     expect(result.candidate).toBe(secondAlternative);
     expect(result.auditAttempts).toBe(3);
     expect(result.alternativeAttempts).toBe(2);
+  });
+
+  it("keeps the fastest under-50-minute audited route after trying slower alternatives", async () => {
+    const options = config({
+      audit: vi.fn(async (candidate: Candidate) => ({ ...persisted(true), routeDurationSeconds: candidate.route === "initial" ? 2_990 : candidate.route === "fast alternative" ? 2_950 : 3_100 })),
+      selectViableFallback: (evaluated) => {
+        const pick = evaluated.filter(({ audit }) => (audit.routeDurationSeconds ?? Infinity) < 3_000)
+          .sort((left, right) => (left.audit.routeDurationSeconds ?? Infinity) - (right.audit.routeDurationSeconds ?? Infinity))[0];
+        return pick ? { candidate: pick.candidate, audit: pick.audit } : null;
+      },
+      findAlternative: vi.fn(async (excluded: number[][]) => excluded.length === 1
+        ? { value: { route: "fast alternative", order: [0, 2, 1] }, order: [0, 2, 1] }
+        : { value: { route: "slow alternative", order: [1, 0, 2] }, order: [1, 0, 2] })
+    });
+    const result = await searchAuditedRoute({ value: initial, order: initial.order }, options);
+
+    expect(result).toMatchObject({ status: "accepted", candidate: { route: "fast alternative" }, auditAttempts: 3, alternativeAttempts: 2, viableFallback: true });
+    expect(result.audit?.routeDurationSeconds).toBe(2_950);
+    expect(options.findAlternative).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not use the viability fallback for routes outside the under-50-minute rule", async () => {
+    const options = config({
+      audit: vi.fn(async () => persisted(true)),
+      selectViableFallback: () => null,
+      findAlternative: vi.fn(async () => null)
+    });
+    const result = await searchAuditedRoute({ value: initial, order: initial.order }, options);
+
+    expect(result.status).toBe("alternatives_exhausted");
   });
 
   it("does not search alternatives when persistence or AI evaluation failed", async () => {

@@ -517,6 +517,11 @@ export function OperationsRoutePlannerDemo() {
       const search = await searchAuditedRoute({ value: initial, order: result.order }, {
         audit: (candidate) => evaluateRouteAudit(candidate.route, candidate.stops),
         requiresReplan: routeAuditRequiresReplan,
+        selectViableFallback: (evaluated) => evaluated
+          .filter(({ audit }) => Number.isFinite(audit.routeDurationSeconds) && audit.routeDurationSeconds < 3_000)
+          .sort((left, right) => left.audit.routeDurationSeconds - right.audit.routeDurationSeconds
+            || (left.candidate.route.uturnCount ?? 0) - (right.candidate.route.uturnCount ?? 0)
+            || (left.audit.riskScore ?? Number.POSITIVE_INFINITY) - (right.audit.riskScore ?? Number.POSITIVE_INFINITY))[0] ?? null,
         hasPersistedEvaluation: (audit) => Boolean(audit.runId && audit.mode === "SHADOW" && audit.provider === "openai" && audit.decision !== "ERROR" && (audit.auditedManeuverCount ?? 0) > 0),
         findAlternative: async (excludedOrders, currentCandidate, currentAudit) => {
           const alternative = await optimizeAtlasOpenRoute(coordinates, plannedVehicleType, fixedDestinationIndex < 0 ? undefined : fixedDestinationIndex, undefined, excludedOrders);
@@ -537,9 +542,15 @@ export function OperationsRoutePlannerDemo() {
       setAlternativeLoading(false);
       setAlternativeAttempts(search.alternativeAttempts);
       setPlanningAudit(search.status === "accepted" ? search.audit : null);
-      setAlternativeSearchComplete(search.alternativeAttempts > 0 && search.status !== "accepted");
+      if (search.status === "accepted") {
+        setProposal(search.candidate);
+        setRouteState("ready");
+      }
+      setAlternativeSearchComplete(search.alternativeAttempts > 0 && (search.status !== "accepted" || search.viableFallback === true));
       if (search.status === "accepted" && replanReason) {
         setNotice(`${replanReason} Se generó una nueva secuencia y cada alternativa se volvió a validar con IA.`);
+      } else if (search.status === "accepted" && search.viableFallback) {
+        setNotice(`La IA recomendó revisar la ruta y el sistema probó ${search.alternativeAttempts} alternativa(s) automáticamente. Se conserva el recorrido completo bajo 50 min con su auditoría IA; no necesitas mover direcciones.`);
       } else if (search.status === "accepted" && search.alternativeAttempts > 0) {
         setNotice(`La IA pidió revisar la ruta inicial; se evaluaron automáticamente ${search.auditAttempts} propuestas y se encontró una secuencia alternativa con auditoría IA persistida.`);
       } else if (search.status === "alternatives_exhausted") {

@@ -5316,6 +5316,31 @@ Revisión inicial: la frase vigente “Menos de 50 min: viable. Confirma revisi�
 - [ ] Completar benchmark reproducible con fixtures geográficos iguales entre motores viables en Chile; la documentación comparada no prueba por sí sola cuál minimiza duración y maniobras en los casos Atlas.
 - [ ] Cerrar las brechas de verificación productiva mediante trazas/smokes autorizados sin crear ni alterar despachos operacionales.
 
+## Reauditoría del objetivo maestro: sentido de ruta e IA activa — continuación 2026-10-08
+
+### Plan verificable de esta iteración
+
+- [x] Rebasar la revisión en `origin/main` y cotejar código, funciones Edge, bundle público, historial de IA y rutas/despachos activos sin leer coordenadas ni mutar operación.
+- [ ] Comprobar con fixtures geográficos versionados que el orden de entrada no domina el resultado, que el destino fijado se conserva y que el comparador selecciona por trazado completo; documentar alcance exacto y casos que la búsqueda acotada no puede resolver.
+- [x] Repetir la comparativa de proveedores con documentación primaria vigente y evaluar si existen credenciales/cobertura para llamadas idénticas en Chile; no concluir ganador empírico si no existe par de ejecuciones comparables.
+- [x] Asegurar mediante revisión de flujo y regresiones que cada camino que presenta, aplica, simula, guarda o despacha una ruta exige evaluación IA persistida ligada a evidencia atestada; clasificar y, si se repite, corregir causas de ERROR sin abrir bypass.
+- [ ] Corregir los defectos demostrados por datos/casos reproducibles, incorporando regresiones antes de cambiar producción.
+- [x] Ejecutar suites de ruta, Deno, build, Guardian, auditorías Supabase y `git diff --check`; publicar únicamente si hay correcciones y CI queda verde.
+- [ ] Ejecutar prueba autenticada no mutativa en el planificador desplegado (propuesta y auditoría, sin guardar ruta ni crear/alterar despacho); si la sesión no está disponible, registrar el bloqueo y dejar pendiente.
+
+### Evidencia inicial revalidada
+
+- El worktree de auditoría se alineó a `origin/main` (`e8fa0fa0f2862ed87b20053f09cebe3d8d0bc3aa`). La rama anterior estaba un commit de merge por detrás.
+- Auditoría SQL de solo lectura: 11 corridas Route Intelligence OpenAI SHADOW, todas con evidencia atestada; 9 WARNING, 2 INSUFFICIENT_EVIDENCE y 2 ERROR históricos (OPENAI_INVALID_OUTPUT y OPENAI_TIMEOUT). El resultado ERROR bloquea uso; no se encontró bypass en esas filas.
+- El navegador interno observable dirige a `gestion.busesjm.cl/login`; por ahora no hay evidencia visible de sesión autenticada para el smoke real.
+- Comparativa documental oficial: Google `avoid_u_turns` es experimental; Google TRUCK/LVR no publica cobertura Chile. Valhalla es el motor operante y soporta perfil bus, dimensiones de referencia, `preferred_side` y paradas `break_through`, pero el grafo no certifica maniobra física ni tráfico real sin feeds. No hay benchmark equivalente Google ejecutado.
+- El orden se decide usando tiempos de matriz y se revalida en rutas completas Valhalla; la búsqueda es acotada. La solicitud actual no comunica hora de salida/tráfico al motor.
+- Producción revalidada: `atlas-tomtom-planning` v27 y `atlas-route-intelligence` v12, ambas `verify_jwt=true`; el bundle público sirve `OperationsRoutePlannerDemo-Chg134us.js` (1,098,098 B) e incluye revisión de ruta guardada y regla visible sub-50. La página raíz devuelve HTTP 200, pero la sesión visible permanece en `/login`.
+- Prueba SQL no mutativa en producción del umbral: 2,999 s + PENALIZE aislada no requiere feedback; 3,000 s sí; `HUMAN_REVIEW` e `INSUFFICIENT_EVIDENCE` siguen requiriéndolo incluso bajo 50 min. Esto preserva hallazgos explícitos además de penalizaciones suaves.
+- El único despacho abierto es histórico (`planning/not_started`): apunta a la ruta activa sin auditoría ligada. La guarda productiva lo detecta como no utilizable; no se alteró el despacho ni la ruta.
+- Suites dirigidas: unitarias 80/80 y contratos 40/40; `deno check` para ambas Edge Functions PASS; TypeScript/build PASS; Guardian 0 errores y 1 warning PERF-001 (página del planificador 868 líneas); migraciones PASS y auditoría de seguridad sin nuevos cambios, con 88 advertencias históricas del repositorio.
+- Se mantiene pendiente prueba autenticada de generación IA sobre la versión productiva actual y replay geográfico de casos operacionales. En ausencia de sesión visible y respuestas Google/TomTom equivalentes, no se atribuye optimalidad global ni superioridad empírica a ningún motor.
+
 ## Plan siguiente: autenticar la evidencia de ruta que evalúa la IA — 2026-10-09
 
 ### Revisión del contrato y decisión previa
@@ -5333,3 +5358,21 @@ La ruta y las maniobras se originan en Valhalla dentro de `atlas-tomtom-planning
 - [ ] Probar comparación de rutas con evidencia real segura o fixtures del motor; correr Deno, unit/contract, Guardian, CI, desplegar en orden compatible y verificar cada frontera productiva sin crear despacho operacional.
 
 El benchmark de Google/TomTom/Valhalla sigue sujeto a tener fixtures geográficos comparables y cobertura real del proveedor en Chile. La auditoría disponible encontró Valhalla como único router activo, TomTom solo para geocodificación, Google no integrado, y sin corpus de rutas operativas en el repo; no se declarará un ganador empírico hasta disponer de ese corpus o respuestas equivalentes guardadas.
+
+## Unificar criterio operativo: recorrido completo bajo 50 minutos — 2026-10-09
+
+### Plan verificable
+
+- [x] Cambiar el gate de interfaz, guardado y despacho para que, si el cálculo completo Valhalla es válido y dura menos de 3.000 segundos, los hallazgos de maniobra/revisión IA queden visibles y persistidos como recomendaciones no bloqueantes.
+- [x] Seguir exigiendo que la IA se ejecute y persista correctamente, que la evidencia venga firmada por el planificador y que las paradas/métricas guardadas coincidan exactamente; errores técnicos y ausencia de firma siguen bloqueando.
+- [x] Aplicar la misma regla en cliente y PostgreSQL con una migración incremental; no editar migraciones ya aplicadas.
+- [x] Agregar regresiones bajo, igual y sobre 50 minutos para REJECT, INSUFFICIENT_EVIDENCE, HUMAN_REVIEW, BLOCK_MANEUVER, REQUEST_ALTERNATIVE y fallos OpenAI; exigir un resultado IA único por cada maniobra enviada.
+- [x] Ejecutar suites Atlas, Deno, build, Guardian, auditorías de migraciones/seguridad y `git diff --check`.
+- [ ] Comprobar la migración en producción y el bundle desplegado.
+- [ ] Hacer smoke de propuesta + revisión IA sin guardar/despachar si el navegador vuelve a tener una sesión autenticada; no crear datos operacionales.
+
+Implementación local: todos los hallazgos de maniobra son recomendaciones no bloqueantes si la ruta completa baja de 3.000 segundos. Las sugerencias `PENALIZE_SEGMENT`, `REQUEST_ALTERNATIVE` y `REJECT` disparan una búsqueda automática limitada a dos órdenes alternativos; cada orden requiere su propia auditoría OpenAI persistida. Si no queda una alternativa evaluada bajo 50 minutos, el sistema conserva la más rápida entre las alternativas viables probadas. Sobre el umbral siguen vigentes los gates de replan/revisión. `ERROR` de IA, auditoría sin persistir, evidencia sin firma, ruta incompleta o diferencias entre snapshot y ruta guardada bloquean siempre.
+
+La respuesta del modelo ahora debe cubrir exactamente una vez cada maniobra que recibe; salidas omitidas o duplicadas se rechazan y se reintentan, para no afirmar que toda la muestra fue evaluada cuando no lo fue.
+
+Validación repetida el 2026-10-09: unitarias 269/269; contratos 167/167; Deno check de las dos Edge Functions PASS; frontend TypeScript/build PASS (el chunk del planificador sigue mostrando la advertencia existente de 1.100,76 kB frente al límite 520 kB); Guardian 0 errores y 1 PERF-001 por el archivo de 879 líneas; auditoría de migraciones PASS; auditoría Supabase sin hallazgos nuevos (88 advertencias históricas); `git diff --check` PASS. Supabase producción reconsultado: última migración `20261009010200 atlas_route_evidence_attestation`; la nueva migración `20261009015414` aún no aplicada.

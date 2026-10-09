@@ -2,22 +2,25 @@ import type { AtlasRouteAuditResponse } from "../services/atlasOperationsApi";
 
 export type RouteAuditFeedbackType = "ACCEPT_AI" | "OVERRIDE_FEASIBLE" | "OVERRIDE_NOT_FEASIBLE" | "INSUFFICIENT_INFORMATION";
 
+function routeIsUnderOperationalThreshold(audit: AtlasRouteAuditResponse) {
+  return Number.isFinite(audit.routeDurationSeconds) && audit.routeDurationSeconds < 3_000;
+}
+
 export function routeAuditNeedsHumanReview(audit: AtlasRouteAuditResponse | null) {
   if (!audit) return false;
+  if (routeIsUnderOperationalThreshold(audit)) return false;
   const hasInsufficientEvidence = audit.decision === "INSUFFICIENT_EVIDENCE"
     || audit.analyzedManeuvers.some((item) => item.decision === "INSUFFICIENT_EVIDENCE");
   const hasHardFinding = audit.decision === "REJECT" || audit.requiresReplan
     || audit.analyzedManeuvers.some((item) => item.decision === "REJECT"
       || ["HUMAN_REVIEW", "BLOCK_MANEUVER", "REQUEST_ALTERNATIVE"].includes(String(item.recommendedAction)));
   const hasSoftPenalty = audit.analyzedManeuvers.some((item) => item.recommendedAction === "PENALIZE_SEGMENT");
-  const shortPenaltyOnly = audit.routeDurationSeconds < 3_000 && hasSoftPenalty && !hasInsufficientEvidence && !hasHardFinding;
-  return hasInsufficientEvidence || hasHardFinding || audit.requiresHumanReview && !shortPenaltyOnly
-    || hasSoftPenalty && !shortPenaltyOnly;
+  return hasInsufficientEvidence || hasHardFinding || audit.requiresHumanReview || hasSoftPenalty;
 }
 
 export function routeAuditRequiresReplan(audit: AtlasRouteAuditResponse | null) {
   return Boolean(audit && (audit.requiresReplan || audit.decision === "REJECT"
-    || audit.analyzedManeuvers.some((item) => item.decision === "REJECT" || ["BLOCK_MANEUVER", "REQUEST_ALTERNATIVE"].includes(String(item.recommendedAction)))));
+    || audit.analyzedManeuvers.some((item) => item.decision === "REJECT" || ["BLOCK_MANEUVER", "REQUEST_ALTERNATIVE", "PENALIZE_SEGMENT"].includes(String(item.recommendedAction)))));
 }
 
 export function isRouteAuditEvaluationComplete(status: "idle" | "loading" | "ready" | "error", audit: AtlasRouteAuditResponse | null) {
@@ -29,8 +32,7 @@ export function isRouteAuditEvaluationComplete(status: "idle" | "loading" | "rea
     && audit.routeDurationSeconds >= 0
     && Boolean(audit.runId)
     && audit.decision !== "ERROR"
-    && audit.decision !== "REJECT"
-    && !routeAuditRequiresReplan(audit)
+    && (routeIsUnderOperationalThreshold(audit) || audit.decision !== "REJECT" && !routeAuditRequiresReplan(audit))
     && (audit.auditedManeuverCount ?? 0) > 0;
 }
 
@@ -39,7 +41,9 @@ export function isRouteAuditOperationallyComplete(status: "idle" | "loading" | "
     && (!routeAuditNeedsHumanReview(audit) || humanReviewAccepted);
 }
 
-export function auditDecisionLabel(decision: AtlasRouteAuditResponse["decision"]) {
+export function auditDecisionLabel(decision: AtlasRouteAuditResponse["decision"], shortRoute = false) {
+  if (shortRoute && decision === "REJECT") return "Observación IA registrada · recomendación no bloqueante";
+  if (shortRoute && decision === "INSUFFICIENT_EVIDENCE") return "Evaluación IA registrada · evidencia limitada";
   return ({
     APPROVE: "Sin alertas en las maniobras revisadas",
     WARNING: "Revisión operacional recomendada",
@@ -85,17 +89,21 @@ export function AtlasRouteAuditPanel({
     {status === "loading" && <p>La IA está evaluando esta ruta. No se puede aplicar ni guardar hasta completar la revisión.</p>}
     {status === "error" && <><p role="alert">{error}</p><button type="button" className="ops-route-demo__secondary" onClick={onRetryAudit}>Reintentar evaluación IA de esta misma ruta</button></>}
     {audit && <>
-      <p><b>{auditDecisionLabel(audit.decision)}</b>{audit.riskScore === null ? " · sin puntaje" : ` · indicador ${audit.riskScore}/100`}{routeAuditNeedsHumanReview(audit) ? " · requiere revisión humana" : ""}</p>
+      <p><b>{auditDecisionLabel(audit.decision, routeIsUnderOperationalThreshold(audit))}</b>{audit.riskScore === null ? " · sin puntaje" : ` · indicador ${audit.riskScore}/100`}{routeAuditNeedsHumanReview(audit) ? " · requiere revisión humana" : ""}</p>
       <p>{audit.summary}</p>
+      {routeIsUnderOperationalThreshold(audit) && <p role="status">Recorrido viable por regla operacional (&lt;50 min). La evaluación IA queda registrada; sus observaciones no exigen cambiar puntos ni bloquean el uso.</p>}
       {routeAuditRequiresReplan(audit) && <>
-        <p role="alert">La IA marcó una maniobra que requiere revisar el trazado. El sistema intenta rodear ese tramo y, si no mejora la ruta, prueba otras secuencias con las mismas direcciones, destino y tipo de equipo. Cada alternativa debe volver a pasar por IA antes de usarse.</p>
+        <p role={routeIsUnderOperationalThreshold(audit) ? "status" : "alert"}>{routeIsUnderOperationalThreshold(audit)
+          ? "La IA sugiere una mejora. El sistema probará alternativas automáticamente y las volverá a evaluar; si no encuentra una mejor, conservará esta ruta completa sin pedirte cambiar los puntos."
+          : "La IA marcó una maniobra que requiere revisar el trazado. El sistema intenta rodear ese tramo y, si no mejora la ruta, prueba otras secuencias con las mismas direcciones, destino y tipo de equipo. Cada alternativa debe volver a pasar por IA antes de usarse."}</p>
         {alternativeLoading
           ? <p role="status">Buscando la alternativa {alternativeAttempts} de 2 y volviendo a evaluarla con IA…</p>
           : alternativeSearchComplete
-            ? <p role="status">Sin ruta aprobable tras {alternativeAttempts} alternativas; propuesta bloqueada.</p>
+            ? <p role="status">{routeIsUnderOperationalThreshold(audit)
+              ? `No se encontró una alternativa sin observaciones tras ${alternativeAttempts} intentos. Se conserva el recorrido completo bajo 50 min; puedes usarlo sin cambiar puntos.`
+              : `Sin ruta aprobable tras ${alternativeAttempts} alternativas; propuesta bloqueada.`}</p>
             : null}
       </>}
-      {audit.routeDurationSeconds < 3_000 && audit.analyzedManeuvers.some((item) => item.recommendedAction === "PENALIZE_SEGMENT") && !routeAuditNeedsHumanReview(audit) && <p role="status">Menos de 50 min: viable; la penalización suave no bloquea el uso.</p>}
       <small>
         {audit.decision === "ERROR" || audit.provider !== "openai"
           ? "No se completó la evaluación de IA."
