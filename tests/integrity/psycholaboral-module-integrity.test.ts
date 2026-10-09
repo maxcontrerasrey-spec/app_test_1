@@ -203,6 +203,10 @@ describe("Gestión Psicolaboral", () => {
     expect(edge).toContain("deterministicAccessCode");
     expect(edge).toContain('`psycholaboral/${prepared.assessment_id}`');
     expect(edge).toContain('"Idempotency-Key": input.idempotencyKey');
+    expect(edge).toContain("recipient_email: prepared.email");
+    expect(psycholaboralApi).toContain("result.recipient_email");
+    expect(managementPage).toContain("setFeedback(`Batería enviada a ${recipientEmail}.`)");
+    expect(managementPage).toContain("[search, status, page, expanded]");
   });
 
   it("agrega IA psicolaboral en tablas privadas sin exponer payload sensible", () => {
