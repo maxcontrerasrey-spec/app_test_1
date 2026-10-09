@@ -86,10 +86,10 @@ export function AtlasRouteAuditPanel({
         {alternativeLoading
           ? <p role="status">Buscando la alternativa {alternativeAttempts} de 2 y volviendo a evaluarla con IA…</p>
           : alternativeSearchComplete
-            ? <p role="status">Se evaluaron {alternativeAttempts} alternativas automáticas sin encontrar una ruta aprobable; esta propuesta sigue bloqueada.</p>
+            ? <p role="status">Sin ruta aprobable tras {alternativeAttempts} alternativas; propuesta bloqueada.</p>
             : null}
       </>}
-      {routeAuditNeedsHumanReview(audit) && !routeAuditRequiresReplan(audit) && !feedbackSaved && <p role="status">Revisa la ruta antes de continuar. Los recorridos bajo 50 minutos se consideran operativamente viables; registra tu evaluación para habilitar aplicar, guardar o navegar.</p>}
+      {routeAuditNeedsHumanReview(audit) && !routeAuditRequiresReplan(audit) && !feedbackSaved && <p role="status">Menos de 50 min: viable. Confirma revisión.</p>}
       <small>
         {audit.decision === "ERROR" || audit.provider !== "openai"
           ? "No se completó la evaluación de IA."
