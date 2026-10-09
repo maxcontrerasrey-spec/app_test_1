@@ -30,6 +30,7 @@ export const MAX_ALTERNATIVE_EXTRA_LEG_DURATION_SECONDS = 120;
 export const MAX_ALTERNATIVE_EXTRA_LEG_DURATION_RATIO = 0.25;
 export const MAX_ALTERNATIVE_EXTRA_ROUTE_DURATION_SECONDS = 180;
 export const MAX_ALTERNATIVE_EXTRA_ROUTE_DURATION_RATIO = 0.15;
+export const MAX_OPERATIONALLY_VIABLE_ROUTE_SECONDS = 50 * 60;
 export const MAX_TARGETED_MANEUVER_AVOIDANCES = 6;
 export const TARGETED_MANEUVER_AVOIDANCE_FACTOR = 10;
 const TARGETED_MANEUVER_MATCH_RADIUS_METERS = 35;
@@ -263,9 +264,12 @@ export function selectRoutePathAlternatives(
       const totals = routeTotals(selected);
       // A mapped U-turn is legal unless there is evidence it requires reversing or is physically impossible.
       // Never trade away a faster full route merely to reduce the U-turn count.
-      if (totals.uturnCount >= baseTotals.uturnCount || totals.durationSeconds > baseTotals.durationSeconds
-        || totals.durationSeconds - baseTotals.durationSeconds > totalDurationAllowance) return;
-      if (isBetterPlan(totals, bestTotals)) {
+      const withinDetourAllowance = totals.durationSeconds <= baseTotals.durationSeconds + totalDurationAllowance;
+      const operationallyViable = totals.durationSeconds < MAX_OPERATIONALLY_VIABLE_ROUTE_SECONDS;
+      if (totals.uturnCount >= baseTotals.uturnCount || !withinDetourAllowance
+        || (totals.durationSeconds > baseTotals.durationSeconds && !operationallyViable)) return;
+      const boundedViableDetour = totals.durationSeconds > baseTotals.durationSeconds && operationallyViable;
+      if (isBetterPlan(totals, bestTotals) || (boundedViableDetour && bestTotals === baseTotals)) {
         bestLegs = [...selected];
         bestTotals = totals;
       }

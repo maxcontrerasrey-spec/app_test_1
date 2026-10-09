@@ -290,7 +290,7 @@ export function enforceFailClosedRouteAudit(output: RouteAuditOutput): RouteAudi
   const hasInsufficientEvidence = output.decision === "INSUFFICIENT_EVIDENCE"
     || output.analyzedManeuvers.some((item) => item.decision === "INSUFFICIENT_EVIDENCE");
   const requiresReplan = output.requiresReplan || hasRejectedManeuver
-    || output.analyzedManeuvers.some((item) => item.recommendedAction === "BLOCK_MANEUVER" || item.recommendedAction === "PENALIZE_SEGMENT" || item.recommendedAction === "REQUEST_ALTERNATIVE");
+    || output.analyzedManeuvers.some((item) => item.recommendedAction === "BLOCK_MANEUVER" || item.recommendedAction === "REQUEST_ALTERNATIVE");
   const requiresHumanReview = output.requiresHumanReview || hasInsufficientEvidence || requiresReplan
     || output.analyzedManeuvers.some((item) => item.recommendedAction === "HUMAN_REVIEW" || item.recommendedAction === "PENALIZE_SEGMENT");
   const decision = hasRejectedManeuver

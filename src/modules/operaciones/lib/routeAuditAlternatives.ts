@@ -2,6 +2,7 @@ import { calculateAtlasValhallaRoute, type AtlasManeuverAvoidanceTarget, type At
 import type { OrderedRouteCandidate } from "./auditedRouteSearch";
 
 export type AuditedRouteProposal<TStop extends { lat: number; lng: number } = { lat: number; lng: number }> = { stops: TStop[]; route: AtlasOptimizedRoute };
+export const MAX_OPERATIONALLY_VIABLE_ROUTE_SECONDS = 50 * 60;
 
 export function auditManeuverAvoidanceTargets(audit: AtlasRouteAuditResponse, route: AtlasPlannedRoute): AtlasManeuverAvoidanceTarget[] {
   const targetedIds = new Set(audit.analyzedManeuvers
@@ -20,7 +21,7 @@ export function routeGeometrySignature(route: AtlasPlannedRoute) {
   return route.coordinates.map(([longitude, latitude]) => `${longitude.toFixed(6)},${latitude.toFixed(6)}`).join(";");
 }
 
-/** Re-route the same stop order around AI-flagged edges; only accept a different, faster complete trace. */
+/** Re-route the same stop order around AI-flagged edges; accept faster traces or bounded detours under 50 minutes. */
 export async function findFasterTargetedRouteAlternative<TStop extends { lat: number; lng: number }>(
   currentCandidate: AuditedRouteProposal<TStop>,
   currentAudit: AtlasRouteAuditResponse,
@@ -38,7 +39,9 @@ export async function findFasterTargetedRouteAlternative<TStop extends { lat: nu
     const changedGeometry = routeGeometrySignature(rerouted) !== routeGeometrySignature(currentCandidate.route);
     const faster = rerouted.durationSeconds < currentCandidate.route.durationSeconds
       || rerouted.durationSeconds === currentCandidate.route.durationSeconds && rerouted.distanceMeters < currentCandidate.route.distanceMeters;
-    if (rerouted.targetedAvoidance?.status !== "APPLIED" || !changedGeometry || !faster) return null;
+    const withinDetourAllowance = rerouted.durationSeconds <= currentCandidate.route.durationSeconds + Math.min(180, currentCandidate.route.durationSeconds * 0.15);
+    const operationallyViable = rerouted.durationSeconds < MAX_OPERATIONALLY_VIABLE_ROUTE_SECONDS;
+    if (rerouted.targetedAvoidance?.status !== "APPLIED" || !changedGeometry || !(faster || (withinDetourAllowance && operationallyViable))) return null;
     return {
       value: { stops: currentCandidate.stops, route: { ...currentCandidate.route, ...rerouted } },
       order: currentCandidate.route.order

@@ -27,7 +27,7 @@ PASS
 
 ## Warnings
 
-- PERF-001 · `src/modules/operaciones/pages/OperationsRoutePlannerDemo.tsx` · Archivo sobre 800 lineas: 891.
+- PERF-001 · `src/modules/operaciones/pages/OperationsRoutePlannerDemo.tsx` · Archivo sobre 800 lineas: 898.
 
 ## Gates informativos
 

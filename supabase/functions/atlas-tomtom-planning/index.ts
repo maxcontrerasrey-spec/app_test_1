@@ -655,7 +655,9 @@ Deno.serve(async (request) => {
           } else {
             const isFaster = alternativeRoute.durationSeconds < baseRoute.durationSeconds
               || alternativeRoute.durationSeconds === baseRoute.durationSeconds && alternativeRoute.distanceMeters < baseRoute.distanceMeters;
-            if (isFaster) {
+            const withinDetourAllowance = alternativeRoute.durationSeconds <= baseRoute.durationSeconds + Math.min(180, baseRoute.durationSeconds * 0.15);
+            const operationallyViable = alternativeRoute.durationSeconds < 50 * 60;
+            if (isFaster || (withinDetourAllowance && operationallyViable)) {
               selectedRoute = alternativeRoute;
               avoidanceStatus = "APPLIED";
             } else avoidanceStatus = "NO_IMPROVEMENT";

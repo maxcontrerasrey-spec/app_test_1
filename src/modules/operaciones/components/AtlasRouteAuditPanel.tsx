@@ -13,7 +13,11 @@ export function routeAuditNeedsHumanReview(audit: AtlasRouteAuditResponse | null
 
 export function routeAuditRequiresReplan(audit: AtlasRouteAuditResponse | null) {
   return Boolean(audit && (audit.requiresReplan || audit.decision === "REJECT"
-    || audit.analyzedManeuvers.some((item) => item.decision === "REJECT" || ["BLOCK_MANEUVER", "PENALIZE_SEGMENT", "REQUEST_ALTERNATIVE"].includes(String(item.recommendedAction)))));
+    || audit.analyzedManeuvers.some((item) => item.decision === "REJECT" || ["BLOCK_MANEUVER", "REQUEST_ALTERNATIVE"].includes(String(item.recommendedAction)))));
+}
+
+export function routeAuditHasSoftPenalty(audit: AtlasRouteAuditResponse | null) {
+  return Boolean(audit && audit.analyzedManeuvers.some((item) => item.recommendedAction === "PENALIZE_SEGMENT"));
 }
 
 export function isRouteAuditEvaluationComplete(status: "idle" | "loading" | "ready" | "error", audit: AtlasRouteAuditResponse | null) {
@@ -89,7 +93,7 @@ export function AtlasRouteAuditPanel({
             ? <p role="status">Se evaluaron {alternativeAttempts} alternativas automáticas sin encontrar una ruta aprobable; esta propuesta sigue bloqueada.</p>
             : null}
       </>}
-      {routeAuditNeedsHumanReview(audit) && !routeAuditRequiresReplan(audit) && !feedbackSaved && <p role="status">La evidencia no es suficiente para liberar la ruta automáticamente. Revisa el caso y registra una evaluación positiva para habilitar aplicar, guardar o probar la navegación.</p>}
+      {routeAuditNeedsHumanReview(audit) && !routeAuditRequiresReplan(audit) && !feedbackSaved && <p role="status">La ruta requiere revisión humana. Si dura menos de 50 minutos, se considera operativamente viable; registra tu evaluación para habilitar aplicar, guardar o probar la navegación.</p>}
       <small>
         {audit.decision === "ERROR" || audit.provider !== "openai"
           ? "No se completó la evaluación de IA."

@@ -36,8 +36,8 @@ describe("Atlas mandatory route audit gate", () => {
     expect(isRouteAuditOperationallyComplete("ready", alternative, true)).toBe(false);
 
     const penalizedSegment = { ...successfulAudit, requiresHumanReview: false, requiresReplan: false, analyzedManeuvers: [{ maneuverId: "m-2", decision: "CAUTION", riskScore: 73, reasons: ["Tramo mejorable"], evidence: ["Valhalla"], recommendedAction: "PENALIZE_SEGMENT" }] };
-    expect(isRouteAuditEvaluationComplete("ready", penalizedSegment)).toBe(false);
-    expect(isRouteAuditOperationallyComplete("ready", penalizedSegment, true)).toBe(false);
+    expect(isRouteAuditEvaluationComplete("ready", penalizedSegment)).toBe(true);
+    expect(isRouteAuditOperationallyComplete("ready", penalizedSegment, true)).toBe(true);
   });
 
   it.each([
