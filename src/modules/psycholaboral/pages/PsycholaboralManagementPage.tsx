@@ -113,7 +113,7 @@ export function PsycholaboralManagementPage() {
     setBusy(row.id);
     setFeedback("");
     try {
-      const { recipientEmail } = await sendPsychBattery(row.id, codes);
+      const recipientEmail = await sendPsychBattery(row.id, codes);
       setFeedback(`Batería enviada a ${recipientEmail}.`);
       await refresh();
     } catch (error) {

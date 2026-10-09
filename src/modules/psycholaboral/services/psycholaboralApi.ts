@@ -113,11 +113,10 @@ export async function sendPsychBattery(
     instrument_codes: codes,
     idempotency_key: crypto.randomUUID(),
   });
-  const recipientEmail = result.recipient_email;
-  if (typeof recipientEmail !== "string" || !recipientEmail.trim()) {
-    throw new Error("El servidor no confirmó el destinatario del envío.");
+  if (typeof result.recipient_email !== "string" || !result.recipient_email) {
+    throw new Error("El servidor no confirmó el correo de destino.");
   }
-  return { recipientEmail };
+  return result.recipient_email;
 }
 export async function decidePsychAssessment(
   assessmentId: string,
