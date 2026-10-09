@@ -106,7 +106,7 @@ export type AtlasRouteManeuver = {
 export type AtlasRouteAuditDecision = "APPROVE" | "WARNING" | "REJECT" | "INSUFFICIENT_EVIDENCE" | "ERROR";
 export type AtlasRouteAuditResponse = {
   decision: AtlasRouteAuditDecision; riskScore: number | null; summary: string; analyzedManeuvers: Array<Record<string, unknown>>;
-  requiresReplan: boolean; requiresHumanReview: boolean; runId: string | null; mode: "OFF" | "SHADOW"; provider?: string;
+  requiresReplan: boolean; requiresHumanReview: boolean; routeDurationSeconds: number; runId: string | null; mode: "OFF" | "SHADOW"; provider?: string;
   model?: string; latencyMs?: number; candidateManeuverCount?: number; auditedManeuverCount?: number; totalManeuverCount?: number;
   evaluationScope?: "RISK_PRIORITIZED_SAMPLE" | "DISTRIBUTED_ROUTE_SAMPLE"; vehicleProfileVerified?: boolean;
   errorCategory?: string | null; status?: string;

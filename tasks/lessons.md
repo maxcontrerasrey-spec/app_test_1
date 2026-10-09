@@ -4380,4 +4380,10 @@ En tablas compartidas del ERP, aplicar `display:flex` directamente a un `<td>` r
 
 - Una recomendación `PENALIZE_SEGMENT` por sí sola no debe bloquear un recorrido completo inferior a 50 minutos; requiere revisión humana.
 - Probar alternativas de giros U en el optimizador Valhalla antes de auditar la ruta; medir el umbral sobre el recorrido completo y limitar el desvío.
-- Mantener bloqueantes los rechazos, `BLOCK_MANEUVER`, `REQUEST_ALTERNATIVE` y las auditorías fallidas; la viabilidad por duración no certifica la factibilidad física y el caso penalizado aún requiere revisión humana.
+- Mantener bloqueantes los rechazos, `BLOCK_MANEUVER`, `REQUEST_ALTERNATIVE` y las auditorías fallidas; la viabilidad por duración no certifica la factibilidad física. La regla de revisión humana para la penalización suave fue ajustada el 2026-10-09.
+
+# 2026-10-09 - Aplicar la viabilidad bajo 50 minutos en todas las fronteras
+
+- Un recorrido completo Valhalla menor a 3000 segundos cuenta como viable para una penalización suave `PENALIZE_SEGMENT`; no mostrar “viable” mientras UI, guardado o despacho exigen confirmar esa misma penalización.
+- Derivar el criterio desde la duración del snapshot auditado y repetirlo en Edge, interfaz, RPC de guardado y gate de despacho; exactamente 3000 segundos queda fuera del umbral.
+- Mantener explícitos `HUMAN_REVIEW`, rechazo, replan, evidencia insuficiente y fallo/falta de persistencia como gates independientes. La duración no certifica la geometría física ni reemplaza la evaluación de IA.

@@ -285,14 +285,20 @@ export type RouteAuditOutput = {
 };
 
 /** Treat incomplete or action-bearing model findings conservatively even if its summary flags disagree. */
-export function enforceFailClosedRouteAudit(output: RouteAuditOutput): RouteAuditOutput {
+export function enforceFailClosedRouteAudit(output: RouteAuditOutput, routeDurationSeconds: number): RouteAuditOutput {
   const hasRejectedManeuver = output.analyzedManeuvers.some((item) => item.decision === "REJECT");
   const hasInsufficientEvidence = output.decision === "INSUFFICIENT_EVIDENCE"
     || output.analyzedManeuvers.some((item) => item.decision === "INSUFFICIENT_EVIDENCE");
   const requiresReplan = output.requiresReplan || hasRejectedManeuver
     || output.analyzedManeuvers.some((item) => item.recommendedAction === "BLOCK_MANEUVER" || item.recommendedAction === "REQUEST_ALTERNATIVE");
-  const requiresHumanReview = output.requiresHumanReview || hasInsufficientEvidence || requiresReplan
-    || output.analyzedManeuvers.some((item) => item.recommendedAction === "HUMAN_REVIEW" || item.recommendedAction === "PENALIZE_SEGMENT");
+  const hasHumanReviewAction = output.analyzedManeuvers.some((item) => item.recommendedAction === "HUMAN_REVIEW");
+  const hasSoftPenalty = output.analyzedManeuvers.some((item) => item.recommendedAction === "PENALIZE_SEGMENT");
+  const shortRouteSoftPenaltyOnly = Number.isFinite(routeDurationSeconds) && routeDurationSeconds < 3_000
+    && hasSoftPenalty && !hasHumanReviewAction && !hasInsufficientEvidence && !hasRejectedManeuver && !requiresReplan
+    && output.decision !== "REJECT";
+  const requiresHumanReview = output.requiresHumanReview && !shortRouteSoftPenaltyOnly
+    || hasInsufficientEvidence || requiresReplan || hasHumanReviewAction
+    || hasSoftPenalty && !shortRouteSoftPenaltyOnly;
   const decision = hasRejectedManeuver
     ? "REJECT"
     : hasInsufficientEvidence && output.decision === "APPROVE"

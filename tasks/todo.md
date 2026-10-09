@@ -5290,3 +5290,22 @@ Implementación ajustada: el optimizador del servidor prueba alternativas Valhal
 Verificación local de la arquitectura ajustada: 45/45 pruebas dirigidas; `npm run guardian` con Node 24 pasó con 0 errores y warning PERF-001 (884 líneas); build TypeScript/Vite y `deno check` de ambas Edge Functions pasaron; la última build queda 4.860 bytes bajo baseline local y 47 bytes bajo el build local de `origin/main`; `git diff --check` pasó. Se mantiene el warning de chunk >520 kB sin alterar el umbral. El CI remoto del commit previo falló por +125 bytes; esperar CI del ajuste final. No se ha desplegado el PR ni se guardó ruta o despacho de prueba.
 
 Revisión del plan antes de implementar: la IA solo priorizará una maniobra ya detectada y seleccionará/recomendará IDs de alternativas calculadas por Valhalla. El proveedor conserva la autoridad de geometría y duración. No se asignará un puntaje de seguridad física, no se inferirá espacio de giro y no se usará feedback positivo para aprobar un trazado distinto al auditado.
+## Aclarar viabilidad operativa para recorridos bajo 50 minutos — 2026-10-09
+
+### Plan verificable
+
+- [x] Aplicar el criterio entregado por el usuario: un recorrido completo con duración Valhalla estrictamente inferior a 50 minutos es viable; una penalización suave `PENALIZE_SEGMENT` no debe exigir feedback humano ni bloquear guardado/despacho por sí sola.
+- [x] Mantener bloqueantes los `REJECT`, `BLOCK_MANEUVER`, `REQUEST_ALTERNATIVE`, evidencia insuficiente, auditoría IA fallida/no persistida y solicitudes explícitas `HUMAN_REVIEW`; no usar duración para anular esos controles.
+- [x] Llevar la duración validada del snapshot a la normalización UI y repetir la misma regla en las RPC/trigger persistentes de guardado y despacho.
+- [x] Agregar regresiones justo bajo, igual y sobre 50 minutos, incluida combinación PENALIZE + HUMAN_REVIEW/insuficiente; auditar propuesta, guardado y despacho.
+- [x] Comparar contra `origin/main`, correr pruebas focalizadas (59/59), Deno, TypeScript/build, auditoría de migraciones/seguridad, Guardian (0 errores; warning PERF-001 preexistente) y `git diff --check`.
+- [ ] Integrar y desplegar con CI verde; aplicar la migración aditiva antes del frontend/Edge, verificar versión, permisos/JWT y el bundle público. No crear ruta ni despacho de prueba.
+
+Revisión inicial: la frase vigente “Menos de 50 min: viable. Confirma revisión.” contradice el criterio si la única señal adicional es `PENALIZE_SEGMENT`. Se tratará esa acción como alerta suave bajo el umbral, sin el paso humano; las acciones explícitas de bloqueo/revisión y los fallos IA se preservan. El límite se mide con segundos del snapshot validado por el servidor, no con entrada libre del cliente.
+
+## Brechas de aseguramiento que continúan en el objetivo maestro
+
+- [ ] Impedir auditorías OpenAI basadas en maniobras/métricas manipulables por el cliente; la evidencia geométrica evaluada debe derivar de un cálculo confiable del servidor y vincularse al recorrido que se guarda/simula/despacha.
+- [ ] Verificar explícitamente qué valida la IA al cambiar la unidad asignada; preservar la advertencia no bloqueante de tipo distinta definida para Despacho y distinguirla de evidencia dimensional del vehículo.
+- [ ] Completar benchmark reproducible con fixtures geográficos iguales entre motores viables en Chile; la documentación comparada no prueba por sí sola cuál minimiza duración y maniobras en los casos Atlas.
+- [ ] Cerrar las brechas de verificación productiva mediante trazas/smokes autorizados sin crear ni alterar despachos operacionales.

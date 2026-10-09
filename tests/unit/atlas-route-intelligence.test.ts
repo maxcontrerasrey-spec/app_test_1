@@ -88,19 +88,25 @@ describe("Atlas Route Intelligence maneuver analyzer", () => {
 
   it("deriva revisión humana y replan desde evidencia y acciones aunque las banderas del modelo contradigan el detalle", () => {
     const base = { decision: "APPROVE" as const, riskScore: 10, summary: "Evaluada", analyzedManeuvers: [], requiresReplan: false, requiresHumanReview: false };
-    const insufficientRoute = enforceFailClosedRouteAudit({ ...base, decision: "INSUFFICIENT_EVIDENCE" });
+    const insufficientRoute = enforceFailClosedRouteAudit({ ...base, decision: "INSUFFICIENT_EVIDENCE" }, 2_999);
     expect(insufficientRoute.requiresHumanReview).toBe(true);
 
-    const insufficientManeuver = enforceFailClosedRouteAudit({ ...base, analyzedManeuvers: [{ maneuverId: "m-001", decision: "INSUFFICIENT_EVIDENCE", riskScore: 10, reasons: [], evidence: [], recommendedAction: "NONE" }] });
+    const insufficientManeuver = enforceFailClosedRouteAudit({ ...base, analyzedManeuvers: [{ maneuverId: "m-001", decision: "INSUFFICIENT_EVIDENCE", riskScore: 10, reasons: [], evidence: [], recommendedAction: "NONE" }] }, 2_999);
     expect(insufficientManeuver.requiresHumanReview).toBe(true);
     expect(insufficientManeuver.decision).toBe("INSUFFICIENT_EVIDENCE");
 
-    const requestedAlternative = enforceFailClosedRouteAudit({ ...base, analyzedManeuvers: [{ maneuverId: "m-001", decision: "CAUTION", riskScore: 75, reasons: [], evidence: ["giro"], recommendedAction: "REQUEST_ALTERNATIVE" }] });
+    const requestedAlternative = enforceFailClosedRouteAudit({ ...base, analyzedManeuvers: [{ maneuverId: "m-001", decision: "CAUTION", riskScore: 75, reasons: [], evidence: ["giro"], recommendedAction: "REQUEST_ALTERNATIVE" }] }, 2_999);
     expect(requestedAlternative.requiresReplan).toBe(true);
     expect(requestedAlternative.requiresHumanReview).toBe(true);
 
-    const penalizedSegment = enforceFailClosedRouteAudit({ ...base, analyzedManeuvers: [{ maneuverId: "m-001", decision: "CAUTION", riskScore: 75, reasons: ["Tramo mejorable"], evidence: ["maniobra de Valhalla"], recommendedAction: "PENALIZE_SEGMENT" }] });
+    const penalizedSegment = enforceFailClosedRouteAudit({ ...base, requiresHumanReview: true, analyzedManeuvers: [{ maneuverId: "m-001", decision: "CAUTION", riskScore: 75, reasons: ["Tramo mejorable"], evidence: ["maniobra de Valhalla"], recommendedAction: "PENALIZE_SEGMENT" }] }, 2_999);
     expect(penalizedSegment.requiresReplan).toBe(false);
-    expect(penalizedSegment.requiresHumanReview).toBe(true);
+    expect(penalizedSegment.requiresHumanReview).toBe(false);
+
+    for (const durationSeconds of [3_000, 3_001]) {
+      expect(enforceFailClosedRouteAudit({ ...base, analyzedManeuvers: penalizedSegment.analyzedManeuvers }, durationSeconds).requiresHumanReview).toBe(true);
+    }
+    const explicitReview = enforceFailClosedRouteAudit({ ...base, analyzedManeuvers: [...penalizedSegment.analyzedManeuvers, { maneuverId: "m-002", decision: "CAUTION", riskScore: 75, reasons: ["Confirmar giro"], evidence: ["IA"], recommendedAction: "HUMAN_REVIEW" }] }, 2_999);
+    expect(explicitReview.requiresHumanReview).toBe(true);
   });
 });

@@ -3,12 +3,16 @@ import type { AtlasRouteAuditResponse } from "../services/atlasOperationsApi";
 export type RouteAuditFeedbackType = "ACCEPT_AI" | "OVERRIDE_FEASIBLE" | "OVERRIDE_NOT_FEASIBLE" | "INSUFFICIENT_INFORMATION";
 
 export function routeAuditNeedsHumanReview(audit: AtlasRouteAuditResponse | null) {
-  return Boolean(audit && (
-    audit.requiresHumanReview
-    || audit.decision === "INSUFFICIENT_EVIDENCE"
-    || audit.analyzedManeuvers.some((item) => item.decision === "INSUFFICIENT_EVIDENCE" || item.decision === "REJECT"
-      || ["HUMAN_REVIEW", "PENALIZE_SEGMENT", "BLOCK_MANEUVER", "REQUEST_ALTERNATIVE"].includes(String(item.recommendedAction)))
-  ));
+  if (!audit) return false;
+  const hasInsufficientEvidence = audit.decision === "INSUFFICIENT_EVIDENCE"
+    || audit.analyzedManeuvers.some((item) => item.decision === "INSUFFICIENT_EVIDENCE");
+  const hasHardFinding = audit.decision === "REJECT" || audit.requiresReplan
+    || audit.analyzedManeuvers.some((item) => item.decision === "REJECT"
+      || ["HUMAN_REVIEW", "BLOCK_MANEUVER", "REQUEST_ALTERNATIVE"].includes(String(item.recommendedAction)));
+  const hasSoftPenalty = audit.analyzedManeuvers.some((item) => item.recommendedAction === "PENALIZE_SEGMENT");
+  const shortPenaltyOnly = audit.routeDurationSeconds < 3_000 && hasSoftPenalty && !hasInsufficientEvidence && !hasHardFinding;
+  return hasInsufficientEvidence || hasHardFinding || audit.requiresHumanReview && !shortPenaltyOnly
+    || hasSoftPenalty && !shortPenaltyOnly;
 }
 
 export function routeAuditRequiresReplan(audit: AtlasRouteAuditResponse | null) {
@@ -21,6 +25,8 @@ export function isRouteAuditEvaluationComplete(status: "idle" | "loading" | "rea
     && audit !== null
     && audit.mode === "SHADOW"
     && audit.provider === "openai"
+    && Number.isFinite(audit.routeDurationSeconds)
+    && audit.routeDurationSeconds >= 0
     && Boolean(audit.runId)
     && audit.decision !== "ERROR"
     && audit.decision !== "REJECT"
@@ -89,7 +95,7 @@ export function AtlasRouteAuditPanel({
             ? <p role="status">Sin ruta aprobable tras {alternativeAttempts} alternativas; propuesta bloqueada.</p>
             : null}
       </>}
-      {routeAuditNeedsHumanReview(audit) && !routeAuditRequiresReplan(audit) && !feedbackSaved && <p role="status">Menos de 50 min: viable. Confirma revisión.</p>}
+      {audit.routeDurationSeconds < 3_000 && audit.analyzedManeuvers.some((item) => item.recommendedAction === "PENALIZE_SEGMENT") && !routeAuditNeedsHumanReview(audit) && <p role="status">Menos de 50 min: viable; la penalización suave no bloquea el uso.</p>}
       <small>
         {audit.decision === "ERROR" || audit.provider !== "openai"
           ? "No se completó la evaluación de IA."
