@@ -6,6 +6,12 @@
 - Separar los hallazgos operacionales de los fallos técnicos: ruta incompleta, auditoría IA fallida/no persistida o atestación inválida sí bloquean por integridad.
 - Evaluar el tiempo total desde el snapshot firmado del planificador, no segmentos sueltos ni valores editables del navegador.
 
+## 2026-10-14 — Un ajuste de acceso no puede sacar una ruta viable del umbral
+
+- Al mover una parada a un acceso peatonal cercano para reducir maniobras, volver a comparar el tiempo total de la ruta ya trazada; una penalización relativa (por ejemplo, hasta 5%) no puede reemplazar un recorrido `< 3000 s` por otro `>= 3000 s`.
+- Evaluar órdenes alternativos con el tiempo del trazado vial completo, no solo con la matriz, y conservar la mejor ruta completa previa como fallback si fallan o empeoran las alternativas.
+- Probar las fronteras 2.999/3.000/3.001 tanto en reglas de maniobra como en ajustes automáticos de acceso.
+
 ## 2026-10-08 — El detalle operacional debe respetar la continuidad visual solicitada
 
 - En el drawer de Control Tower, conductor y jornada son una sola fila lógica; mantenerlos en celdas separadas produce una lectura fragmentada.

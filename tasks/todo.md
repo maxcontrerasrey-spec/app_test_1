@@ -5501,7 +5501,6 @@ No se detectó un defecto de código que justifique otro cambio funcional en est
 Hallazgo inicial: `OperationsRoutePlannerDemo.startSimulation()` recalcula una ruta con evidencia firmada `DRIVER_SIMULATION` y luego la envía a Route Intelligence. `normalizeRouteSnapshot()` tipa ese valor, pero la condición de admisión solo acepta `OPTIMIZED_PROPOSAL` y `SAVED_ROUTE_PREVIEW`, por lo que devuelve `invalid_route_snapshot` antes de OpenAI. El simulador queda bloqueado aunque la ruta de planificación ya tuviera IA. No modificar rutas ni despachos de producción durante la verificación.
 
 Corrección local: el parser compartido acepta únicamente los tres tipos existentes en `AtlasRouteKind`; el prompt v1.9.0 guía la simulación como revalidación del trazado aplicado, no como reoptimización. Regresión parser: 3 tipos aceptados y tipos desconocidos/null rechazados. Validación: Atlas unit/contract 163/163, Deno check de ambas funciones PASS, build frontend PASS (se conserva el warning de chunk del planificador >520 kB), Guardian 0 errores/1 PERF-001 existente; `git diff --check` PASS. Falta integrar/desplegar y verificar la función productiva y un smoke autenticado del simulador.
-
 # Corrección permanente de generación BUK concurrente — 2026-10-09
 
 - [x] Correlacionar el incidente RC-0187 con candidato, jobs BUK, cola documental y logs productivos, sin reintentar ni mutar el caso.
@@ -5516,3 +5515,20 @@ Hallazgo inicial: Benjamín Ignacio Leiva Cortez (RC-0187) terminó correctament
 Revisión local: la bandeja reconcilia todos los jobs devueltos por el enqueue hasta estado terminal (incluidos los reclamados por cron), deduplica por `job_id`, recupera resultados aun si el invoke del navegador falla y comunica un timeout real como “sigue en proceso”, nunca como cero confirmados. La cola documental deja de ejecutarse en ocho rondas desde el navegador y queda en el cron productivo ya existente. No hay migraciones, cambios RLS, grants ni contratos RPC. Regresiones focalizadas 30/30, TypeScript/build PASS, Guardian 0 errores/1 warning preexistente `PERF-001`, `git diff --check` PASS.
 
 Resultado productivo: PR #132 fusionado en `main` como `f073f5b4dc2cafb281053417bf9e61945ff7e3cd`; guardrails enterprise de `main` y Cloudflare Pages concluyeron `success`. `gestion.busesjm.cl` sirve el nuevo chunk `HiringStatusPage-CMlddq34.js`, que contiene los mensajes de reconciliación automática/carga documental en segundo plano y ya no contiene el mensaje falso de cero documentos. La verificación no creó ni reencoló personas en BUK.
+## Buscar órdenes viables después de ajustar accesos de paradas — 2026-10-09
+
+### Plan verificable
+
+- [x] Confirmar el hueco por inspección del flujo: después de desplazar una parada a un acceso vial corto y validado, se reoptimizaba la matriz ajustada pero se trazaba un solo orden completo; una matriz y el tiempo de ruta completa pueden rankear órdenes distinto.
+- [x] Evaluar un conjunto acotado de órdenes con Valhalla sobre las coordenadas ajustadas, manteniendo el recorrido previo como baseline y el destino fijado al final.
+- [x] Aplicar el ajuste solo cuando el mejor trazado completo conserva la mejora de acceso exigida; mantener el fallback original y la regla operativa `< 3000 s`.
+- [x] Registrar cuántas alternativas ajustadas se trazaron y fallaron para que la auditoría IA reciba el alcance real de búsqueda.
+- [x] Agregar regresiones para matriz/ruta discordantes, alternativa fallida, destino fijo y preservación del baseline.
+- [x] Bloquear el ajuste de acceso si degrada una ruta completa de menos de 3.000 s a una duración igual o mayor; probar 2.999/3.000/3.001 s y conservar la ruta bajo el límite.
+- [x] Ejecutar suites Atlas, Deno, build, Guardian, baseline y `git diff --check`: unitarias 297/297, contratos 167/167, Deno PASS, frontend build PASS, performance baseline PASS y Guardian 0 errores/1 PERF-001 preexistente. Se normalizó `node_modules` con `npm ci`; el primer fallo del baseline provenía de Supabase JS 2.117.3 instalado localmente en vez del 2.108.1 fijado en `package-lock.json`.
+- [ ] Crear PR, esperar CI verde, integrar y desplegar `atlas-tomtom-planning` (producción sigue en v29; este cambio es local).
+- [ ] Completar una propuesta IA real autenticada y no mutativa, y comparación A/B de proveedor con la misma ruta. El Mac está bloqueado; no hay sesión del ERP disponible.
+- [x] Consultar producción solo lectura: la migración `20261009015908` está aplicada; el predicado real devuelve feedback `false` a 2.999 s y `true` a 3.000/3.001 s incluso con `REJECT` + `BLOCK_MANEUVER`. La producción tiene 1 ruta activa y 0 con auditoría utilizable; no se escribieron datos.
+- [ ] Ejecutar en Postgres aislado la matriz de casos de guardado/despacho por falta de Docker/Podman en este host; mantener la revisión productiva en solo lectura.
+
+Hallazgo: `tryNearbyStopAccessAdjustment` optimizaba una matriz nueva y solo llamaba a Valhalla para ese único orden. La primera pasada sí re-traza un conjunto acotado de alternativas porque el tiempo de matriz no siempre ordena igual que el tiempo de ruta completa. Tras ajustar accesos, esa protección no se repetía; ahora compara hasta tres órdenes completos y conserva el baseline en caso de fallo. Una revisión adicional detectó que una mejora de maniobra con desvío de hasta 5% podía reemplazar una ruta viable de 2.999 s por otra de 3.000 s o más; el predicado ahora rechaza esa degradación y conserva el criterio estricto del usuario.

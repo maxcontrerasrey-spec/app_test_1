@@ -36,6 +36,13 @@ describe("Atlas nearby stop access", () => {
     expect(isStopAccessRouteImproved({ durationSeconds: 600, uturnCount: 0, turnCount: 8 }, { durationSeconds: 631, uturnCount: 0, turnCount: 7 })).toBe(false);
   });
 
+  it("never pushes a viable under-50-minute route to the threshold or beyond", () => {
+    expect(isStopAccessRouteImproved({ durationSeconds: 2_999, uturnCount: 2 }, { durationSeconds: 3_000, uturnCount: 1 })).toBe(false);
+    expect(isStopAccessRouteImproved({ durationSeconds: 2_999, uturnCount: 2 }, { durationSeconds: 3_001, uturnCount: 1 })).toBe(false);
+    expect(isStopAccessRouteImproved({ durationSeconds: 2_999, uturnCount: 2 }, { durationSeconds: 2_999, uturnCount: 1 })).toBe(true);
+    expect(isStopAccessRouteImproved({ durationSeconds: 3_000, uturnCount: 2 }, { durationSeconds: 2_999, uturnCount: 1 })).toBe(true);
+  });
+
   it("keeps stop identity, label, and a pinned destination while applying its adjusted access point", () => {
     const stops = [
       { id: "first", label: "Origen", lat: -22.45, lng: -68.93 },

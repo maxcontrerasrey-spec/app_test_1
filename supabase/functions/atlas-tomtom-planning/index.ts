@@ -11,6 +11,7 @@ import { verifyPedestrianStopAccess } from "./pedestrianStopAccess.ts";
 import { ALTERNATIVE_REQUEST_TIMEOUT_MS, MAX_ALTERNATES_PER_LEG, MAX_ALTERNATIVE_CONCURRENCY, extractValhallaAlternateLegs, findUturnLegIndexes, parseValhallaRouteLeg, selectRoutePathAlternatives, type AtlasRoutePathLeg } from "./routePathAlternatives.ts";
 import { resolveAtlasVehicleRoutingModel } from "../../../src/modules/operaciones/lib/vehicleRoutingCosting.ts";
 import { orderRouteStopsByIndex } from "./orderedRouteStops.ts";
+import { MAX_ADJUSTED_STOP_ROUTE_CANDIDATES, selectFastestAdjustedStopRoute } from "./adjustedStopRouteSearch.ts";
 
 const ALLOWED_ORIGINS = new Set([
   "https://gestion.busesjm.cl",
@@ -246,9 +247,34 @@ async function tryNearbyStopAccessAdjustment(
 
     const adjustedMatrix = await valhallaMatrix(adjustedStops, model);
     const adjustedOptimization = optimizeOpenRoute(adjustedMatrix, undefined, fixedDestinationIndex);
-    const route = await valhallaRoute(adjustedOptimization.order.map((index) => adjustedStops[index]!), model);
-    if (!isStopAccessRouteImproved(baseRoute, route)) return null;
-    return { adjustedStops, adjustedOptimization, route, stopAccessAdjustments };
+    const adjustedRouteSearch = await selectFastestAdjustedStopRoute({
+      matrix: adjustedMatrix,
+      matrixSeedOrder: adjustedOptimization.order,
+      baselineOrder: baseOrder,
+      baselineRoute: accessRoute,
+      fixedDestinationIndex,
+      evaluate: (order) => valhallaRoute(order.map((index) => adjustedStops[index]!), model)
+    });
+    const route = adjustedRouteSearch.route;
+    const applied = isStopAccessRouteImproved(baseRoute, route);
+    if (!applied) {
+      return {
+        applied: false as const,
+        routeOrderAlternativesEvaluated: adjustedRouteSearch.alternativesEvaluated,
+        routeOrderAlternativesFailed: adjustedRouteSearch.alternativesFailed,
+        routeOrderAlternativeApplied: false
+      };
+    }
+    return {
+      applied: true as const,
+      adjustedStops,
+      adjustedOptimization: { ...adjustedOptimization, order: adjustedRouteSearch.order, durationSeconds: adjustedRouteSearch.matrixDurationSeconds },
+      route,
+      stopAccessAdjustments,
+      routeOrderAlternativesEvaluated: adjustedRouteSearch.alternativesEvaluated,
+      routeOrderAlternativesFailed: adjustedRouteSearch.alternativesFailed,
+      routeOrderAlternativeApplied: adjustedRouteSearch.alternativeApplied
+    };
   } catch {
     // Access adjustment is opportunistic: a Valhalla or pedestrian lookup error must not discard the base route.
     return null;
@@ -616,29 +642,30 @@ Deno.serve(async (request) => {
       const selectedRoute = routedOrder.route;
       const selectedMatrixDurationSeconds = routedOrder.matrixDurationSeconds;
       const accessAdjustment = await tryNearbyStopAccessAdjustment(stops, selectedOrder, fixedDestinationIndex as number | undefined, selectedRoute, vehicleRoutingModel);
-      const stopsByInputIndex = accessAdjustment?.adjustedStops ?? stops;
-      const finalOrder = accessAdjustment?.adjustedOptimization.order ?? selectedOrder;
+      const appliedAccessAdjustment = accessAdjustment?.applied ? accessAdjustment : null;
+      const stopsByInputIndex = appliedAccessAdjustment?.adjustedStops ?? stops;
+      const finalOrder = appliedAccessAdjustment?.adjustedOptimization.order ?? selectedOrder;
       const orderedStops = orderRouteStopsByIndex(stopsByInputIndex, finalOrder);
-      const routeBeforePathAlternatives = accessAdjustment?.route ?? selectedRoute;
+      const routeBeforePathAlternatives = appliedAccessAdjustment?.route ?? selectedRoute;
       const pathAlternatives = await tryRoutePathAlternatives(orderedStops, routeBeforePathAlternatives, vehicleRoutingModel);
       const finalRoute = pathAlternatives?.route ?? routeBeforePathAlternatives;
       const routeResult = {
         ...publicRoute(finalRoute),
         order: finalOrder,
-        matrixDurationSeconds: accessAdjustment?.adjustedOptimization.durationSeconds ?? selectedMatrixDurationSeconds,
-        inputOrderMatrixDurationSeconds: accessAdjustment
-          ? accessAdjustment.adjustedOptimization.inputOrderDurationSeconds
+        matrixDurationSeconds: appliedAccessAdjustment?.adjustedOptimization.durationSeconds ?? selectedMatrixDurationSeconds,
+        inputOrderMatrixDurationSeconds: appliedAccessAdjustment
+          ? appliedAccessAdjustment.adjustedOptimization.inputOrderDurationSeconds
           : seedWasExcluded ? null : optimized.inputOrderDurationSeconds,
         routeOrderSearch: {
-          candidatesEvaluated: routedOrder.alternativesEvaluated + 1,
-          failedCandidates: routeAlternativeFailures,
-          alternativeApplied: routedOrder.alternativeApplied,
-          status: routeAlternativeFailures ? "SEARCH_INCOMPLETE" : "COMPLETE",
+          candidatesEvaluated: routedOrder.alternativesEvaluated + 1 + (accessAdjustment ? accessAdjustment.routeOrderAlternativesEvaluated + 1 : 0),
+          failedCandidates: routeAlternativeFailures + (accessAdjustment?.routeOrderAlternativesFailed ?? 0),
+          alternativeApplied: routedOrder.alternativeApplied || Boolean(appliedAccessAdjustment?.routeOrderAlternativeApplied),
+          status: routeAlternativeFailures || (accessAdjustment?.routeOrderAlternativesFailed ?? 0) ? "SEARCH_INCOMPLETE" : "COMPLETE",
           searchScope: "BOUNDED",
           searchMethod: optimized.searchMethod,
-          alternativeBudget: routeCandidateBudget
+          alternativeBudget: routeCandidateBudget + (accessAdjustment ? MAX_ADJUSTED_STOP_ROUTE_CANDIDATES : 0)
         },
-        stopAccessAdjustments: accessAdjustment?.stopAccessAdjustments ?? [],
+        stopAccessAdjustments: appliedAccessAdjustment?.stopAccessAdjustments ?? [],
         routePathOptimization: pathAlternatives?.routePathOptimization ?? null,
         optimizationMethod: "valhalla_matrix_open_path_v2",
         plannedVehicleType: vehicleRoutingModel.category,
