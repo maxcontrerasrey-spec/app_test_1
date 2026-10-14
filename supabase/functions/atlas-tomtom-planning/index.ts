@@ -663,7 +663,8 @@ Deno.serve(async (request) => {
           status: routeAlternativeFailures || (accessAdjustment?.routeOrderAlternativesFailed ?? 0) ? "SEARCH_INCOMPLETE" : "COMPLETE",
           searchScope: "BOUNDED",
           searchMethod: optimized.searchMethod,
-          alternativeBudget: routeCandidateBudget + (accessAdjustment ? MAX_ADJUSTED_STOP_ROUTE_CANDIDATES : 0)
+          alternativeBudget: routeCandidateBudget + (accessAdjustment ? MAX_ADJUSTED_STOP_ROUTE_CANDIDATES : 0),
+          selectionAuthority: "VALHALLA_COMPLETE_ROUTE_DURATION"
         },
         stopAccessAdjustments: appliedAccessAdjustment?.stopAccessAdjustments ?? [],
         routePathOptimization: pathAlternatives?.routePathOptimization ?? null,
