@@ -94,6 +94,8 @@ describe("Atlas Route Intelligence security contract", () => {
 
   it("passes bounded Valhalla route-order search evidence to AI instead of letting it claim no comparison occurred", () => {
     expect(planner).toContain("reportedRouteOrderSearch: result.routeOrderSearch ?? null");
+    expect(planner).toContain('selectionAuthority: "VALHALLA_COMPLETE_ROUTE_DURATION"');
+    expect(edge).toContain('search.selectionAuthority !== "VALHALLA_COMPLETE_ROUTE_DURATION"');
     expect(edge).toContain("reportedRouteOrderSearch");
     expect(edge).toContain("no afirmar que no hubo comparación de órdenes");
     expect(edge).toContain("di que se evaluó una búsqueda acotada, nunca exhaustiva ni global");

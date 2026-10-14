@@ -12,6 +12,12 @@
 - Evaluar órdenes alternativos con el tiempo del trazado vial completo, no solo con la matriz, y conservar la mejor ruta completa previa como fallback si fallan o empeoran las alternativas.
 - Probar las fronteras 2.999/3.000/3.001 tanto en reglas de maniobra como en ajustes automáticos de acceso.
 
+## 2026-10-14 — La evidencia firmada del planificador debe coincidir con el contrato de auditoría IA
+
+- Cuando se amplíe el schema de un snapshot firmado, actualizar el productor y el validador en la misma entrega; un campo requerido ausente convierte una ruta funcional en `invalid_route_snapshot` y evita registrar la auditoría IA.
+- Mantener una prueba contractual que verifique el valor emitido por el planificador y el valor exigido por la Edge auditora.
+- No confundir ese fallo de integridad con viabilidad: una ruta completa menor de 3.000 segundos sigue siendo viable según el negocio, aunque debe corregirse el fallo técnico para dejar evidencia IA válida.
+
 ## 2026-10-08 — El detalle operacional debe respetar la continuidad visual solicitada
 
 - En el drawer de Control Tower, conductor y jornada son una sola fila lógica; mantenerlos en celdas separadas produce una lectura fragmentada.

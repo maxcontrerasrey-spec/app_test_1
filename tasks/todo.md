@@ -5534,3 +5534,17 @@ Resultado productivo: PR #132 fusionado en `main` como `f073f5b4dc2cafb281053417
 Verificación productiva posterior al despliegue (2026-10-14): `atlas-tomtom-planning` v30 `ACTIVE` con `verify_jwt=true`; `atlas-route-intelligence` v14 `ACTIVE` con `verify_jwt=true`. Una invocación sin JWT sigue respondiendo HTTP 401. El helper SQL productivo conserva el umbral estricto con hallazgos `REJECT` + `BLOCK_MANEUVER`: no requiere feedback a 2.999 s y sí a 3.000/3.001 s. Hay 1 ruta activa y 0 vinculadas a auditoría IA utilizable; esa ruta existente no demuestra el flujo nuevo. El smoke de propuesta autenticada sigue pendiente porque el Mac está bloqueado; no se guardaron rutas ni se despacharon servicios.
 
 Hallazgo: `tryNearbyStopAccessAdjustment` optimizaba una matriz nueva y solo llamaba a Valhalla para ese único orden. La primera pasada sí re-traza un conjunto acotado de alternativas porque el tiempo de matriz no siempre ordena igual que el tiempo de ruta completa. Tras ajustar accesos, esa protección no se repetía; ahora compara hasta tres órdenes completos y conserva el baseline en caso de fallo. Una revisión adicional detectó que una mejora de maniobra con desvío de hasta 5% podía reemplazar una ruta viable de 2.999 s por otra de 3.000 s o más; el predicado ahora rechaza esa degradación y conserva el criterio estricto del usuario.
+
+## Corregir snapshot de búsqueda que bloquea auditoría IA — 2026-10-14
+
+### Plan verificable
+
+- [x] Reproducir en producción una propuesta real autenticada de 12 paradas, identificar duración < 3.000 s y aislar el error de auditoría sin guardar ruta ni despachar.
+- [x] Comparar el snapshot firmado que emite `atlas-tomtom-planning` con las validaciones de `atlas-route-intelligence` y ubicar el campo faltante.
+- [x] Agregar al snapshot firmado `selectionAuthority: VALHALLA_COMPLETE_ROUTE_DURATION`, coherente con el criterio real de selección por trazado completo.
+- [x] Añadir regresión de contrato y ejecutar pruebas de ruta/IA, build, Guardian y `git diff --check`.
+- [ ] Integrar con CI, desplegar únicamente el planificador y verificar en producción una auditoría con `runId`, proveedor y persistencia; mantener el umbral estricto de 3.000 s y no guardar la ruta ni despachar.
+
+Hallazgo inicial: la propuesta productiva completó 12 paradas en 36 minutos. La auditoría respondió `invalid_route_snapshot`. El Edge auditor exige `reportedRouteOrderSearch.selectionAuthority === "VALHALLA_COMPLETE_ROUTE_DURATION"`; el planificador actual firmaba el bloque de búsqueda sin esa propiedad. La ruta bajo 50 minutos conserva su viabilidad funcional; este rechazo técnico solo impide completar la auditoría IA y dejar evidencia persistida.
+
+Verificación local: 30 pruebas focalizadas pasan; `npm run guardian` pasa con solo la advertencia existente de tamaño del módulo del planificador; `git diff --check` pasa. Pendiente integrar con CI, desplegar el Edge planificador y comprobar en la sesión autenticada que la auditoría IA se completa y persiste para una ruta menor de 50 minutos. No se guardó ruta ni se despachó servicio.
