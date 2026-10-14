@@ -7,6 +7,7 @@ const ALLOWED_ORIGINS = new Set(["https://gestion.busesjm.cl", "http://127.0.0.1
 const MAX_BODY_BYTES = 72 * 1024;
 const MAX_MANEUVERS = 500;
 const MAX_AUDITED_MANEUVERS = 20;
+const MAX_REPORTED_ROUTE_ORDER_ALTERNATIVE_BUDGET = 11; // 8 de orden + 3 por ajuste de acceso.
 const MODEL = "gpt-6-luna";
 const AGENT_VERSION = "route-intelligence-reviewer:1.9.0";
 const PROMPT_VERSION = "route-intelligence-prompt:1.9.0";
@@ -126,7 +127,7 @@ function normalizeRouteSnapshot(value: unknown): RouteSnapshot | null {
     const searchMethod = search.searchMethod === undefined || search.searchMethod === null
       ? null : search.searchMethod;
     const alternativeBudget = search.alternativeBudget === undefined || search.alternativeBudget === null
-      ? null : finite(search.alternativeBudget, 0, 8);
+      ? null : finite(search.alternativeBudget, 0, MAX_REPORTED_ROUTE_ORDER_ALTERNATIVE_BUDGET);
     if (candidatesEvaluated === null || failedCandidates === null || typeof search.alternativeApplied !== "boolean"
       || typeof search.status !== "string" || !statuses.has(search.status)
       || searchScope !== "BOUNDED"

@@ -96,6 +96,8 @@ describe("Atlas Route Intelligence security contract", () => {
     expect(planner).toContain("reportedRouteOrderSearch: result.routeOrderSearch ?? null");
     expect(planner).toContain('selectionAuthority: "VALHALLA_COMPLETE_ROUTE_DURATION"');
     expect(edge).toContain('search.selectionAuthority !== "VALHALLA_COMPLETE_ROUTE_DURATION"');
+    expect(edge).toContain('const MAX_REPORTED_ROUTE_ORDER_ALTERNATIVE_BUDGET = 11');
+    expect(edge).toContain('finite(search.alternativeBudget, 0, MAX_REPORTED_ROUTE_ORDER_ALTERNATIVE_BUDGET)');
     expect(edge).toContain("reportedRouteOrderSearch");
     expect(edge).toContain("no afirmar que no hubo comparación de órdenes");
     expect(edge).toContain("di que se evaluó una búsqueda acotada, nunca exhaustiva ni global");
