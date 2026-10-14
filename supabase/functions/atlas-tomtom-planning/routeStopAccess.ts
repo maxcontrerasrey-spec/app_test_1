@@ -14,6 +14,7 @@ export const MIN_STOP_ACCESS_CHANGE_METERS = 3;
 export const MAX_UTURN_STOP_CANDIDATES = 4;
 export const MAX_ACCEPTABLE_DETOUR_FOR_UTURN_SECONDS = 0.05;
 export const MIN_ROUTE_TIME_IMPROVEMENT_SECONDS = 10;
+const ROUTE_VIABILITY_THRESHOLD_SECONDS = 3_000;
 
 export function distanceBetweenPointsMeters(a: RouteStopPoint, b: RouteStopPoint): number {
   const radians = Math.PI / 180;
@@ -73,6 +74,10 @@ export function isStopAccessRouteImproved(
   candidate: { durationSeconds: number; uturnCount: number; turnCount?: number }
 ): boolean {
   if (!Number.isFinite(baseline.durationSeconds) || !Number.isFinite(candidate.durationSeconds)) return false;
+  // A nearby access point must not turn an already viable (<50 min) route into
+  // an over-threshold route, even when its geometry removes a maneuver.
+  if (baseline.durationSeconds < ROUTE_VIABILITY_THRESHOLD_SECONDS
+    && candidate.durationSeconds >= ROUTE_VIABILITY_THRESHOLD_SECONDS) return false;
   if (candidate.uturnCount < baseline.uturnCount || (baseline.turnCount !== undefined && candidate.turnCount !== undefined && candidate.turnCount < baseline.turnCount)) {
     return candidate.durationSeconds <= baseline.durationSeconds * (1 + MAX_ACCEPTABLE_DETOUR_FOR_UTURN_SECONDS);
   }
